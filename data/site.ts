@@ -3,6 +3,39 @@
  * Brand, outbound links and SEO. Change WhatsApp and Instagram URLs here only.
  * ========================================================================== */
 
+/** The origin used when nothing usable is configured. */
+const DEFAULT_SITE_URL = 'https://photowalksinpune.com';
+
+/**
+ * Resolve the canonical origin for metadataBase and Open Graph URLs.
+ *
+ * A host that declares NEXT_PUBLIC_SITE_URL but leaves it blank hands us an
+ * empty string, which `??` does not catch and `new URL('')` throws on. Anything
+ * empty, scheme-less or otherwise unparseable falls back rather than failing
+ * the build.
+ */
+function resolveSiteUrl(): string {
+  const candidates = [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.NEXT_PUBLIC_VERCEL_URL,
+    DEFAULT_SITE_URL,
+  ];
+
+  for (const candidate of candidates) {
+    const trimmed = candidate?.trim();
+    if (!trimmed) continue;
+
+    const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try {
+      return new URL(withScheme).origin;
+    } catch {
+      // Try the next candidate.
+    }
+  }
+
+  return DEFAULT_SITE_URL;
+}
+
 export interface SiteLinks {
   instagram: string;
   instagramHandle: string;
@@ -54,7 +87,7 @@ export const site: SiteConfig = {
     title: 'Photowalks in Pune | Walk. Photograph. Connect.',
     description:
       'Photowalks in Pune is a community for photographers and curious people exploring Pune one walk and one photograph at a time.',
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://photowalksinpune.com',
+    url: resolveSiteUrl(),
     ogImage: '/images/hero/pune-hero.jpg',
     keywords: [
       'photowalk Pune',
