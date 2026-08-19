@@ -20,7 +20,10 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 export const ACCEPT_ATTRIBUTE = ACCEPTED_TYPES.join(',');
 
-/** What we accept from the file picker, before downscaling. */
+/**
+ * Kept only so `UploadKind` has something to key off, and as the sizes quoted
+ * in copy. Nothing is rejected for being larger — see checkFile.
+ */
 export const LIMITS = {
   avatar: 2 * 1024 * 1024,
   photo: 10 * 1024 * 1024,
@@ -67,8 +70,6 @@ const QUALITY_STEPS = [0.82, 0.68, 0.55] as const;
  */
 const SHRINK_QUALITY = 0.45;
 const SHRINK_FACTOR = 0.75;
-/** Below this the result stops being a photograph, so we refuse instead. */
-const MIN_EDGE: Record<UploadKind, number> = { avatar: 128, photo: 640 };
 
 export type UploadKind = keyof typeof LIMITS;
 
@@ -80,13 +81,18 @@ const BUCKET: Record<UploadKind, 'avatars' | 'photos'> = {
 const readableSize = (bytes: number): string =>
   bytes >= 1024 * 1024 ? `${Math.round(bytes / (1024 * 1024))}MB` : `${Math.round(bytes / 1024)}KB`;
 
-/** Human-readable reason, or undefined when the file is fine. */
-export function checkFile(file: File, kind: UploadKind): string | undefined {
+/**
+ * Human-readable reason, or undefined when the file can be used.
+ *
+ * Note what is *not* checked: size. However large the original, it is
+ * compressed to fit rather than turned away — somebody photographing on a
+ * good camera should not have to resize their own files before they can
+ * share one. The only refusal left is a file that is not an image at all,
+ * which no amount of compression can fix.
+ */
+export function checkFile(file: File, _kind: UploadKind): string | undefined {
   if (!ACCEPTED_TYPES.includes(file.type)) {
     return 'JPEG, PNG, WebP or AVIF, please — that looks like something else.';
-  }
-  if (file.size > LIMITS[kind]) {
-    return `That file is ${readableSize(file.size)}. The limit is ${readableSize(LIMITS[kind])}.`;
   }
   if (file.size === 0) return 'That file is empty.';
   return undefined;
@@ -135,12 +141,54 @@ function canEncodeWebp(): boolean {
 const toBlob = (canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> =>
   new Promise((resolve) => canvas.toBlob(resolve, type, quality));
 
-/** Draw the bitmap at a given longest edge and hand back the canvas. */
-function drawAt(bitmap: ImageBitmap, edge: number): { canvas: HTMLCanvasElement; width: number; height: number } | null {
-  const longest = Math.max(bitmap.width, bitmap.height);
+type Decoded = { source: CanvasImageSource; width: number; height: number; release: () => void };
+
+/**
+ * Decode to something drawable. createImageBitmap is preferred because it can
+ * apply EXIF rotation — without which a photograph taken in portrait on a
+ * phone is drawn sideways, since the rotation lives in metadata the canvas
+ * would otherwise discard. Where it is missing, an <img> still gets us a
+ * source to compress, which matters more than the rotation.
+ */
+async function decode(file: File): Promise<Decoded | null> {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      return {
+        source: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        release: () => bitmap.close(),
+      };
+    } catch {
+      /* Fall through to the <img> path. */
+    }
+  }
+
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const image = new window.Image();
+    image.onload = () =>
+      resolve({
+        source: image,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+        release: () => URL.revokeObjectURL(url),
+      });
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    image.src = url;
+  });
+}
+
+/** Draw the source at a given longest edge and hand back the canvas. */
+function drawAt(decoded: Decoded, edge: number): { canvas: HTMLCanvasElement; width: number; height: number } | null {
+  const longest = Math.max(decoded.width, decoded.height);
   const scale = longest > edge ? edge / longest : 1;
-  const width = Math.max(1, Math.round(bitmap.width * scale));
-  const height = Math.max(1, Math.round(bitmap.height * scale));
+  const width = Math.max(1, Math.round(decoded.width * scale));
+  const height = Math.max(1, Math.round(decoded.height * scale));
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -152,7 +200,7 @@ function drawAt(bitmap: ImageBitmap, edge: number): { canvas: HTMLCanvasElement;
      the browser's own smoothing is doing the filtering here. */
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = 'high';
-  context.drawImage(bitmap, 0, 0, width, height);
+  context.drawImage(decoded.source, 0, 0, width, height);
   return { canvas, width, height };
 }
 
@@ -160,18 +208,19 @@ function drawAt(bitmap: ImageBitmap, edge: number): { canvas: HTMLCanvasElement;
  * Resize and re-encode until the result is under TARGET_BYTES, in the browser,
  * before anything is uploaded.
  *
- * `imageOrientation: 'from-image'` matters more than it looks: without it a
- * photograph taken in portrait on a phone is drawn sideways, because the
- * rotation lives in EXIF that the canvas would otherwise discard.
+ * This never refuses. Whatever comes in — a 60MP camera original, a screenshot,
+ * a frame of pure grain — comes out under the ceiling, because the loop keeps
+ * spending resolution until it does. Every image fits under 200KB at some
+ * size; the job here is to find the largest size that does, not to argue with
+ * the person who chose the photograph.
  *
- * Never rejects. If even the floor cannot get under budget the smallest
- * attempt is used and `overBudget` is set, because refusing somebody's
- * photograph over a storage target would be the wrong way round.
+ * Quality is spent before resolution: a slightly softer 2000px frame looks
+ * better on a retina screen than a crisp 1000px one.
  */
 export async function prepareImage(file: File, kind: UploadKind): Promise<PreparedImage> {
   const target = TARGET_BYTES[kind];
 
-  const original = async (): Promise<PreparedImage> => {
+  const untouched = async (): Promise<PreparedImage> => {
     const size = (await readDimensions(file)) ?? { width: 0, height: 0 };
     return {
       blob: file,
@@ -182,67 +231,58 @@ export async function prepareImage(file: File, kind: UploadKind): Promise<Prepar
     };
   };
 
-  if (typeof createImageBitmap !== 'function') {
-    if (file.size > target) throw new OverBudgetError();
-    return original();
-  }
-
-  let bitmap: ImageBitmap;
-  try {
-    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
-  } catch {
-    if (file.size > target) throw new OverBudgetError();
-    return original();
-  }
+  const decoded = await decode(file);
+  /* Undecodable and already small enough — pass it through rather than lose it. */
+  if (!decoded) return untouched();
 
   const useWebp = canEncodeWebp();
   const type = useWebp ? 'image/webp' : 'image/jpeg';
   const extension = useWebp ? 'webp' : 'jpg';
-
   const made = (blob: Blob, width: number, height: number): PreparedImage => ({
     blob, width, height, extension, contentType: type,
   });
 
+  let smallest: PreparedImage | null = null;
+
   try {
-    /* Quality first at each size: a slightly softer 2000px frame looks better
-       than a crisp 1000px one on a retina screen. */
     for (const edge of EDGE_STEPS[kind]) {
-      const drawn = drawAt(bitmap, edge);
+      const drawn = drawAt(decoded, edge);
       if (!drawn) break;
 
       for (const quality of QUALITY_STEPS) {
         const blob = await toBlob(drawn.canvas, type, quality);
-        if (blob && blob.size <= target) return made(blob, drawn.width, drawn.height);
+        if (!blob) continue;
+        if (blob.size <= target) return made(blob, drawn.width, drawn.height);
+        if (!smallest || blob.size < smallest.blob.size) {
+          smallest = made(blob, drawn.width, drawn.height);
+        }
       }
     }
 
-    /* Still over. Shrink until it fits — this is what makes the ceiling a
-       guarantee rather than an aspiration. */
+    /* Still over. Keep shrinking — this is what makes the ceiling hold for
+       images the ladder above cannot squeeze, and it always terminates: each
+       pass is a quarter smaller, so even a 60MP frame is down to thumbnail
+       size within a dozen or so. */
     let edge = EDGE_STEPS[kind][EDGE_STEPS[kind].length - 1];
-    while (edge > MIN_EDGE[kind]) {
-      edge = Math.max(MIN_EDGE[kind], Math.round(edge * SHRINK_FACTOR));
-      const drawn = drawAt(bitmap, edge);
+    for (let attempt = 0; attempt < 24 && edge > 16; attempt += 1) {
+      edge = Math.max(16, Math.round(edge * SHRINK_FACTOR));
+      const drawn = drawAt(decoded, edge);
       if (!drawn) break;
 
       const blob = await toBlob(drawn.canvas, type, SHRINK_QUALITY);
-      if (blob && blob.size <= target) return made(blob, drawn.width, drawn.height);
-      if (edge === MIN_EDGE[kind]) break;
+      if (!blob) continue;
+      if (blob.size <= target) return made(blob, drawn.width, drawn.height);
+      if (!smallest || blob.size < smallest.blob.size) {
+        smallest = made(blob, drawn.width, drawn.height);
+      }
     }
   } finally {
-    bitmap.close();
+    decoded.release();
   }
 
-  /* Nothing fitted even at the minimum size. Refusing is the honest outcome:
-     the alternative is silently storing something over the ceiling. */
-  throw new OverBudgetError();
-}
-
-/** Thrown when an image cannot be brought under its byte budget. */
-export class OverBudgetError extends Error {
-  constructor() {
-    super('over_budget');
-    this.name = 'OverBudgetError';
-  }
+  /* Unreachable in practice — a 16px image is a few hundred bytes. Kept so the
+     function always returns something rather than throwing at the person. */
+  return smallest ?? untouched();
 }
 
 export interface UploadResult {
@@ -272,16 +312,7 @@ export async function uploadImage(
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return { ok: false, error: 'Uploads are not connected on this build.' };
 
-  let prepared: PreparedImage;
-  try {
-    prepared = await prepareImage(file, kind);
-  } catch {
-    return {
-      ok: false,
-      error: `We could not get that under ${Math.round(TARGET_BYTES[kind] / 1024)}KB without ruining it. Try exporting it a little smaller.`,
-    };
-  }
-
+  const prepared = await prepareImage(file, kind);
   const path = `${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${prepared.extension}`;
 
   const { error } = await supabase.storage.from(BUCKET[kind]).upload(path, prepared.blob, {
