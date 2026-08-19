@@ -167,6 +167,39 @@ update public.profiles set bio = 'nope' where true;    -- 0 rows: no policy perm
 
 ---
 
+---
+
+## Reclaiming orphaned images
+
+Deleting an account cascades its `photos` rows away, but nothing reaches into
+a bucket — there is no foreign key from Postgres to object storage. The files
+stay, invisible and still counted against the 1GB allowance.
+
+```bash
+SUPABASE_SERVICE_ROLE_KEY=... node scripts/prune-storage.mjs          # report
+SUPABASE_SERVICE_ROLE_KEY=... node scripts/prune-storage.mjs --apply  # delete
+```
+
+It reports by default and deletes nothing without `--apply`. It removes files
+under a uid whose account is gone, and files that no `photos` row or
+`profiles.avatar_url` points at — an upload that failed halfway, for instance.
+
+Worth running after deleting anybody from the dashboard, and occasionally
+otherwise. On a schedule it belongs in a cron job or a scheduled Edge
+Function, not in the app.
+
+**Why this is not a database trigger.** The obvious fix is a trigger on
+`auth.users` that deletes from `storage.objects`, and it is a trap: that table
+holds the *metadata*, while the bytes live in S3. Removing the row makes the
+file invisible to the Storage API, so nothing can ever list or delete it
+again — the bytes are stranded and still billed. The Storage API removes both
+halves, which is why this runs outside the database.
+
+The service-role key bypasses Row Level Security. Pass it on the command line
+or from a secret store; never put it in `.env.local` beside the
+`NEXT_PUBLIC_` variables, and never in a variable that starts with that
+prefix.
+
 ## What is deliberately not here
 
 **No `service_role` key, and no admin client.** Everything this app does is
