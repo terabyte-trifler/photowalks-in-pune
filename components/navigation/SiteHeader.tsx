@@ -23,7 +23,10 @@ export function SiteHeader() {
      still scroll without a navigation. */
   const pathname = usePathname();
   const onHome = pathname === '/';
-  const sectionHref = (hash: string) => (onHome ? hash : `/${hash}`);
+  /* Only fragments need the prefix — "/photographers" is already a route and
+     would become "//photographers", which the browser reads as a host. */
+  const sectionHref = (href: string) =>
+    href.startsWith('#') && !onHome ? `/${href}` : href;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);

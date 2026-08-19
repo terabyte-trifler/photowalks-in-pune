@@ -32,6 +32,13 @@ export interface Event {
   status: WalkStatus;
   /** True only when the details are confirmed and publishable as schema.org. */
   verified: boolean;
+  /**
+   * The username of the member hosting this walk, if one has volunteered.
+   * Deliberately unset on every walk below: a host is a real person and
+   * naming one who has not agreed would be inventing them. Set it to a real
+   * profile's username and it appears under "Hosted by" on their page.
+   */
+  hostUsername?: string;
 }
 
 export const featuredWalk: Event = {

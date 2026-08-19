@@ -38,6 +38,7 @@ and run it. Both are safe to run more than once.
 |---|---|
 | `20260820000001_profiles.sql` | `profiles`, the username generator, the sign-up trigger, RLS |
 | `20260820000002_walk_rsvps.sql` | `walk_rsvps`, one row per member per walk, RLS |
+| `20260820000003_photographers.sql` | `website_url`, `photos`, two public views, and the `avatars` / `photos` storage buckets with their policies |
 
 With the CLI instead:
 
@@ -46,7 +47,19 @@ supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-Check they landed: **Table Editor** should show `profiles` and `walk_rsvps`,
+### Storage
+
+Migration 0003 creates both buckets and their policies, so there is nothing to
+click in **Storage**. Check it worked: **Storage** should list `avatars`
+(2MB limit) and `photos` (10MB), both public, both accepting JPEG, PNG, WebP
+and AVIF only. Public means *readable* — writing is limited to the owner by
+policy, keyed on the uid folder each file sits in.
+
+If you ever recreate a bucket by hand, recreate the policies with it; a public
+bucket with no insert policy is writable by nobody, and one with a policy that
+omits the folder check is writable by everybody.
+
+Check they landed: **Table Editor** should show `profiles`, `photos` and `walk_rsvps`,
 both with **RLS enabled**, and **Authentication → Policies** should list three
 policies on each.
 

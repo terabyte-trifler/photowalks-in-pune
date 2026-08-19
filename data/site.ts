@@ -110,12 +110,19 @@ export const sections = [
   { id: 'story', label: 'Story' },
   { id: 'categories', label: 'Subjects' },
   { id: 'community', label: 'Community' },
+  { id: 'photographers', label: 'People' },
   { id: 'instagram', label: 'Instagram' },
   { id: 'newsletter', label: 'Letter' },
 ] as const;
 
+/**
+ * `href` is either a section on the homepage (a fragment) or a route of its
+ * own. SiteHeader prefixes fragments with "/" when it is not on the homepage;
+ * routes are left alone. See sectionHref there.
+ */
 export const navigation = [
   { label: 'Walks', href: '#walks' },
+  { label: 'Photographers', href: '/photographers' },
   { label: 'Stories', href: '#story' },
   { label: 'Community', href: '#community' },
   { label: 'Instagram', href: site.links.instagram, external: true },

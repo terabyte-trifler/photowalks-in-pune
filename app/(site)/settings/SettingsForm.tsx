@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useActionState, useEffect, useState } from 'react';
 import { AuthNotice } from '@/components/auth/AuthNotice';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { categories } from '@/data/photos';
+import { photographyStyles } from '@/data/photography';
+import { AvatarUpload } from '@/components/photographers/AvatarUpload';
 import { LIMITS } from '@/lib/auth/validation';
 import type { Profile } from '@/lib/supabase/types';
 import { saveProfile, type SaveProfileState } from './actions';
@@ -29,6 +30,8 @@ export function SettingsForm({ profile, email }: { profile: Profile; email: stri
     <form action={formAction} noValidate>
       <fieldset disabled={pending} className="border-0 p-0">
         <legend className="sr-only">Profile details</legend>
+
+        <AvatarUpload initialUrl={profile.avatar_url} fullName={profile.full_name} />
 
         <div className="grid gap-x-10 sm:grid-cols-2">
           <Field
@@ -66,6 +69,16 @@ export function SettingsForm({ profile, email }: { profile: Profile; email: stri
             hint="Handle or profile link"
             autoComplete="off"
           />
+          <Field
+            name="website_url"
+            label="Website (optional)"
+            defaultValue={profile.website_url ?? ''}
+            error={state.errors?.website_url}
+            maxLength={LIMITS.website}
+            placeholder="example.com"
+            hint="Your own site, if you have one"
+            autoComplete="url"
+          />
         </div>
 
         <div className="mb-6">
@@ -100,14 +113,14 @@ export function SettingsForm({ profile, email }: { profile: Profile; email: stri
           )}
         </div>
 
-        {/* The subjects are the same ones the archive is filtered by, in
-            data/photos.ts — one vocabulary for the whole site. */}
+        {/* Styles, from data/photography.ts — the same vocabulary the
+            directory filters by, so picking one here makes you findable. */}
         <fieldset className="mb-8 border-0 p-0">
           <legend className="field-label">
             What you photograph — up to {LIMITS.interests}
           </legend>
           <ul className="mt-1 flex flex-wrap gap-2">
-            {categories.map((category) => {
+            {photographyStyles.map((category) => {
               const checked = interests.includes(category.id);
               const full = interests.length >= LIMITS.interests && !checked;
 
@@ -119,6 +132,7 @@ export function SettingsForm({ profile, email }: { profile: Profile; email: stri
                         ? 'border-foreground bg-foreground text-background'
                         : 'border-border-strong text-foreground-soft hover:border-foreground'
                     } ${full ? 'cursor-not-allowed opacity-40' : ''}`}
+                    title={category.note}
                   >
                     <input
                       type="checkbox"
@@ -176,6 +190,10 @@ export function SettingsForm({ profile, email }: { profile: Profile; email: stri
 
           <Link href={`/photographers/${username}`} className="cta">
             View public profile <span aria-hidden="true">→</span>
+          </Link>
+
+          <Link href={`/photographers/${username}/photos`} className="cta">
+            Manage photographs <span aria-hidden="true">→</span>
           </Link>
         </div>
       </fieldset>

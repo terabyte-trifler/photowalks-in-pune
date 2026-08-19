@@ -2,22 +2,31 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Avatar } from '@/components/navigation/Avatar';
+import { StyleTags } from '@/components/photographers/StyleTags';
+import { WalkList } from '@/components/photographers/WalkList';
+import { WorkGrid } from '@/components/photographers/WorkGrid';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
-import { categories } from '@/data/photos';
+import { upcomingWalks } from '@/data/events';
 import { site } from '@/data/site';
 import { getCurrentUser } from '@/lib/auth/session';
-import { getProfileByUsername } from '@/lib/profiles';
-import { joinedLabel } from '@/lib/utils';
+import { websiteLabel } from '@/lib/auth/validation';
+import {
+  getPhotographerCard,
+  listAttendance,
+  listCompanions,
+  listPhotos,
+} from '@/lib/photographers';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
-import type { Profile } from '@/lib/supabase/types';
+import type { PhotographerCard } from '@/lib/supabase/types';
+import { joinedLabel } from '@/lib/utils';
 
-/* Profiles change when their owner edits them, so they are rendered per
-   request. Nothing here is behind a login: a photography community's profiles
-   are public, which is also why the RLS select policy is `using (true)`. */
+/* A profile changes when its owner edits it, and it shows who else was on a
+   walk, so it is rendered per request. Nothing on it is behind a login. */
 export const dynamic = 'force-dynamic';
 
-const CATEGORY_LABELS = new Map(categories.map((category) => [category.id, category.label]));
+/** How many frames the profile shows before "view all". */
+const RECENT_WORK = 6;
 
 export async function generateMetadata({
   params,
@@ -25,20 +34,28 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const profile = await getProfileByUsername(username);
+  const photographer = await getPhotographerCard(username);
 
-  if (!profile) return { title: `Photographer not found · ${site.displayName}` };
+  if (!photographer) return { title: `Photographer not found · ${site.displayName}` };
+
+  const styles = photographer.photography_interests ?? [];
+  const description =
+    photographer.bio?.trim() ||
+    `Explore ${photographer.full_name}'s photography, walks and interests on ${site.displayName}.` +
+      (styles.length ? ` Shoots ${styles.join(', ')}.` : '');
 
   return {
-    title: `${profile.full_name} · ${site.displayName}`,
-    description:
-      profile.bio ?? `${profile.full_name} photographs in ${profile.city} with ${site.displayName}.`,
-    alternates: { canonical: `/photographers/${profile.username}` },
+    title: `${photographer.full_name} — ${site.displayName}`,
+    description,
+    alternates: { canonical: `/photographers/${photographer.username}` },
     openGraph: {
       type: 'profile',
-      title: `${profile.full_name} · ${site.displayName}`,
-      description: profile.bio ?? `Walking and photographing ${profile.city}.`,
+      title: `${photographer.full_name} — ${site.displayName}`,
+      description,
+      url: `/photographers/${photographer.username}`,
     },
+    /* Public profiles are meant to be found. */
+    robots: { index: true, follow: true },
   };
 }
 
@@ -48,55 +65,170 @@ export default async function PhotographerPage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-
   if (!isSupabaseConfigured()) notFound();
 
-  const profile = await getProfileByUsername(username);
-  if (!profile) notFound();
+  const photographer = await getPhotographerCard(username);
+  if (!photographer) notFound();
 
-  const viewer = await getCurrentUser();
-  const isOwner = viewer?.id === profile.id;
+  const [viewer, work, attendance] = await Promise.all([
+    getCurrentUser(),
+    listPhotos(photographer.id, { page: 1, pageSize: RECENT_WORK }),
+    listAttendance(photographer.id),
+  ]);
+
+  const isOwner = viewer?.id === photographer.id;
+  const firstName = photographer.full_name.trim().split(/\s+/)[0];
+
+  /* Walks are still a file, not a table, so hosting is read from there. */
+  const hosted = upcomingWalks.filter(
+    (walk) => walk.hostUsername?.toLowerCase() === photographer.username,
+  );
+
+  /* The edge that makes this a network: everyone else who was on those walks. */
+  const companions = await listCompanions(
+    attendance.map((row) => row.event_id),
+    photographer.id,
+  );
 
   return (
     <>
-      <ProfileHeader profile={profile} isOwner={isOwner} />
+      <ProfileHeader photographer={photographer} isOwner={isOwner} hostedCount={hosted.length} />
 
-      <ContributionSection
-        index="02"
-        label="Walks"
-        title="Walks attended"
-        empty={
-          isOwner
-            ? 'You have not been on a walk yet. The next one is on the homepage.'
-            : `${firstName(profile.full_name)} has not been on a walk yet.`
-        }
-        action={{ label: 'See the next walk', href: '/#next-walk' }}
-      />
+      {/* ---- Recent work ------------------------------------------------- */}
+      <section className="border-b border-border py-section-sm" aria-labelledby="work-title">
+        <div className="shell">
+          <Reveal>
+            <SectionHeader index="02" label="The work" />
+            <div className="mb-[clamp(1.5rem,3vw,2.25rem)] flex flex-wrap items-baseline justify-between gap-4">
+              <h2 id="work-title" className="display text-display-lg">
+                Recent work
+              </h2>
+              {work.total > RECENT_WORK && (
+                <Link href={`/photographers/${photographer.username}/photos`} className="cta">
+                  View all {work.total} photos <span aria-hidden="true">→</span>
+                </Link>
+              )}
+            </div>
 
-      <ContributionSection
-        index="03"
-        label="Archive"
-        title="Photographs"
-        empty={
-          isOwner
-            ? 'Nothing here yet. Uploads open when the archive does.'
-            : `No photographs from ${firstName(profile.full_name)} in the archive yet.`
-        }
-        action={{ label: 'Browse the archive', href: '/#gallery' }}
-      />
+            {work.rows.length > 0 ? (
+              <WorkGrid photos={work.rows} />
+            ) : (
+              <Empty
+                title="No photographs yet"
+                body={
+                  isOwner
+                    ? 'Nothing uploaded yet. Add a few frames and this is where they will sit.'
+                    : `${firstName} has not put any photographs up yet.`
+                }
+                action={
+                  isOwner
+                    ? { label: 'Add photographs', href: `/photographers/${photographer.username}/photos` }
+                    : undefined
+                }
+              />
+            )}
+          </Reveal>
+        </div>
+      </section>
 
-      <ContributionSection
-        index="04"
-        label="Challenges"
-        title="Challenges"
-        empty="Photography challenges have not started yet. They will show up here."
-      />
+      {/* ---- Walks attended ---------------------------------------------- */}
+      <section className="border-b border-border py-section-sm" aria-labelledby="walks-title">
+        <div className="shell">
+          <Reveal>
+            <SectionHeader index="03" label="On foot" />
+            <h2 id="walks-title" className="display mb-[clamp(1.5rem,3vw,2.25rem)] text-display-lg">
+              Walks
+            </h2>
+
+            {attendance.length > 0 ? (
+              <WalkList attendance={attendance} />
+            ) : (
+              <Empty
+                title="No walks attended yet"
+                body={
+                  isOwner
+                    ? 'You have not been on a walk yet. The next one is on the homepage.'
+                    : `${firstName} has not been on a walk yet.`
+                }
+                action={{ label: 'See the next walk', href: '/#next-walk' }}
+              />
+            )}
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---- Walks hosted — only when there are any ----------------------- */}
+      {hosted.length > 0 && (
+        <section className="border-b border-border py-section-sm" aria-labelledby="hosted-title">
+          <div className="shell">
+            <Reveal>
+              <SectionHeader index="04" label="Hosting" />
+              <h2 id="hosted-title" className="display mb-[clamp(1.5rem,3vw,2.25rem)] text-display-lg">
+                Hosted by {firstName}
+              </h2>
+              <WalkList
+                attendance={hosted.map((walk) => ({
+                  profile_id: photographer.id,
+                  event_id: walk.id,
+                  event_title: walk.title,
+                  event_date: walk.date,
+                }))}
+              />
+            </Reveal>
+          </div>
+        </section>
+      )}
+
+      {/* ---- Who else was there ------------------------------------------ */}
+      {companions.length > 0 && (
+        <section className="py-section-sm" aria-labelledby="companions-title">
+          <div className="shell">
+            <Reveal>
+              <SectionHeader index={hosted.length > 0 ? '05' : '04'} label="Walked together" />
+              <h2 id="companions-title" className="display mb-[clamp(1.5rem,3vw,2.25rem)] text-display-lg">
+                Also on those walks
+              </h2>
+              <ul className="flex flex-wrap gap-x-8 gap-y-5">
+                {companions.map((person) => (
+                  <li key={person.id}>
+                    <Link
+                      href={`/photographers/${person.username}`}
+                      className="group flex items-center gap-3"
+                    >
+                      <Avatar src={person.avatar_url} name={person.full_name} size={38} />
+                      <span>
+                        <span className="block text-[0.9375rem] font-medium tracking-tight transition-colors group-hover:text-accent">
+                          {person.full_name}
+                        </span>
+                        <span className="meta normal-case tracking-[0.08em]">
+                          @{person.username}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          </div>
+        </section>
+      )}
     </>
   );
 }
 
-function ProfileHeader({ profile, isOwner }: { profile: Profile; isOwner: boolean }) {
-  const interests = profile.photography_interests ?? [];
+/* ---- Header -------------------------------------------------------------- */
+
+function ProfileHeader({
+  photographer,
+  isOwner,
+  hostedCount,
+}: {
+  photographer: PhotographerCard;
+  isOwner: boolean;
+  hostedCount: number;
+}) {
+  const instagram = photographer.instagram_username;
+  const website = photographer.website_url;
 
   return (
     <section className="border-b border-border py-[clamp(2.5rem,6vw,4.5rem)]" aria-labelledby="profile-name">
@@ -104,77 +236,59 @@ function ProfileHeader({ profile, isOwner }: { profile: Profile; isOwner: boolea
         <SectionHeader index="01" label="Photographer" />
 
         <div className="grid gap-[clamp(1.5rem,4vw,3rem)] lg:grid-cols-[auto_1fr] lg:items-start">
-          {/* Avatar sizes itself from `size` inline, so it takes one number
-              rather than responsive classes that an inline style would win
-              against. 112px reads at 375px and at 1920px. */}
-          <Avatar src={profile.avatar_url} name={profile.full_name} size={112} />
+          <Avatar src={photographer.avatar_url} name={photographer.full_name} size={128} />
 
-          <div>
-            <h1 id="profile-name" className="display text-display-lg">
-              {profile.full_name}
+          <div className="min-w-0">
+            <h1 id="profile-name" className="display text-display-xl">
+              {photographer.full_name}
             </h1>
-            <p className="meta mt-3 normal-case tracking-[0.1em]">@{profile.username}</p>
+            <p className="meta mt-3 normal-case tracking-[0.1em]">
+              @{photographer.username}
+              {photographer.city ? ` · ${photographer.city}` : ''}
+            </p>
 
-            {profile.bio && (
-              <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[56ch] font-display text-lead text-foreground-soft">
-                {profile.bio}
+            {photographer.bio && (
+              <p className="mt-[clamp(1.25rem,2.5vw,1.75rem)] max-w-[54ch] font-display text-lead text-foreground-soft">
+                {photographer.bio}
               </p>
             )}
 
-            {/* The rebate strip: the metadata that sits under a photograph on
-                a contact sheet, here under the person. */}
-            <dl className="mt-[clamp(1.5rem,3vw,2.25rem)] grid grid-cols-2 border-t border-border sm:grid-cols-3">
-              <Fact label="City" value={profile.city} />
-              <Fact label="Joined" value={joinedLabel(profile.created_at)} />
-              <Fact
-                label="Instagram"
-                value={
-                  profile.instagram_username ? (
-                    <a
-                      href={`https://instagram.com/${profile.instagram_username}`}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="transition-colors hover:text-accent"
-                    >
-                      @{profile.instagram_username}
-                    </a>
-                  ) : (
-                    <span className="text-muted">Not linked</span>
-                  )
-                }
-              />
+            <StyleTags
+              styles={photographer.photography_interests}
+              linked
+              className="mt-[clamp(1.25rem,2.5vw,1.75rem)]"
+            />
+
+            {/* The rebate strip: the numbers, and only the real ones. */}
+            <dl className="mt-[clamp(1.5rem,3vw,2.25rem)] grid grid-cols-2 border-t border-border sm:grid-cols-4">
+              <Stat value={photographer.photo_count} label="Photographs" />
+              <Stat value={photographer.walks_attended} label="Walks attended" />
+              {hostedCount > 0 && <Stat value={hostedCount} label="Walks hosted" />}
+              <Stat text={joinedLabel(photographer.created_at)} label="Joined" />
             </dl>
 
-            <div className="mt-[clamp(1.5rem,3vw,2rem)]">
-              <p className="meta mb-3">Subjects</p>
-              {interests.length > 0 ? (
-                <ul className="flex flex-wrap gap-2">
-                  {interests.map((interest) => (
-                    <li
-                      key={interest}
-                      className="border border-border-strong px-3 py-1.5 font-mono text-micro uppercase text-foreground-soft"
-                    >
-                      {CATEGORY_LABELS.get(interest) ?? interest}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-[0.9375rem] text-muted">
-                  {isOwner
-                    ? 'You have not picked any subjects yet.'
-                    : 'No subjects picked yet.'}
-                </p>
-              )}
-            </div>
-
-            {isOwner && (
-              <div className="mt-[clamp(1.75rem,3vw,2.5rem)] flex flex-wrap gap-x-8 gap-y-4">
-                <Link href="/settings" className="cta-solid">
-                  Edit profile <span aria-hidden="true">→</span>
-                </Link>
-                <Link href="/my-walks" className="cta">
-                  My walks <span aria-hidden="true">→</span>
-                </Link>
+            {(instagram || website || isOwner) && (
+              <div className="mt-[clamp(1.5rem,3vw,2.25rem)] flex flex-wrap items-center gap-x-8 gap-y-4">
+                {isOwner && (
+                  <Link href="/settings" className="cta-solid">
+                    Edit profile <span aria-hidden="true">→</span>
+                  </Link>
+                )}
+                {instagram && (
+                  <a
+                    href={`https://instagram.com/${instagram}`}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="cta"
+                  >
+                    Instagram @{instagram} <span aria-hidden="true">↗</span>
+                  </a>
+                )}
+                {website && (
+                  <a href={website} target="_blank" rel="noreferrer noopener me" className="cta">
+                    {websiteLabel(website)} <span aria-hidden="true">↗</span>
+                  </a>
+                )}
               </div>
             )}
           </div>
@@ -184,54 +298,35 @@ function ProfileHeader({ profile, isOwner }: { profile: Profile; isOwner: boolea
   );
 }
 
-function Fact({ label, value }: { label: string; value: React.ReactNode }) {
+function Stat({ value, text, label }: { value?: number; text?: string; label: string }) {
   return (
     <div className="border-b border-border py-[clamp(1rem,2vw,1.35rem)] pr-4">
       <dt className="meta">{label}</dt>
-      <dd className="mt-1.5 text-[0.9375rem] text-foreground-soft">{value}</dd>
+      <dd className="mt-1.5 font-display text-[clamp(1.5rem,3vw,2.25rem)] leading-none">
+        {typeof value === 'number' ? value : <span className="text-[0.6em]">{text}</span>}
+      </dd>
     </div>
   );
 }
 
-/**
- * The three things a profile will eventually hold. They are empty because
- * nothing has been walked, uploaded or judged yet — no invented counts, in
- * keeping with the rest of the site (see data/community.ts).
- */
-function ContributionSection({
-  index,
-  label,
+function Empty({
   title,
-  empty,
+  body,
   action,
 }: {
-  index: string;
-  label: string;
   title: string;
-  empty: string;
+  body: string;
   action?: { label: string; href: string };
 }) {
   return (
-    <section className="border-b border-border py-section-sm" aria-labelledby={`section-${index}`}>
-      <div className="shell">
-        <Reveal>
-          <SectionHeader index={index} label={label} />
-          <h2 id={`section-${index}`} className="display text-display-md">
-            {title}
-          </h2>
-
-          <div className="mt-[clamp(1.25rem,2.5vw,1.75rem)] border-l-2 border-border-strong bg-subtle py-5 pl-5 pr-4">
-            <p className="max-w-[52ch] text-body text-foreground-soft">{empty}</p>
-            {action && (
-              <Link href={action.href} className="cta mt-4">
-                {action.label} <span aria-hidden="true">→</span>
-              </Link>
-            )}
-          </div>
-        </Reveal>
-      </div>
-    </section>
+    <div className="border-l-2 border-border-strong bg-subtle py-5 pl-5 pr-4">
+      <p className="meta">{title}</p>
+      <p className="mt-3 max-w-[52ch] text-body text-foreground-soft">{body}</p>
+      {action && (
+        <Link href={action.href} className="cta mt-4">
+          {action.label} <span aria-hidden="true">→</span>
+        </Link>
+      )}
+    </div>
   );
 }
-
-const firstName = (fullName: string): string => fullName.trim().split(/\s+/)[0];

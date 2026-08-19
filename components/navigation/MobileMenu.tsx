@@ -17,7 +17,9 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
 
   /* Same reason as SiteHeader: the sections only exist on the homepage. */
   const pathname = usePathname();
-  const sectionHref = (hash: string) => (pathname === '/' ? hash : `/${hash}`);
+  /* Only fragments need the prefix — see the note in SiteHeader. */
+  const sectionHref = (href: string) =>
+    href.startsWith('#') && pathname !== '/' ? `/${href}` : href;
 
   useEffect(() => {
     if (!open) return;

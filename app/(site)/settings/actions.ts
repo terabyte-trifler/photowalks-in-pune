@@ -6,18 +6,22 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { authErrorMessage } from '@/lib/auth/errors';
 import {
   normaliseInstagram,
+  normaliseWebsite,
   sanitiseInterests,
   validateBio,
   validateCity,
   validateFullName,
   validateInstagram,
   validateUsername,
+  validateWebsite,
 } from '@/lib/auth/validation';
 
 export interface SaveProfileState {
   status: 'idle' | 'saved' | 'error';
   message?: string;
-  errors?: Partial<Record<'full_name' | 'username' | 'city' | 'bio' | 'instagram_username', string>>;
+  errors?: Partial<
+    Record<'full_name' | 'username' | 'city' | 'bio' | 'instagram_username' | 'website_url', string>
+  >;
   /** The username after saving, so the form can update the profile link. */
   username?: string;
 }
@@ -57,7 +61,21 @@ export async function saveProfile(
   const city = String(formData.get('city') ?? '').trim();
   const bio = String(formData.get('bio') ?? '').trim();
   const instagram = normaliseInstagram(String(formData.get('instagram_username') ?? ''));
+  const website = normaliseWebsite(String(formData.get('website_url') ?? ''));
   const interests = sanitiseInterests(formData.getAll('photography_interests'));
+
+  /* The avatar is uploaded straight to Storage by the browser; what arrives
+     here is the resulting public URL. Accept only a URL inside this project's
+     own storage, so this field cannot be used to point a profile picture at
+     an arbitrary host. */
+  const avatarRaw = String(formData.get('avatar_url') ?? '').trim();
+  const avatarAllowedPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/avatars/`;
+  const avatar =
+    avatarRaw && avatarAllowedPrefix.length > '/storage/v1/object/public/avatars/'.length
+      ? avatarRaw.startsWith(avatarAllowedPrefix)
+        ? avatarRaw
+        : null
+      : null;
 
   const errors: SaveProfileState['errors'] = {};
   const fullNameError = validateFullName(fullName);
@@ -65,12 +83,14 @@ export async function saveProfile(
   const cityError = validateCity(city);
   const bioError = validateBio(bio);
   const instagramError = validateInstagram(instagram);
+  const websiteError = validateWebsite(website);
 
   if (fullNameError) errors.full_name = fullNameError;
   if (usernameError) errors.username = usernameError;
   if (cityError) errors.city = cityError;
   if (bioError) errors.bio = bioError;
   if (instagramError) errors.instagram_username = instagramError;
+  if (websiteError) errors.website_url = websiteError;
 
   if (Object.keys(errors).length > 0) {
     return { status: 'error', errors, message: 'Check the fields above.' };
@@ -84,6 +104,8 @@ export async function saveProfile(
       city,
       bio: bio || null,
       instagram_username: instagram || null,
+      website_url: website || null,
+      avatar_url: avatar,
       photography_interests: interests.length > 0 ? interests : null,
     })
     .eq('id', user.id);
@@ -102,6 +124,7 @@ export async function saveProfile(
   }
 
   revalidatePath(`/photographers/${username}`);
+  revalidatePath('/photographers');
   revalidatePath('/settings');
 
   return { status: 'saved', username, message: 'Your profile has been saved.' };
