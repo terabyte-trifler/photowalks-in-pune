@@ -141,7 +141,9 @@ migration, Google OAuth — is in **[supabase/README.md](supabase/README.md)**.
 | `/login` | Email and password, or Google |
 | `/forgot-password` | Sends the reset email |
 | `/reset-password` | Where that email lands, after `/auth/callback` |
+| `/photographers` | The directory: search, filters, pagination |
 | `/photographers/[username]` | Public profile |
+| `/photographers/[username]/photos` | Everything they have uploaded |
 | `/profile` | Redirects to your own public profile |
 | `/settings` | Edit your profile |
 | `/my-walks` | The walks you have joined, still-to-come and walked |
@@ -212,6 +214,58 @@ Walks themselves still live in `data/events.ts` — they are edited by hand a fe
 times a month and a table would be ceremony for four rows. `event_id` is a text
 key into that file, with the title and date copied onto the RSVP so the page
 stands alone and a past RSVP still reads correctly after the file is edited.
+
+### Photographers
+
+`/photographers` is the directory and `/photographers/[username]` the public
+profile. Both are open to everyone; only the owner sees an edit control.
+
+Search is debounced by 300ms and lives in the URL rather than in component
+state, so `/photographers?style=film` is a link somebody can send and the back
+button behaves. It matches name, username, city and — the part that matters —
+photography style, so searching "street" finds people who shoot street rather
+than people called Street. Filters are style, city and four orderings; when an
+ordering has no data behind it the page says so instead of presenting ties as a
+ranking.
+
+Interests are **photography styles** (`data/photography.ts`), deliberately a
+different vocabulary from the archive's Pune subjects in `data/photos.ts`.
+Those describe what a photograph is of and filter the gallery; these describe
+how somebody works and sit on a person. Two photographers can both shoot
+Mandai, one on a phone and one on film.
+
+Profiles connect back to walks. A profile lists the walks it has been on, each
+linking to that walk's RSVP, and ends with everybody else who was on them —
+which is the edge that makes this a network rather than a list.
+
+### Photographs and storage
+
+`photos` holds what members upload; the files live in Supabase Storage under
+`photos/<uid>/…` and `avatars/<uid>/…`. Only the path is stored, so the project
+can move buckets or put a CDN in front without rewriting rows.
+
+Storage policies key on the uid folder — `(storage.foldername(name))[1] =
+auth.uid()::text` — so a member cannot write into, overwrite or delete anything
+in somebody else's folder, and the buckets themselves reject the wrong MIME
+type and anything oversized. The checks in `lib/uploads.ts` exist so a 40MB RAW
+file is refused instantly rather than after a long upload; they are a courtesy,
+not the guard.
+
+### Two public views
+
+`walk_rsvps` is owner-only because it holds a phone number, which makes "how
+many walks has this person been on" unanswerable from a public page. Migration
+0003 adds two read-only views with fixed column lists:
+
+| View | What it exposes |
+|---|---|
+| `walk_attendance` | who walked which walk, and when — never contact details |
+| `photographer_cards` | public profile columns plus walk and photograph counts |
+
+Both run with their owner's privileges rather than the caller's, which is what
+lets them see past the row policy on `walk_rsvps`. That is safe precisely
+because the column list is fixed: there is no way to ask either view for a
+private column. Do not add columns to them without re-reading that reasoning.
 
 ### Profiles
 

@@ -11,7 +11,7 @@ export async function InstagramSection() {
   return (
     <section id="instagram" className="border-t border-border py-section" aria-labelledby="instagram-title">
       <div className="shell">
-        <SectionHeader index="09" label="From Instagram" />
+        <SectionHeader index="10" label="From Instagram" />
 
         <div className="mb-[clamp(1.75rem,3vw,2.5rem)] flex flex-wrap items-end justify-between gap-4">
           <h2 id="instagram-title" className="display text-display-lg">

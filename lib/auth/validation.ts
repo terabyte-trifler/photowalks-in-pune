@@ -9,7 +9,7 @@
  * The copy is the site's voice: short, plain sentences, no exclamation marks.
  * ========================================================================== */
 
-import { categories, type PhotoCategory } from '@/data/photos';
+import { MAX_INTERESTS, isPhotographyStyle, type PhotographyStyle } from '@/data/photography';
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const USERNAME_PATTERN = /^[a-z0-9_]{3,30}$/;
@@ -21,11 +21,12 @@ export const LIMITS = {
   bio: 280,
   city: 60,
   instagram: 30,
+  website: 200,
   password: { min: 8, max: 72 },
-  interests: 8,
+  interests: MAX_INTERESTS,
 } as const;
 
-const VALID_INTERESTS = new Set<string>(categories.map((category) => category.id));
+
 
 export function validateFullName(value: string): string | undefined {
   const name = value.trim();
@@ -110,18 +111,58 @@ export function normaliseInstagram(value: string): string {
     .split(/[/?#]/)[0];
 }
 
-/** Drops anything not in data/photos.ts, then caps the list. */
-export function sanitiseInterests(values: unknown): PhotoCategory[] {
+/** Drops anything not in data/photography.ts, then caps the list. */
+export function sanitiseInterests(values: unknown): PhotographyStyle[] {
   if (!Array.isArray(values)) return [];
   const seen = new Set<string>();
-  const clean: PhotoCategory[] = [];
+  const clean: PhotographyStyle[] = [];
   for (const value of values) {
-    if (typeof value !== 'string' || !VALID_INTERESTS.has(value) || seen.has(value)) continue;
+    if (typeof value !== 'string' || !isPhotographyStyle(value) || seen.has(value)) continue;
     seen.add(value);
-    clean.push(value as PhotoCategory);
+    clean.push(value);
     if (clean.length === LIMITS.interests) break;
   }
   return clean;
+}
+
+/**
+ * A personal site. People type "example.com"; the scheme is added for them,
+ * and anything that is not a plausible http(s) address is rejected rather than
+ * stored and rendered as a broken link.
+ */
+export function normaliseWebsite(value: string): string {
+  const trimmed = value.trim().replace(/\/+$/, '');
+  if (!trimmed) return '';
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+export function validateWebsite(value: string): string | undefined {
+  const url = normaliseWebsite(value);
+  if (!url) return undefined;
+  if (url.length > LIMITS.website) return 'That address is too long.';
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return 'Only http and https addresses, please.';
+    }
+    if (!parsed.hostname.includes('.') || parsed.hostname.endsWith('.')) {
+      return 'That does not look like a website address.';
+    }
+    return undefined;
+  } catch {
+    return 'That does not look like a website address.';
+  }
+}
+
+/** example.com — what we actually show, rather than the full URL. */
+export function websiteLabel(url: string): string {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const host = hostname.replace(/^www\./, '');
+    return pathname && pathname !== '/' ? `${host}${pathname}` : host;
+  } catch {
+    return url;
+  }
 }
 
 /**

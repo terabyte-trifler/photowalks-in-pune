@@ -32,7 +32,7 @@ export function Newsletter() {
   return (
     <section id="newsletter" className="border-t border-border py-section" aria-labelledby="newsletter-title">
       <div className="shell">
-        <SectionHeader index="10" label="The letter" />
+        <SectionHeader index="11" label="The letter" />
 
         <h2 id="newsletter-title" className="display text-display-xl">
           Come walk with us.

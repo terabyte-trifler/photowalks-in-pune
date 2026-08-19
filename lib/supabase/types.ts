@@ -13,7 +13,7 @@
  * means adding rows to this file and nothing else — as walk_rsvps did.
  * ========================================================================== */
 
-import type { PhotoCategory } from '@/data/photos';
+import type { PhotographyStyle } from '@/data/photography';
 
 /* A type alias rather than an interface on purpose: supabase-js requires each
    Row to satisfy Record<string, unknown>, and only type aliases get the
@@ -27,9 +27,40 @@ export type Profile = {
   bio: string | null;
   city: string;
   instagram_username: string | null;
-  photography_interests: PhotoCategory[] | null;
+  website_url: string | null;
+  photography_interests: PhotographyStyle[] | null;
   created_at: string;
   updated_at: string;
+};
+
+/** A photograph a member has uploaded. The file itself lives in Storage. */
+export type PhotoRecord = {
+  id: string;
+  profile_id: string;
+  storage_path: string;
+  caption: string | null;
+  location: string | null;
+  taken_at: string | null;
+  width: number | null;
+  height: number | null;
+  created_at: string;
+};
+
+/**
+ * Public projections (see migration 0003). Both are read-only views that
+ * expose a fixed column list; neither can be asked for a private column.
+ */
+export type WalkAttendance = {
+  profile_id: string;
+  event_id: string;
+  event_title: string;
+  event_date: string;
+};
+
+export type PhotographerCard = Omit<Profile, 'id'> & {
+  id: string;
+  walks_attended: number;
+  photo_count: number;
 };
 
 /** One row per member per walk. See migration 0002. */
@@ -56,6 +87,7 @@ export type ProfileUpdate = Partial<
     | 'bio'
     | 'city'
     | 'instagram_username'
+    | 'website_url'
     | 'photography_interests'
   >
 >;
@@ -70,6 +102,21 @@ export type Database = {
         Update: ProfileUpdate;
         /* Populated as photos, groups and challenges arrive. */
         Relationships: [];
+      };
+      photos: {
+        Row: PhotoRecord;
+        Insert: Omit<PhotoRecord, 'id' | 'created_at'> &
+          Partial<Pick<PhotoRecord, 'id' | 'created_at'>>;
+        Update: Partial<Pick<PhotoRecord, 'caption' | 'location' | 'taken_at'>>;
+        Relationships: [
+          {
+            foreignKeyName: 'photos_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       walk_rsvps: {
         Row: WalkRsvp;
@@ -88,8 +135,10 @@ export type Database = {
         ];
       };
     };
-    /* The idiom `supabase gen types` emits for an empty section. */
-    Views: { [_ in never]: never };
+    Views: {
+      walk_attendance: { Row: WalkAttendance; Relationships: [] };
+      photographer_cards: { Row: PhotographerCard; Relationships: [] };
+    };
     Functions: { [_ in never]: never };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

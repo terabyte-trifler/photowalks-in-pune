@@ -13,11 +13,19 @@ import { PhotoLightbox } from '@/components/gallery/PhotoLightbox';
 import { PhotoStory } from '@/components/stories/PhotoStory';
 import { PuneCategories } from '@/components/community/PuneCategories';
 import { CommunitySection } from '@/components/community/CommunitySection';
+import { PhotographersStrip } from '@/components/community/PhotographersStrip';
 import { InstagramSection } from '@/components/community/InstagramSection';
 import { Newsletter } from '@/components/newsletter/Newsletter';
 import { SiteFooter } from '@/components/footer/SiteFooter';
 import { RSVPProvider } from '@/components/rsvp/RSVPProvider';
 import { GalleryProvider } from '@/components/gallery/GalleryProvider';
+
+/**
+ * Rebuilt every five minutes so the photographers strip picks up new members
+ * without the page giving up static rendering. Nothing else here changes
+ * between deploys.
+ */
+export const revalidate = 300;
 
 /**
  * The homepage. A server component: the two providers are client, but their
@@ -44,6 +52,7 @@ export default function HomePage() {
           <PhotoStory />
           <PuneCategories />
           <CommunitySection />
+          <PhotographersStrip />
           <InstagramSection />
           <Newsletter />
         </main>
