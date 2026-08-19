@@ -24,6 +24,7 @@ import type { PhotoRecord, PhotographerCard, WalkAttendance } from '@/lib/supaba
 export {
   CARD_PHOTO_COUNT,
   DIRECTORY_PAGE_SIZE,
+  MAX_PHOTOS_PER_MEMBER,
   PHOTOS_PAGE_SIZE,
   SORT_OPTIONS,
   imageUrl,

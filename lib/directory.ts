@@ -19,6 +19,14 @@ export const PHOTOS_PAGE_SIZE = 24;
 /** How many frames ride along on a directory card. */
 export const CARD_PHOTO_COUNT = 3;
 
+/**
+ * How many photographs one member may hold. Enforced by the
+ * photos_enforce_limit trigger in migration 0004 — this constant only lets the
+ * uploader say so before somebody wastes an upload finding out.
+ * Keep the two in step.
+ */
+export const MAX_PHOTOS_PER_MEMBER = 20;
+
 export type DirectorySort = 'active' | 'walks' | 'recent' | 'new';
 
 export const SORT_OPTIONS: { id: DirectorySort; label: string }[] = [

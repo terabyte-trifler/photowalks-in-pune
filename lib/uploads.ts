@@ -14,15 +14,30 @@
  * They are a courtesy, not the guard. See migration 0003.
  * ========================================================================== */
 
+import { MAX_PHOTOS_PER_MEMBER } from '@/lib/directory';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
 export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 export const ACCEPT_ATTRIBUTE = ACCEPTED_TYPES.join(',');
 
+/** What we accept from the file picker, before downscaling. */
 export const LIMITS = {
   avatar: 2 * 1024 * 1024,
   photo: 10 * 1024 * 1024,
 } as const;
+
+/**
+ * What we actually store. A camera original is twenty to forty times larger
+ * than anything a browser will display: at 500 members × 20 photographs, ten
+ * megabytes each is ~98GB of storage and the same again in egress, against a
+ * free tier of one gigabyte. Two thousand pixels of WebP is around 300KB and
+ * is still more resolution than the grid ever asks for.
+ *
+ * It is also much faster to upload on mobile data, which is how most of these
+ * photographs will arrive.
+ */
+const MAX_EDGE = { avatar: 512, photo: 2000 } as const;
+const QUALITY = { avatar: 0.85, photo: 0.82 } as const;
 
 export type UploadKind = keyof typeof LIMITS;
 
@@ -63,10 +78,103 @@ export function readDimensions(file: File): Promise<{ width: number; height: num
   });
 }
 
+export interface PreparedImage {
+  blob: Blob;
+  width: number;
+  height: number;
+  extension: string;
+  contentType: string;
+}
+
+/** Does this browser actually produce WebP from a canvas? Safari lagged. */
+let webpSupport: boolean | null = null;
+function canEncodeWebp(): boolean {
+  if (webpSupport !== null) return webpSupport;
+  try {
+    const probe = document.createElement('canvas');
+    probe.width = 1;
+    probe.height = 1;
+    webpSupport = probe.toDataURL('image/webp').startsWith('data:image/webp');
+  } catch {
+    webpSupport = false;
+  }
+  return webpSupport;
+}
+
+const toBlob = (canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> =>
+  new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+
+/**
+ * Resize down to MAX_EDGE and re-encode, in the browser, before anything is
+ * uploaded. Returns the original untouched when shrinking it would not help —
+ * a small WebP that is already under the limit is left exactly as it is.
+ *
+ * `imageOrientation: 'from-image'` matters more than it looks: without it a
+ * photograph taken in portrait on a phone is drawn to the canvas sideways,
+ * because the rotation lives in EXIF that the canvas would otherwise discard.
+ */
+export async function prepareImage(file: File, kind: UploadKind): Promise<PreparedImage> {
+  const edge = MAX_EDGE[kind];
+  const fallback = async (): Promise<PreparedImage> => {
+    const size = (await readDimensions(file)) ?? { width: 0, height: 0 };
+    return {
+      blob: file,
+      width: size.width,
+      height: size.height,
+      extension: (file.name.split('.').pop() ?? 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg',
+      contentType: file.type,
+    };
+  };
+
+  if (typeof createImageBitmap !== 'function') return fallback();
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch {
+    return fallback();
+  }
+
+  const longest = Math.max(bitmap.width, bitmap.height);
+  const scale = longest > edge ? edge / longest : 1;
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    bitmap.close();
+    return fallback();
+  }
+  context.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  const useWebp = canEncodeWebp();
+  const type = useWebp ? 'image/webp' : 'image/jpeg';
+  const blob = await toBlob(canvas, type, QUALITY[kind]);
+
+  /* Re-encoding can occasionally produce something larger than the original —
+     a small, already-optimised file, for instance. Keep whichever is smaller. */
+  if (!blob || blob.size >= file.size) return fallback();
+
+  return {
+    blob,
+    width,
+    height,
+    extension: useWebp ? 'webp' : 'jpg',
+    contentType: type,
+  };
+}
+
 export interface UploadResult {
   ok: boolean;
-  /** Path within the bucket, e.g. `<uid>/1712345678-frame.jpg`. */
+  /** Path within the bucket, e.g. `<uid>/1712345678-a1b2c3.webp`. */
   path?: string;
+  /** Dimensions of what was actually stored, after downscaling. */
+  width?: number;
+  height?: number;
   error?: string;
 }
 
@@ -85,13 +193,13 @@ export async function uploadImage(
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return { ok: false, error: 'Uploads are not connected on this build.' };
 
-  const extension = (file.name.split('.').pop() ?? 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const path = `${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension || 'jpg'}`;
+  const prepared = await prepareImage(file, kind);
+  const path = `${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${prepared.extension}`;
 
-  const { error } = await supabase.storage.from(BUCKET[kind]).upload(path, file, {
+  const { error } = await supabase.storage.from(BUCKET[kind]).upload(path, prepared.blob, {
     cacheControl: '31536000',
     upsert: false,
-    contentType: file.type,
+    contentType: prepared.contentType,
   });
 
   if (error) {
@@ -108,7 +216,7 @@ export async function uploadImage(
     return { ok: false, error: 'That upload did not go through. Try again in a moment.' };
   }
 
-  return { ok: true, path };
+  return { ok: true, path, width: prepared.width, height: prepared.height };
 }
 
 /** Remove a file. The policy limits this to the member's own folder. */
@@ -131,4 +239,15 @@ export function publicUrlFor(bucket: 'avatars' | 'photos', path: string): string
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return path;
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
+
+/**
+ * The photos_enforce_limit trigger raises a message the browser would
+ * otherwise show raw. Turn it into a sentence; leave anything else alone.
+ */
+export function photoInsertError(message: string | undefined): string {
+  if (message?.includes('photo_limit_reached')) {
+    return `That is ${MAX_PHOTOS_PER_MEMBER} photographs — the most a profile holds. Remove one to add another.`;
+  }
+  return 'That did not save. Try again in a moment.';
 }

@@ -67,7 +67,7 @@ export default async function PhotographerPhotosPage({
 
         {isOwner && (
           <div className="mt-[clamp(2rem,4vw,3rem)]">
-            <PhotoManager profileId={photographer.id} photos={work.rows} />
+            <PhotoManager profileId={photographer.id} photos={work.rows} total={work.total} />
           </div>
         )}
 

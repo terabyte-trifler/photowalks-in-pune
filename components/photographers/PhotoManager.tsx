@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { MAX_PHOTOS_PER_MEMBER } from '@/lib/directory';
 import {
   ACCEPT_ATTRIBUTE,
   checkFile,
-  readDimensions,
+  photoInsertError,
   removeImage,
   uploadImage,
 } from '@/lib/uploads';
@@ -26,9 +27,12 @@ import type { PhotoRecord } from '@/lib/supabase/types';
 export function PhotoManager({
   profileId,
   photos,
+  total,
 }: {
   profileId: string;
   photos: PhotoRecord[];
+  /** Everything they hold, not just this page — the limit counts all of it. */
+  total: number;
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -41,6 +45,9 @@ export function PhotoManager({
   const isOwner = user?.id === profileId;
   if (!isOwner) return null;
 
+  const remaining = Math.max(0, MAX_PHOTOS_PER_MEMBER - total);
+  const full = remaining === 0;
+
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0 || !user) return;
 
@@ -48,6 +55,16 @@ export function PhotoManager({
     const rejected = chosen.find((file) => checkFile(file, 'photo'));
     if (rejected) {
       setError(checkFile(rejected, 'photo') ?? 'That file cannot be used.');
+      return;
+    }
+
+    /* The trigger would refuse these anyway; saying so first saves the upload. */
+    if (chosen.length > remaining) {
+      setError(
+        remaining === 0
+          ? `That is ${MAX_PHOTOS_PER_MEMBER} photographs — the most a profile holds. Remove one to add another.`
+          : `Room for ${remaining} more, and you chose ${chosen.length}.`,
+      );
       return;
     }
 
@@ -59,7 +76,8 @@ export function PhotoManager({
     setProgress({ done: 0, total: chosen.length });
 
     for (const [index, file] of chosen.entries()) {
-      const dimensions = await readDimensions(file);
+      /* uploadImage downscales to 2000px WebP first, and reports the
+         dimensions of what it actually stored. */
       const uploaded = await uploadImage(file, 'photo', user.id);
 
       if (!uploaded.ok || !uploaded.path) {
@@ -70,8 +88,8 @@ export function PhotoManager({
       const { error: insertError } = await supabase.from('photos').insert({
         profile_id: user.id,
         storage_path: uploaded.path,
-        width: dimensions?.width ?? null,
-        height: dimensions?.height ?? null,
+        width: uploaded.width ?? null,
+        height: uploaded.height ?? null,
         caption: null,
         location: null,
         taken_at: null,
@@ -80,7 +98,7 @@ export function PhotoManager({
       if (insertError) {
         /* Do not leave an orphan file in the bucket. */
         void removeImage('photo', uploaded.path);
-        setError('That did not save. Try again in a moment.');
+        setError(photoInsertError(insertError.message));
         break;
       }
 
@@ -113,7 +131,7 @@ export function PhotoManager({
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <p className="meta">Your archive</p>
         <span className="meta normal-case tracking-[0.06em]">
-          JPEG, PNG, WebP or AVIF · up to 10MB each
+          {total} of {MAX_PHOTOS_PER_MEMBER} · resized to 2000px before upload
         </span>
       </div>
 
@@ -121,7 +139,7 @@ export function PhotoManager({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          disabled={busy}
+          disabled={busy || full}
           aria-busy={busy}
           className="cta-solid disabled:opacity-60"
         >
@@ -129,7 +147,9 @@ export function PhotoManager({
             ? progress.total > 1
               ? `Uploading ${progress.done + 1} of ${progress.total}`
               : 'Uploading'
-            : 'Add photographs'}{' '}
+            : full
+              ? 'No room left'
+              : 'Add photographs'}{' '}
           <span aria-hidden="true">→</span>
         </button>
 
