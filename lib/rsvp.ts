@@ -1,42 +1,30 @@
 /* ============================================================================
  * RSVP
  * ----------------------------------------------------------------------------
- * MOCK IMPLEMENTATION. There is no backend yet, so nothing is permanently
- * saved — submissions go to localStorage on the visitor's own device and the
- * confirmation screen says so plainly. Do not remove that notice until
- * `isBackendConfigured` can return true.
+ * Joining a walk reaches the database. Rows go to `walk_rsvps`
+ * (supabase/migrations/20260820000002_walk_rsvps.sql), one per member per
+ * walk, and Row Level Security scopes every read and write to the member
+ * making it — there is no service-role key anywhere in this codebase.
  *
- * ---- TO CONNECT SUPABASE ---------------------------------------------------
- * 1. npm i @supabase/supabase-js
- * 2. Fill NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY
- * 3. Create the table:
+ * Joining requires an account: the dialog shows a sign-in panel to signed-out
+ * visitors (components/rsvp/RSVPModal.tsx). Browsing the walks stays open.
  *
- *      create table rsvps (
- *        id uuid primary key default gen_random_uuid(),
- *        event_id text not null,
- *        event_title text not null,
- *        name text not null,
- *        email text not null,
- *        whatsapp text not null,
- *        instagram text,
- *        experience text not null,
- *        consent boolean not null default false,
- *        created_at timestamptz not null default now()
- *      );
- *      alter table rsvps enable row level security;
- *      create policy "anon can insert" on rsvps
- *        for insert to anon with check (true);
- *
- * 4. Replace the body of `submitRsvp` with the commented call below.
- *    Nothing in the UI changes — it only knows submitRsvp() and
- *    isBackendConfigured().
+ * With no Supabase project configured the original behaviour remains — the
+ * submission is kept in this browser only, and the confirmation screen says
+ * plainly that nobody received it. `isBackendConfigured()` drives that notice.
  * ========================================================================== */
 
 import type { ExperienceLevel } from '@/data/events';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 export interface RsvpInput {
   eventId: string;
   eventTitle: string;
+  /** ISO date of the walk, copied onto the row so /my-walks can stand alone. */
+  eventDate: string;
+  /** The signed-in member's id. Null only on a build with no Supabase project. */
+  profileId: string | null;
   name: string;
   email: string;
   whatsapp: string;
@@ -49,6 +37,8 @@ export interface RsvpResult {
   ok: boolean;
   /** False when the submission only reached this browser. */
   persisted: boolean;
+  /** True when this member had already joined this walk. */
+  alreadyJoined?: boolean;
   error?: string;
 }
 
@@ -56,8 +46,7 @@ export type RsvpErrors = Partial<Record<'name' | 'email' | 'whatsapp', string>>;
 
 const STORAGE_KEY = 'pwip.rsvps';
 
-export const isBackendConfigured = (): boolean =>
-  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+export const isBackendConfigured = (): boolean => isSupabaseConfigured();
 
 export function validateRsvp(input: Partial<RsvpInput>): RsvpErrors {
   const errors: RsvpErrors = {};
@@ -71,19 +60,79 @@ export function validateRsvp(input: Partial<RsvpInput>): RsvpErrors {
   return errors;
 }
 
-export async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
-  try {
-    // --- SUPABASE SWAP POINT -------------------------------------------
-    // const { error } = await supabase.from('rsvps').insert({
-    //   event_id: input.eventId, event_title: input.eventTitle,
-    //   name: input.name, email: input.email, whatsapp: input.whatsapp,
-    //   instagram: input.instagram, experience: input.experience,
-    //   consent: input.consent,
-    // });
-    // if (error) return { ok: false, persisted: false, error: 'That did not save. Try again.' };
-    // return { ok: true, persisted: true };
-    // -------------------------------------------------------------------
+/**
+ * Has this member already joined this walk? Lets the dialog open on the
+ * confirmed state instead of on a form whose submission the one-per-walk
+ * constraint would reject.
+ */
+export async function findExistingRsvp(profileId: string, eventId: string): Promise<boolean> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return false;
 
+  const { data, error } = await supabase
+    .from('walk_rsvps')
+    .select('id')
+    .eq('profile_id', profileId)
+    .eq('event_id', eventId)
+    .maybeSingle();
+
+  if (error) return false;
+  return Boolean(data);
+}
+
+export async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
+  const supabase = getSupabaseBrowserClient();
+
+  if (supabase && input.profileId) {
+    try {
+      const { error } = await supabase.from('walk_rsvps').insert({
+        profile_id: input.profileId,
+        event_id: input.eventId,
+        event_title: input.eventTitle,
+        event_date: input.eventDate,
+        whatsapp: input.whatsapp,
+        experience: input.experience,
+        consent: input.consent,
+      });
+
+      if (error) {
+        /* The one-per-walk unique constraint. Not a failure — they are in. */
+        if (error.code === '23505') return { ok: true, persisted: true, alreadyJoined: true };
+
+        if (error.code === '23514') {
+          return {
+            ok: false,
+            persisted: false,
+            error: 'Check the details above — something there is not quite right.',
+          };
+        }
+        if (error.code === '42501' || error.code === 'PGRST301') {
+          return {
+            ok: false,
+            persisted: false,
+            error: 'Your session has expired. Log in again to hold your spot.',
+          };
+        }
+        return {
+          ok: false,
+          persisted: false,
+          error: 'That did not save. Try again, or message us on WhatsApp.',
+        };
+      }
+
+      return { ok: true, persisted: true };
+    } catch {
+      return {
+        ok: false,
+        persisted: false,
+        error: 'We could not reach the server. Check your connection and try again.',
+      };
+    }
+  }
+
+  /* No Supabase project on this build — keep the local fallback so the whole
+     flow still demonstrates, and keep saying so afterwards. */
+  try {
     await new Promise((resolve) => setTimeout(resolve, 600));
     const existing: unknown[] = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '[]');
     existing.push({ ...input, createdAt: new Date().toISOString() });
@@ -96,4 +145,14 @@ export async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
       error: 'That did not save. Try again, or message us on WhatsApp.',
     };
   }
+}
+
+/** Cancelling is a delete; the RLS policy limits it to the member's own row. */
+export async function cancelRsvp(rsvpId: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return { ok: false, error: 'Accounts are not connected on this build.' };
+
+  const { error } = await supabase.from('walk_rsvps').delete().eq('id', rsvpId);
+  if (error) return { ok: false, error: 'We could not cancel that. Try again in a moment.' };
+  return { ok: true };
 }

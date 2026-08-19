@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif, Archivo, DM_Mono } from 'next/font/google';
 import { featuredWalk } from '@/data/events';
 import { site } from '@/data/site';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 import './globals.css';
 
 /* Two faces plus a mono for metadata. Instrument Serif holds up set very large
@@ -131,7 +132,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to the next walk
         </a>
 
-        {children}
+        {/* Auth state for the whole site. A client provider wrapping server
+            children, exactly like RSVPProvider on the homepage: the pages it
+            wraps stay server components and only the header ships this code. */}
+        <AuthProvider>{children}</AuthProvider>
 
         <script
           type="application/ld+json"

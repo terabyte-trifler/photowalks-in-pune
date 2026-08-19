@@ -61,6 +61,10 @@
 
   @media (min-width: 1180px) {
     body { padding-left: var(--rail); }
+
+    /* The account screens run edge to edge and do not render the contact-sheet
+       rail beside them, so they give the gutter back. */
+    body:has(.full-bleed) { padding-left: 0; }
   }
 
   ::selection { background: var(--accent); color: #fff; }

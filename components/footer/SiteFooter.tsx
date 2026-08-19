@@ -8,7 +8,7 @@ export function SiteFooter() {
   ];
 
   const smallPrint = [
-    { label: 'Newsletter', href: '#newsletter' },
+    { label: 'Newsletter', href: '/#newsletter' },
     { label: 'Privacy', href: '#privacy' },
     { label: 'Terms', href: '#terms' },
   ];
