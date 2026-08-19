@@ -1,14 +1,23 @@
 'use client';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { navigation } from '@/data/site';
 import { featuredWalk } from '@/data/events';
 import { useRSVP } from '@/components/rsvp/RSVPProvider';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { Avatar } from './Avatar';
 
 export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const reduced = useReducedMotion();
   const { open: openRSVP } = useRSVP();
+  const { user, profile, loading, signOut } = useAuth();
+
+  /* Same reason as SiteHeader: the sections only exist on the homepage. */
+  const pathname = usePathname();
+  const sectionHref = (hash: string) => (pathname === '/' ? hash : `/${hash}`);
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +54,7 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
             {navigation.map((item) => (
               <a
                 key={item.label}
-                href={item.href}
+                href={'external' in item && item.external ? item.href : sectionHref(item.href)}
                 onClick={onClose}
                 className="display block border-b border-border py-[0.45em] text-[clamp(2rem,11vw,3.5rem)] leading-tight"
                 {...('external' in item && item.external
@@ -56,6 +65,67 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
               </a>
             ))}
           </nav>
+
+          {/* The account, in the quieter mono register so the walk nav above
+              keeps the page's voice. */}
+          {!loading && (
+            <div className="mt-8">
+              {user ? (
+                <>
+                  <div className="flex items-center gap-3 border-b border-border pb-4">
+                    <Avatar src={profile?.avatar_url} name={profile?.full_name ?? 'Photographer'} size={34} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[0.9375rem] font-medium tracking-tight">
+                        {profile?.full_name ?? 'Photographer'}
+                      </span>
+                      <span className="meta block truncate normal-case tracking-[0.08em]">
+                        {profile ? `@${profile.username}` : user.email}
+                      </span>
+                    </span>
+                  </div>
+
+                  <ul className="grid">
+                    {[
+                      { label: 'Profile', href: profile ? `/photographers/${profile.username}` : '/profile' },
+                      { label: 'My walks', href: '/my-walks' },
+                      { label: 'Settings', href: '/settings' },
+                    ].map((item) => (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          onClick={onClose}
+                          className="block border-b border-border py-3.5 font-mono text-meta uppercase text-foreground-soft transition-colors hover:text-accent"
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                    <li>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          onClose();
+                          await signOut();
+                        }}
+                        className="block w-full py-3.5 text-left font-mono text-meta uppercase text-foreground-soft transition-colors hover:text-accent"
+                      >
+                        Log out
+                      </button>
+                    </li>
+                  </ul>
+                </>
+              ) : (
+                <div className="flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-border pt-5">
+                  <Link href="/login" onClick={onClose} className="cta">
+                    Log in <span aria-hidden="true">→</span>
+                  </Link>
+                  <Link href="/signup" onClick={onClose} className="cta">
+                    Join <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="mt-auto pt-8">
             <button

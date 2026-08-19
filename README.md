@@ -5,11 +5,16 @@ Statically prerendered, no backend required to run.
 
 ```bash
 npm install
-cp .env.example .env.local     # optional — everything works without it
+cp .env.example .env.local     # optional — the public site works without it
 npm run dev                    # http://localhost:3000
 npm run build && npm start
 npm run typecheck              # tsc --noEmit, strict, zero errors
 ```
+
+Accounts need a Supabase project — two environment variables and one SQL file.
+See **[supabase/README.md](supabase/README.md)**. Without them the site is
+exactly what it was: every public page renders, and the login and join screens
+say plainly that accounts are not connected.
 
 Deploys to Vercel with no configuration.
 
@@ -19,11 +24,14 @@ Deploys to Vercel with no configuration.
 
 ```
 app/
-  layout.tsx          Fonts, metadata, viewport, structured data
+  layout.tsx          Fonts, metadata, viewport, structured data, AuthProvider
   page.tsx            The homepage — composition only
   globals.css         Design tokens + editorial primitives
   icon.svg            Favicon
-  not-found.tsx       The only other route
+  not-found.tsx       404
+  (auth)/             login · signup · forgot-password · reset-password
+  (site)/             profile · settings · my-walks · photographers/[username]
+  auth/callback/      OAuth + email-link exchange (route handler)
 
 components/
   navigation/         SiteHeader · MobileMenu · AnnouncementBar · ContactSheetRail
@@ -37,6 +45,8 @@ components/
   newsletter/         Newsletter
   footer/             SiteFooter
   rsvp/               RSVPProvider · RSVPButton · RSVPModal
+  auth/               AuthProvider (useAuth) · AuthShell · AuthField
+                      · AuthNotice · GoogleButton · useAuthGate
   ui/                 Dialog · Reveal · Typography
 
 data/
@@ -46,10 +56,16 @@ data/
   community.ts        CommunityStats, Instagram posts
 
 lib/
-  utils.ts            cn(), date/price/capacity formatting
+  utils.ts            cn(), date/price/capacity formatting, joined date, initials
   rsvp.ts             Mock submission — Supabase swap point
   newsletter.ts       Provider swap point
   instagram.ts        Graph API swap point
+  profiles.ts         Profile reads
+  supabase/           client (browser) · server · middleware · config · types
+  auth/               session (server) · validation · errors · redirects
+
+middleware.ts         Session refresh on every request
+supabase/migrations/  profiles table, trigger, RLS
 
 public/images/        hero · walks · gallery · stories · instagram · logo
 ```
@@ -107,11 +123,111 @@ warning in orange.
 currently publishes Organization schema only. Flip `verified` once the date,
 time, meeting point and cost are confirmed.
 
-Related: nothing is stored on a server yet. The RSVP and newsletter flows are
-fully functional — validation, per-field errors, loading state, duplicate-submit
-prevention, success state — but `lib/rsvp.ts` writes to `localStorage` and the
-confirmation screen says so plainly. That notice disappears on its own once
-`isBackendConfigured()` returns true.
+Related: the newsletter is still local-only. `lib/newsletter.ts` writes to
+`localStorage` and the success state says so plainly, until
+`NEXT_PUBLIC_NEWSLETTER_ENDPOINT` is set. RSVPs are no longer in that category —
+they go to `walk_rsvps` (see **Joining a walk** below).
+
+---
+
+## Accounts
+
+Supabase Auth for credentials, Supabase Postgres for profiles. Setup — project,
+migration, Google OAuth — is in **[supabase/README.md](supabase/README.md)**.
+
+| Route | What it is |
+|---|---|
+| `/signup` | Full name, email, password, confirm, or Google |
+| `/login` | Email and password, or Google |
+| `/forgot-password` | Sends the reset email |
+| `/reset-password` | Where that email lands, after `/auth/callback` |
+| `/photographers/[username]` | Public profile |
+| `/profile` | Redirects to your own public profile |
+| `/settings` | Edit your profile |
+| `/my-walks` | The walks you have joined, still-to-come and walked |
+| `/auth/callback` | Exchanges an OAuth code or an email token for a session |
+
+### Reading the auth state
+
+```tsx
+const { user, profile, loading, signIn, signUp, signOut } = useAuth();
+```
+
+Three states, and the header renders all three: `loading` (a placeholder the
+same size as what replaces it, so nothing jumps), signed out (Log in · Join),
+signed in (avatar → Profile · My walks · Settings · Log out). The provider sits
+in the root layout and wraps server children, exactly like `RSVPProvider` does
+on the homepage — so the homepage is still statically prerendered and only the
+header ships the code.
+
+Sessions live in cookies, not `localStorage`, which is what lets `middleware.ts`
+refresh them and lets server components read them. `onAuthStateChange` keeps the
+header honest without a reload, in this tab and in any other one.
+
+### What needs an account, and what does not
+
+Nothing public moved behind a login. The homepage, the walks, the archive, the
+community and every profile are open, and the middleware only guards
+`/settings`, `/profile` and `/my-walks`.
+
+Actions are the part that will need an identity — RSVP, upload, like, comment,
+save, join a group, enter a challenge, host a walk. The seam for that is one
+hook:
+
+```tsx
+const gate = useAuthGate();
+if (!gate('to hold your spot')) return;   // sends them to /login, and back again
+```
+
+The server action behind such a thing still calls `requireUser()`. The hook is
+about not wasting somebody's time; it is not the security control.
+
+### Joining a walk
+
+Browsing is open to everyone. Joining is not — a spot belongs to somebody we can
+reach on the morning of the walk, so the RSVP dialog asks for an account first.
+
+All six places that start an RSVP (hero, header, featured walk, walks list,
+mobile menu, sticky mobile bar) go through one `open()`, so the gate lives in
+the dialog and none of those six knows about it. It asks rather than redirects:
+throwing somebody to `/login` the moment they press the primary action loses
+both their place on the page and which walk they meant. The links carry
+`next=/?rsvp=<slug>`, and `RSVPProvider` reopens the dialog on that walk when
+they come back.
+
+Because there is an account, the form arrives with name, email and Instagram
+already filled from the profile; only the WhatsApp number and experience level
+are actually asked for.
+
+Rows go to `walk_rsvps`, one per member per walk (`unique (profile_id,
+event_id)`), so joining twice is not an error — the dialog opens on "Already
+in". RSVPs are private: members read, create and cancel only their own, and
+`anon` is granted nothing at all. There is no UPDATE policy; changing your mind
+means cancelling and rejoining, which keeps `created_at` honest.
+
+`/my-walks` splits them into still-to-come and walked, by the walk's date in
+Pune. Cancelling is offered only on walks that have not happened.
+
+Walks themselves still live in `data/events.ts` — they are edited by hand a few
+times a month and a table would be ceremony for four rows. `event_id` is a text
+key into that file, with the title and date copied onto the RSVP so the page
+stands alone and a past RSVP still reads correctly after the file is edited.
+
+### Profiles
+
+One row per auth user, created by the `on_auth_user_created` trigger in
+`supabase/migrations/` — never by application code. That is deliberate: a Google
+sign-up has no form to run code in, so a trigger is the only path both sign-up
+routes share, and doing it in both places is how you get duplicates.
+
+The username is minted from the name. "Gurnoor Singh" becomes `gurnoor`, then
+`gurnoorsingh` if that is taken, then `gurnoor1`, `gurnoor2`. Uniqueness is a
+database constraint, not a lookup, and the trigger retries on collision.
+
+Row Level Security: anyone may read a profile, only its owner may write one, and
+`id` and `created_at` are revoked from `authenticated` entirely. `profiles` holds
+nothing private — no email, no phone, no tokens — which is what makes a
+world-readable policy safe. Keep it that way.
 
 ---
 
@@ -119,7 +235,11 @@ confirmation screen says so plainly. That notice disappears on its own once
 
 **Supabase (RSVPs).** `lib/rsvp.ts` contains the table DDL, the RLS policy and
 the exact insert call in a comment block. The UI only knows `submitRsvp()` and
-`isBackendConfigured()`, so this is a one-file change.
+`isBackendConfigured()`, so this is a one-file change. Note that
+`isBackendConfigured()` no longer keys off `NEXT_PUBLIC_SUPABASE_URL` — that
+variable now means "accounts are on", which says nothing about RSVPs. It stays
+`false`, and the confirmation screen keeps telling people the truth, until the
+`rsvps` table exists and the swap point is filled in.
 
 **Newsletter.** Set `NEXT_PUBLIC_NEWSLETTER_ENDPOINT` to anything accepting
 `POST { email }`. The local fallback switches off by itself.

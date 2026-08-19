@@ -1,11 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Dialog, DialogClose } from '@/components/ui/Dialog';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { experienceLevels, type Event, type ExperienceLevel } from '@/data/events';
 import { site } from '@/data/site';
 import { longDate, priceLabel } from '@/lib/utils';
 import {
+  findExistingRsvp,
   isBackendConfigured,
   submitRsvp,
   validateRsvp,
@@ -33,11 +36,13 @@ const EMPTY: FormValues = {
 };
 
 export function RSVPModal({ event, onClose }: { event: Event | null; onClose: () => void }) {
+  const { user, profile, loading: authLoading } = useAuth();
   const [values, setValues] = useState<FormValues>(EMPTY);
   const [errors, setErrors] = useState<RsvpErrors>({});
   const [status, setStatus] = useState<Status>('editing');
   const [failure, setFailure] = useState('');
   const [persisted, setPersisted] = useState(false);
+  const [alreadyJoined, setAlreadyJoined] = useState(false);
 
   /* A fresh form each time a different walk is opened. */
   useEffect(() => {
@@ -46,11 +51,110 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
       setErrors({});
       setStatus('editing');
       setFailure('');
+      setAlreadyJoined(false);
     }
   }, [event]);
 
+  /* Already on this walk? Open on the confirmation rather than on a form the
+     one-per-walk constraint would reject. */
+  useEffect(() => {
+    if (!event || !user) return;
+    let active = true;
+    void findExistingRsvp(user.id, event.id).then((joined) => {
+      if (!active || !joined) return;
+      setAlreadyJoined(true);
+      setPersisted(true);
+      setStatus('confirmed');
+    });
+    return () => {
+      active = false;
+    };
+  }, [event, user]);
+
+  /* Having an account is the point of asking for one: the name, email and
+     Instagram handle are already known, so the form only asks for what a walk
+     actually needs. Only empty fields are filled, so nothing typed is lost if
+     the profile arrives a moment later. */
+  useEffect(() => {
+    if (!event) return;
+    setValues((current) => ({
+      ...current,
+      name: current.name || profile?.full_name || '',
+      email: current.email || user?.email || '',
+      instagram: current.instagram || profile?.instagram_username || '',
+    }));
+  }, [event, user, profile]);
+
   if (!event) {
     return <Dialog open={false} onClose={onClose} label="RSVP"><div /></Dialog>;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The gate. Browsing the walks stays open to everyone; holding a place
+   * on one does not, because a spot belongs to a person we can reach on
+   * the morning of the walk.
+   *
+   * This is deliberately not a redirect. Joining is the primary action on
+   * the page, and throwing somebody to /login the instant they press it
+   * loses both their place on the page and which walk they meant. The
+   * dialog opens as it always did, still showing the walk, and asks.
+   * `next` carries the walk back so the form reopens on it afterwards.
+   * ------------------------------------------------------------------ */
+  if (!authLoading && !user) {
+    const back = `/?rsvp=${encodeURIComponent(event.slug)}`;
+    return (
+      <Dialog open onClose={onClose} label={`Log in to join ${event.title}`} className="max-w-[560px]">
+        <div className="mb-7 flex items-start justify-between gap-4 border-b border-border pb-4">
+          <div>
+            <p className="meta">Join a walk</p>
+            <h2 className="display mt-2 text-display-md">{event.title}</h2>
+            <p className="meta mt-2">
+              {longDate(event.date)} · {event.time} · {priceLabel(event.price)}
+            </p>
+          </div>
+          <DialogClose onClose={onClose} />
+        </div>
+
+        <p className="display text-display-md">First, an introduction.</p>
+        <p className="mt-4 font-display text-lead text-foreground-soft">
+          We keep the walks small, and the meeting point goes out on the morning
+          itself — so an account is simply how we know where to find you. It also
+          remembers the walks you have joined, which means we need only ask you
+          this once.
+        </p>
+
+        <div className="mt-[clamp(2rem,4vw,2.5rem)] grid gap-4">
+          <Link href={`/signup?next=${encodeURIComponent(back)}`} className="cta-solid justify-between">
+            Create an account <span aria-hidden="true">→</span>
+          </Link>
+          <Link href={`/login?next=${encodeURIComponent(back)}`} className="cta-ghost justify-between">
+            I already have one <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+
+        <p className="meta mt-5 normal-case tracking-[0.06em]">
+          The rest of the site stays open — the walks, the archive and the community
+          ask nothing of you.
+        </p>
+      </Dialog>
+    );
+  }
+
+  /* Auth is still resolving. Hold the dialog's shape rather than flashing the
+     sign-in panel at somebody who is in fact logged in. */
+  if (authLoading) {
+    return (
+      <Dialog open onClose={onClose} label={`RSVP for ${event.title}`} className="max-w-[560px]">
+        <div className="mb-7 flex items-start justify-between gap-4 border-b border-border pb-4">
+          <div>
+            <p className="meta">RSVP</p>
+            <h2 className="display mt-2 text-display-md">{event.title}</h2>
+          </div>
+          <DialogClose onClose={onClose} />
+        </div>
+        <p className="meta" role="status">One moment…</p>
+      </Dialog>
+    );
   }
 
   const update = <K extends keyof FormValues>(key: K, value: FormValues[K]) => {
@@ -72,6 +176,10 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
     const result = await submitRsvp({
       eventId: event.id,
       eventTitle: event.title,
+      eventDate: event.date,
+      /* The future walk_rsvps row belongs to a profile, not to a typed-in
+         name. See the DDL note in lib/rsvp.ts. */
+      profileId: user?.id ?? null,
       name: values.name.trim(),
       email: values.email.trim(),
       whatsapp: values.whatsapp.trim(),
@@ -87,6 +195,7 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
     }
 
     setPersisted(result.persisted);
+    setAlreadyJoined(Boolean(result.alreadyJoined));
     setStatus('confirmed');
   }
 
@@ -100,13 +209,17 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
       {status === 'confirmed' ? (
         <>
           <div className="mb-7 flex items-start justify-between gap-4 border-b border-border pb-4">
-            <span className="meta">Confirmed</span>
+            <span className="meta">{alreadyJoined ? 'Already joined' : 'Confirmed'}</span>
             <DialogClose onClose={onClose} />
           </div>
 
-          <h2 className="display text-display-lg">You&rsquo;re in.</h2>
+          <h2 className="display text-display-lg">
+            {alreadyJoined ? <>Already in.</> : <>You&rsquo;re in.</>}
+          </h2>
           <p className="mt-4 font-display text-lead text-foreground-soft">
-            We&rsquo;ll send the walk details and meeting point to your WhatsApp and email.
+            {alreadyJoined
+              ? 'You joined this walk already — there is nothing more to do.'
+              : 'We\u2019ll send the walk details and meeting point to your WhatsApp and email.'}
           </p>
           <p className="meta mt-5">
             {event.title} · {longDate(event.date)} · {event.time} · {event.location}
@@ -132,7 +245,10 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
             >
               Join WhatsApp community <span aria-hidden="true">→</span>
             </a>
-            <button type="button" className="cta-ghost justify-between" onClick={onClose}>
+            <Link href="/my-walks" className="cta-ghost justify-between">
+              See my walks <span aria-hidden="true">→</span>
+            </Link>
+            <button type="button" className="cta justify-between" onClick={onClose}>
               Back to site <span aria-hidden="true">↩</span>
             </button>
           </div>

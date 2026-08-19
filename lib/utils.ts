@@ -32,3 +32,22 @@ export const spotsLabel = (spots: number, capacity: number): string => {
 };
 
 export const padIndex = (n: number): string => String(n).padStart(2, '0');
+
+/** The month a member joined, in the same voice as the walk dates. */
+export const joinedLabel = (iso: string): string => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-IN', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Asia/Kolkata',
+  });
+};
+
+/** Initials for the monogram shown when a member has no avatar. */
+export const initials = (fullName: string): string => {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '\u00b7';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};

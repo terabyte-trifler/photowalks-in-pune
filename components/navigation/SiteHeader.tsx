@@ -1,11 +1,13 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { featuredWalk } from '@/data/events';
 import { navigation, site } from '@/data/site';
 import { cn } from '@/lib/utils';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { MobileMenu } from './MobileMenu';
+import { UserMenu } from './UserMenu';
 
 /**
  * Client because it reacts to scroll and owns the mobile menu. Small enough
@@ -14,6 +16,14 @@ import { MobileMenu } from './MobileMenu';
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  /* The sections live on the homepage. Now that the header also appears on the
+     account pages, a bare "#walks" would scroll nowhere — so off the homepage
+     the same links become "/#walks". On the homepage they stay fragments and
+     still scroll without a navigation. */
+  const pathname = usePathname();
+  const onHome = pathname === '/';
+  const sectionHref = (hash: string) => (onHome ? hash : `/${hash}`);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -33,7 +43,10 @@ export function SiteHeader() {
         )}
       >
         <nav className="shell flex min-h-[62px] items-center justify-between gap-6" aria-label="Primary">
-          <a href="#hero" className="inline-flex items-center gap-2.5 text-[0.9375rem] font-medium tracking-tight">
+          <a
+            href={sectionHref('#hero')}
+            className="inline-flex items-center gap-2.5 text-[0.9375rem] font-medium tracking-tight"
+          >
             <span
               aria-hidden="true"
               className="grid h-[22px] w-[22px] flex-none place-items-center rounded-full border border-foreground"
@@ -47,7 +60,7 @@ export function SiteHeader() {
             {navigation.map((item) => (
               <a
                 key={item.label}
-                href={item.href}
+                href={'external' in item && item.external ? item.href : sectionHref(item.href)}
                 className="border-b border-transparent py-1.5 font-mono text-meta uppercase text-foreground-soft transition-colors hover:border-accent hover:text-foreground"
                 {...('external' in item && item.external
                   ? { target: '_blank', rel: 'noreferrer noopener' }
@@ -59,6 +72,10 @@ export function SiteHeader() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Account controls sit to the left of the walk CTA, separated by a
+                hairline. Booking a walk is the product; this is the account. */}
+            <UserMenu />
+
             <RSVPButton
               event={featuredWalk}
               className="border border-foreground px-4 py-2.5 font-mono text-meta uppercase transition-colors hover:bg-foreground hover:text-background"
