@@ -131,7 +131,7 @@ export function PhotoManager({
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <p className="meta">Your archive</p>
         <span className="meta normal-case tracking-[0.06em]">
-          {total} of {MAX_PHOTOS_PER_MEMBER} · resized to 2000px before upload
+          {total} of {MAX_PHOTOS_PER_MEMBER} · compressed to under 200KB before upload
         </span>
       </div>
 

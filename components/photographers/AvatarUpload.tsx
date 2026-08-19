@@ -116,7 +116,9 @@ export function AvatarUpload({
             </button>
           )}
 
-          <span className="meta normal-case tracking-[0.06em]">JPEG, PNG, WebP or AVIF · up to 2MB</span>
+          <span className="meta normal-case tracking-[0.06em]">
+            JPEG, PNG, WebP or AVIF · compressed for you
+          </span>
         </div>
       </div>
 

@@ -26,18 +26,49 @@ export const LIMITS = {
   photo: 10 * 1024 * 1024,
 } as const;
 
-/**
- * What we actually store. A camera original is twenty to forty times larger
- * than anything a browser will display: at 500 members × 20 photographs, ten
- * megabytes each is ~98GB of storage and the same again in egress, against a
- * free tier of one gigabyte. Two thousand pixels of WebP is around 300KB and
- * is still more resolution than the grid ever asks for.
+/* ---------------------------------------------------------------------------
+ * WHAT WE ACTUALLY STORE
+ * ---------------------------------------------------------------------------
+ * A camera original is twenty to forty times larger than anything a browser
+ * will display. At 500 members × 20 photographs, ten megabytes each is ~67GB
+ * of storage and the same again in egress, against a free tier of one
+ * gigabyte. So every image is resized and re-encoded in the browser until it
+ * fits a byte budget, before a single byte is uploaded.
  *
- * It is also much faster to upload on mobile data, which is how most of these
- * photographs will arrive.
+ * The budget is a real trade-off, not a free win: 200KB across two megapixels
+ * is roughly 0.6 bits per pixel, which is comfortable for most photographs and
+ * tight for very detailed ones — dense foliage, crowds, heavy grain. The
+ * ladder below spends resolution last, because a slightly softer 2000px frame
+ * looks better than a crisp 1000px one on a retina screen.
+ * ------------------------------------------------------------------------ */
+
+/** The ceiling each kind is compressed to. */
+export const TARGET_BYTES = {
+  avatar: 100 * 1024,
+  photo: 200 * 1024,
+} as const;
+
+/**
+ * Tried in order, quality first at each size. Nine encodes at the very worst,
+ * and one or two for a typical photograph, since the loop stops the moment it
+ * is under budget.
  */
-const MAX_EDGE = { avatar: 512, photo: 2000 } as const;
-const QUALITY = { avatar: 0.85, photo: 0.82 } as const;
+const EDGE_STEPS: Record<UploadKind, number[]> = {
+  avatar: [512, 384, 256],
+  photo: [2000, 1500, 1100],
+};
+const QUALITY_STEPS = [0.82, 0.68, 0.55] as const;
+
+/**
+ * When the ladder above still has not fitted — a very grainy or noisy frame,
+ * mostly — the image is shrunk repeatedly at low quality until it does. Any
+ * photograph fits under 200KB at some size; this finds that size instead of
+ * giving up. In practice it is reached rarely and exits after a step or two.
+ */
+const SHRINK_QUALITY = 0.45;
+const SHRINK_FACTOR = 0.75;
+/** Below this the result stops being a photograph, so we refuse instead. */
+const MIN_EDGE: Record<UploadKind, number> = { avatar: 128, photo: 640 };
 
 export type UploadKind = keyof typeof LIMITS;
 
@@ -104,18 +135,43 @@ function canEncodeWebp(): boolean {
 const toBlob = (canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> =>
   new Promise((resolve) => canvas.toBlob(resolve, type, quality));
 
+/** Draw the bitmap at a given longest edge and hand back the canvas. */
+function drawAt(bitmap: ImageBitmap, edge: number): { canvas: HTMLCanvasElement; width: number; height: number } | null {
+  const longest = Math.max(bitmap.width, bitmap.height);
+  const scale = longest > edge ? edge / longest : 1;
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+
+  /* Downscaling in one step is what makes a resized photograph look crunchy;
+     the browser's own smoothing is doing the filtering here. */
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(bitmap, 0, 0, width, height);
+  return { canvas, width, height };
+}
+
 /**
- * Resize down to MAX_EDGE and re-encode, in the browser, before anything is
- * uploaded. Returns the original untouched when shrinking it would not help —
- * a small WebP that is already under the limit is left exactly as it is.
+ * Resize and re-encode until the result is under TARGET_BYTES, in the browser,
+ * before anything is uploaded.
  *
  * `imageOrientation: 'from-image'` matters more than it looks: without it a
- * photograph taken in portrait on a phone is drawn to the canvas sideways,
- * because the rotation lives in EXIF that the canvas would otherwise discard.
+ * photograph taken in portrait on a phone is drawn sideways, because the
+ * rotation lives in EXIF that the canvas would otherwise discard.
+ *
+ * Never rejects. If even the floor cannot get under budget the smallest
+ * attempt is used and `overBudget` is set, because refusing somebody's
+ * photograph over a storage target would be the wrong way round.
  */
 export async function prepareImage(file: File, kind: UploadKind): Promise<PreparedImage> {
-  const edge = MAX_EDGE[kind];
-  const fallback = async (): Promise<PreparedImage> => {
+  const target = TARGET_BYTES[kind];
+
+  const original = async (): Promise<PreparedImage> => {
     const size = (await readDimensions(file)) ?? { width: 0, height: 0 };
     return {
       blob: file,
@@ -126,55 +182,78 @@ export async function prepareImage(file: File, kind: UploadKind): Promise<Prepar
     };
   };
 
-  if (typeof createImageBitmap !== 'function') return fallback();
+  if (typeof createImageBitmap !== 'function') {
+    if (file.size > target) throw new OverBudgetError();
+    return original();
+  }
 
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
   } catch {
-    return fallback();
+    if (file.size > target) throw new OverBudgetError();
+    return original();
   }
-
-  const longest = Math.max(bitmap.width, bitmap.height);
-  const scale = longest > edge ? edge / longest : 1;
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext('2d');
-  if (!context) {
-    bitmap.close();
-    return fallback();
-  }
-  context.drawImage(bitmap, 0, 0, width, height);
-  bitmap.close();
 
   const useWebp = canEncodeWebp();
   const type = useWebp ? 'image/webp' : 'image/jpeg';
-  const blob = await toBlob(canvas, type, QUALITY[kind]);
+  const extension = useWebp ? 'webp' : 'jpg';
 
-  /* Re-encoding can occasionally produce something larger than the original —
-     a small, already-optimised file, for instance. Keep whichever is smaller. */
-  if (!blob || blob.size >= file.size) return fallback();
+  const made = (blob: Blob, width: number, height: number): PreparedImage => ({
+    blob, width, height, extension, contentType: type,
+  });
 
-  return {
-    blob,
-    width,
-    height,
-    extension: useWebp ? 'webp' : 'jpg',
-    contentType: type,
-  };
+  try {
+    /* Quality first at each size: a slightly softer 2000px frame looks better
+       than a crisp 1000px one on a retina screen. */
+    for (const edge of EDGE_STEPS[kind]) {
+      const drawn = drawAt(bitmap, edge);
+      if (!drawn) break;
+
+      for (const quality of QUALITY_STEPS) {
+        const blob = await toBlob(drawn.canvas, type, quality);
+        if (blob && blob.size <= target) return made(blob, drawn.width, drawn.height);
+      }
+    }
+
+    /* Still over. Shrink until it fits — this is what makes the ceiling a
+       guarantee rather than an aspiration. */
+    let edge = EDGE_STEPS[kind][EDGE_STEPS[kind].length - 1];
+    while (edge > MIN_EDGE[kind]) {
+      edge = Math.max(MIN_EDGE[kind], Math.round(edge * SHRINK_FACTOR));
+      const drawn = drawAt(bitmap, edge);
+      if (!drawn) break;
+
+      const blob = await toBlob(drawn.canvas, type, SHRINK_QUALITY);
+      if (blob && blob.size <= target) return made(blob, drawn.width, drawn.height);
+      if (edge === MIN_EDGE[kind]) break;
+    }
+  } finally {
+    bitmap.close();
+  }
+
+  /* Nothing fitted even at the minimum size. Refusing is the honest outcome:
+     the alternative is silently storing something over the ceiling. */
+  throw new OverBudgetError();
+}
+
+/** Thrown when an image cannot be brought under its byte budget. */
+export class OverBudgetError extends Error {
+  constructor() {
+    super('over_budget');
+    this.name = 'OverBudgetError';
+  }
 }
 
 export interface UploadResult {
   ok: boolean;
   /** Path within the bucket, e.g. `<uid>/1712345678-a1b2c3.webp`. */
   path?: string;
-  /** Dimensions of what was actually stored, after downscaling. */
+  /** Dimensions of what was actually stored, after compression. */
   width?: number;
   height?: number;
+  /** Size of what was stored, in bytes. */
+  bytes?: number;
   error?: string;
 }
 
@@ -193,7 +272,16 @@ export async function uploadImage(
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return { ok: false, error: 'Uploads are not connected on this build.' };
 
-  const prepared = await prepareImage(file, kind);
+  let prepared: PreparedImage;
+  try {
+    prepared = await prepareImage(file, kind);
+  } catch {
+    return {
+      ok: false,
+      error: `We could not get that under ${Math.round(TARGET_BYTES[kind] / 1024)}KB without ruining it. Try exporting it a little smaller.`,
+    };
+  }
+
   const path = `${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${prepared.extension}`;
 
   const { error } = await supabase.storage.from(BUCKET[kind]).upload(path, prepared.blob, {
@@ -216,7 +304,13 @@ export async function uploadImage(
     return { ok: false, error: 'That upload did not go through. Try again in a moment.' };
   }
 
-  return { ok: true, path, width: prepared.width, height: prepared.height };
+  return {
+    ok: true,
+    path,
+    width: prepared.width,
+    height: prepared.height,
+    bytes: prepared.blob.size,
+  };
 }
 
 /** Remove a file. The policy limits this to the member's own folder. */
