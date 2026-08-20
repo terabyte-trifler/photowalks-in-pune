@@ -65,8 +65,23 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.cdninstagram.com', pathname: '/**' },
       { protocol: 'https', hostname: '**.fbcdn.net', pathname: '/**' },
     ],
-    /* next/image refuses a quality it has not been told about from v16. */
-    qualities: [70, 72, 74, 80],
+    /* next/image refuses a quality it has not been told about, and the refusal
+       is a thrown error that takes the page down rather than a warning. This
+       list was written by hand and missed two: the lightbox asks for 82 and
+       the story dialog for 76, so opening either crashed the whole gallery.
+       
+       Every value below is one an <Image> in this codebase actually passes.
+       If you add a quality prop, add it here in the same commit — the symptom
+       is not a slightly wrong image, it is a blank page. Keep in step with:
+       
+         70  AuthShell, InstagramSection
+         72  PhotoGrid, HeroImage
+         74  FeaturedWalk, PhotoStory
+         76  StoryDialog
+         82  PhotoLightbox
+       
+       80 is kept because next/image also uses it as its own default. */
+    qualities: [70, 72, 74, 76, 80, 82],
 
     /* Next's default top widths are 2048 and 3840. Members upload through the
        browser-side downscaler, which caps the long edge at 2000px — so a
