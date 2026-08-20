@@ -51,12 +51,12 @@ export const featuredWalk: Event = {
   slug: 'camp-colonial-lines',
   title: 'Camp / Colonial Lines',
   date: '2026-08-23',
-  time: '7:00 AM',
+  time: '4:00 PM',
   location: 'Camp · MG Road',
   area: 'Camp',
   description:
-    'Arcades, bakeries and old shopfronts, photographed before Camp opens for the day.',
-  theme: 'Heritage · morning light',
+    'Arcades, bakeries and old shopfronts, photographed as the afternoon light comes down MG Road.',
+  theme: 'Heritage · afternoon light',
   image: '/images/walks/camp.jpg',
   imageAlt:
     'A wide tree-lined street in black and white, a church spire in the distance and motorbikes coming towards the camera',

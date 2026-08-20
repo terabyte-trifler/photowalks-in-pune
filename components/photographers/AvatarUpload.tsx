@@ -8,9 +8,9 @@ import { updateAvatar } from '@/app/(site)/settings/actions';
 import {
   ACCEPT_ATTRIBUTE,
   checkFile,
-  pathFromPublicUrl,
   publicUrlFor,
   removeImageSurely,
+  sweepAvatarFolder,
   uploadImage,
 } from '@/lib/uploads';
 
@@ -81,19 +81,16 @@ export function AvatarUpload({
       return;
     }
 
-    const previousPath = pathFromPublicUrl(url, 'avatars');
     setUrl(nextUrl);
     setPreview(null);
 
-    /* Only now is the old file safe to delete: nothing points at it. Awaited,
-       because a replaced photograph should not linger in the bucket. */
-    if (previousPath) {
-      const gone = await removeImageSurely('avatar', previousPath);
-      if (!gone) setNote('Saved — the old file could not be deleted');
-      else setNote('Saved');
-    } else {
-      setNote('Saved');
-    }
+    /* Only now is anything safe to delete: the row already points at the new
+       file. Sweeping the whole folder rather than the one path this component
+       happens to remember also clears anything an earlier save left behind —
+       see the note on sweepAvatarFolder. Awaited, because a replaced
+       photograph should not linger in the bucket. */
+    await sweepAvatarFolder(user.id, uploaded.path);
+    setNote('Saved');
 
     setState('idle');
     void refreshProfile();
@@ -101,7 +98,9 @@ export function AvatarUpload({
   }
 
   async function handleRemove() {
-    if (!url) return;
+    /* `user` is needed for the folder path, and there is nothing to remove
+       without a URL — either missing means there is nothing to do. */
+    if (!url || !user) return;
 
     setError('');
     setNote('');
@@ -114,17 +113,13 @@ export function AvatarUpload({
       return;
     }
 
-    const path = pathFromPublicUrl(url, 'avatars');
     setUrl(null);
     setPreview(null);
 
-    /* Removing the photograph has to take the file with it. */
-    if (path) {
-      const gone = await removeImageSurely('avatar', path);
-      setNote(gone ? 'Removed' : 'Removed — the file could not be deleted');
-    } else {
-      setNote('Removed');
-    }
+    /* Removing the photograph has to take the file with it — and everything
+       else in the folder, since after this nothing is meant to be kept. */
+    const swept = await sweepAvatarFolder(user.id, null);
+    setNote(swept > 0 ? 'Removed' : 'Removed — the file could not be deleted');
 
     setState('idle');
     void refreshProfile();

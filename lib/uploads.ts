@@ -377,6 +377,42 @@ export async function removeImageSurely(
   return false;
 }
 
+/**
+ * Delete everything in a member's avatar folder except the file they are now
+ * using.
+ *
+ * Replacing a picture already deletes the file it replaced, one for one. That
+ * is correct and it is also fragile: it depends on the browser staying open
+ * long enough to issue the delete, on the previous URL being in state, and on
+ * that delete succeeding. Miss any of those — a closed tab, a dropped
+ * connection, a sign-in that changed the URL underneath — and a file is left
+ * behind that nothing points at and nothing will ever look for again. An
+ * orphan sweep found two of them, 27 kB, from a single member.
+ *
+ * Sweeping the folder instead is self-healing. Every time somebody changes
+ * their picture, whatever accumulated before is cleared too, so a missed
+ * delete costs storage until their next change rather than forever. Storage
+ * policy already scopes both the listing and the removal to `auth.uid()`, so
+ * this can only ever touch the caller's own folder.
+ */
+export async function sweepAvatarFolder(ownerId: string, keepPath: string | null): Promise<number> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return 0;
+
+  const { data, error } = await supabase.storage.from(BUCKET.avatar).list(ownerId, { limit: 100 });
+  if (error || !data) return 0;
+
+  const keep = keepPath?.split('/').pop();
+  const stale = data
+    .filter((file) => file.name !== keep)
+    .map((file) => `${ownerId}/${file.name}`);
+
+  if (stale.length === 0) return 0;
+
+  const { error: removeError } = await supabase.storage.from(BUCKET.avatar).remove(stale);
+  return removeError ? 0 : stale.length;
+}
+
 /** The stored `avatar_url` is a full URL; storage needs the path inside it. */
 export function pathFromPublicUrl(url: string | null, bucket: 'avatars' | 'photos'): string | null {
   if (!url) return null;
