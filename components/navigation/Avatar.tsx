@@ -33,9 +33,15 @@ export function Avatar({
           fill
           sizes={`${size}px`}
           className="object-cover"
-          /* Avatars come from Google and, later, Supabase Storage. Both are
-             out of our hands, so a broken one must not break the header. */
-          unoptimized={!src.startsWith('/')}
+          /* Optimised like everything else. This used to be `unoptimized`,
+             from when avatars only came from Google and the host was not in
+             next.config. Both sources are configured now, and the flag was
+             costing real bandwidth: Supabase Storage serves avatars with
+             `cache-control: no-cache`, so every unoptimised avatar was
+             re-downloaded from Supabase on every view — one per member, on a
+             directory page that lists all of them. Through the optimiser they
+             are fetched once, cached at the edge for a year, and resized from
+             56 kB to a few kB at the size they are actually drawn. */
         />
       ) : (
         <span

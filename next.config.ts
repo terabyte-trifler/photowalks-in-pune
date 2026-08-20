@@ -46,7 +46,13 @@ const nextConfig: NextConfig = {
          here too when photographs and uploaded avatars move there:
          { protocol: 'https', hostname: '<project-ref>.supabase.co',
            pathname: '/storage/v1/object/public/**' }                        */
-      { protocol: 'https', hostname: 'lh3.googleusercontent.com', pathname: '/**' },
+      /* Any lh<n>, not just lh3. The avatar_url constraint in migration 0007
+         permits lh[0-9]+.googleusercontent.com, and Google really does serve
+         from lh4, lh5 and up — listing only lh3 here meant the optimiser would
+         refuse an avatar the database had accepted, and that member's picture
+         would simply fail to load. Breadth is safe: the database is the gate,
+         and it pins the host far more tightly than this does. */
+      { protocol: 'https', hostname: '**.googleusercontent.com', pathname: '/**' },
       /* Avatars and photographs in Supabase Storage. The wildcard covers the
          project ref, which differs between local, preview and production. */
       {
