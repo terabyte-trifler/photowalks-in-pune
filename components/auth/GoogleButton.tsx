@@ -11,10 +11,22 @@ import { useAuth } from './AuthProvider';
  *
  * Styled as .cta-ghost so it reads as the quieter of the two ways in.
  */
-export function GoogleButton({ next, label }: { next?: string; label: string }) {
+export function GoogleButton({
+  next,
+  label,
+  enabled,
+}: {
+  next?: string;
+  label: string;
+  /** Whether Google is switched on in the Supabase project. */
+  enabled: boolean;
+}) {
   const { signInWithGoogle, configured } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  /* Not configured: show nothing rather than a button that fails when pressed. */
+  if (!enabled) return null;
 
   async function handleClick() {
     if (busy) return;

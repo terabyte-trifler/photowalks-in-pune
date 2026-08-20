@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { site } from '@/data/site';
+import { getEnabledProviders } from '@/lib/auth/providers';
 import { LoginForm } from './LoginForm';
 
 export const metadata: Metadata = {
@@ -14,7 +15,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string; reason?: string; error?: string; message?: string }>;
 }) {
-  const params = await searchParams;
+  const [params, providers] = await Promise.all([searchParams, getEnabledProviders()]);
 
   return (
     <AuthShell
@@ -41,6 +42,7 @@ export default async function LoginPage({
       }
     >
       <LoginForm
+        googleEnabled={providers.google}
         next={params.next}
         reason={params.reason}
         callbackError={params.error}

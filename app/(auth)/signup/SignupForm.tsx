@@ -27,7 +27,15 @@ interface Errors {
   confirm?: string;
 }
 
-export function SignupForm({ next, callbackError }: { next?: string; callbackError?: string }) {
+export function SignupForm({
+  next,
+  callbackError,
+  googleEnabled,
+}: {
+  next?: string;
+  callbackError?: string;
+  googleEnabled: boolean;
+}) {
   const { signUp, configured } = useAuth();
 
   const [fullName, setFullName] = useState('');
@@ -231,9 +239,12 @@ export function SignupForm({ next, callbackError }: { next?: string; callbackErr
         </p>
       </form>
 
-      <AuthDivider />
-
-      <GoogleButton next={destination} label="Continue with Google" />
+      {googleEnabled && (
+        <>
+          <AuthDivider />
+          <GoogleButton next={destination} label="Continue with Google" enabled />
+        </>
+      )}
     </>
   );
 }

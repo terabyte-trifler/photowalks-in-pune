@@ -136,6 +136,16 @@ secret, save.
 That is the whole integration. The client secret lives in Supabase and never
 touches this repository.
 
+The button appears by itself once you do. The app reads `/auth/v1/settings` —
+a public endpoint listing which providers are on — so there is no flag to
+change and nothing to redeploy. Until Google is enabled the button is not
+rendered at all, because a sign-in button that fails when pressed is worse
+than no button, and it sits on the screen where people decide whether the site
+works.
+
+That answer is cached for five minutes, so allow a few minutes (or a redeploy)
+before it shows up.
+
 ### Local development
 
 The local stack (`supabase start`) needs the same pair in `supabase/config.toml`:

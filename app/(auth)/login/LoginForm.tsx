@@ -24,11 +24,13 @@ export function LoginForm({
   reason,
   callbackError,
   message,
+  googleEnabled,
 }: {
   next?: string;
   reason?: string;
   callbackError?: string;
   message?: string;
+  googleEnabled: boolean;
 }) {
   const { signIn, configured } = useAuth();
 
@@ -167,9 +169,12 @@ export function LoginForm({
         </button>
       </form>
 
-      <AuthDivider />
-
-      <GoogleButton next={destination} label="Continue with Google" />
+      {googleEnabled && (
+        <>
+          <AuthDivider />
+          <GoogleButton next={destination} label="Continue with Google" enabled />
+        </>
+      )}
     </>
   );
 }
