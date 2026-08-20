@@ -2,6 +2,15 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  /**
+   * There is a package-lock.json above this directory, so Next infers the
+   * workspace root as the parent and warns on every build. Pinning it here
+   * silences that and, more usefully, keeps deployment file-tracing scoped to
+   * this project instead of everything above it.
+   */
+  turbopack: { root: process.cwd() },
+  outputFileTracingRoot: process.cwd(),
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
