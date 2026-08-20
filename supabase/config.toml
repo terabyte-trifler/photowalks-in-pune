@@ -243,10 +243,35 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# ---------------------------------------------------------------------------
+# EMAIL TEMPLATES
+# ---------------------------------------------------------------------------
+# Supabase's defaults are a bare white page naming a company the reader has
+# never heard of. Nobody signed up to Supabase — they signed up to walk around
+# Pune with a camera — and an unfamiliar name on the one email that can change
+# a password is the exact shape of a phishing attempt. These are the site's own
+# paper, type and voice; see supabase/templates/.
+#
+# NOTE ON THE SENDER. These control the subject and the body. They cannot
+# change who the mail is *from*: with Supabase's built-in sender that stays
+# `Supabase Auth <noreply@mail.app.supabase.io>` no matter what is written
+# here. Only custom SMTP moves the From line to Photowalks in Pune, which is
+# the [auth.email.smtp] block above.
+
+[auth.email.template.recovery]
+subject = "Set a new password · Photowalks in Pune"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.confirmation]
+subject = "Confirm your email · Photowalks in Pune"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email · Photowalks in Pune"
+content_path = "./supabase/templates/email_change.html"
+
+# Not written: invite, magic_link and reauthentication. Nothing in the app
+# sends them, and an unused template is one more thing to keep in step.
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

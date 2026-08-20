@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>Confirm your new email · Photowalks in Pune</title>
+<!--
+  ==========================================================================
+  CHANGE OF EMAIL ADDRESS
+  --------------------------------------------------------------------------
+  Nothing in the app changes an email address today — the settings form does
+  not offer it, and the column grants do not permit it. Supabase can still send
+  this, so it is branded rather than left as a default that names a company the
+  reader has never heard of.
+  ========================================================================== -->
+<style>
+  /* Only progressive enhancement lives here. Everything structural is inline
+     so that a client which discards this block still renders correctly. */
+  @media (prefers-color-scheme: dark) {
+    .pw-body   { background: #14110e !important; }
+    .pw-sheet  { background: #1c1815 !important; border-color: #35302a !important; }
+    .pw-ink    { color: #f2efe9 !important; }
+    .pw-soft   { color: #c9c2b8 !important; }
+    .pw-mute   { color: #9a9186 !important; }
+    .pw-rule   { border-color: #35302a !important; }
+    .pw-strip  { background: #14110e !important; }
+  }
+  @media only screen and (max-width: 620px) {
+    .pw-pad    { padding-left: 24px !important; padding-right: 24px !important; }
+    .pw-h1     { font-size: 34px !important; line-height: 1.02 !important; }
+    .pw-btn    { display: block !important; text-align: center !important; }
+  }
+  a { text-decoration: none; }
+</style>
+</head>
+
+<body class="pw-body" style="margin:0;padding:0;width:100%;background:#f2efe9;-webkit-font-smoothing:antialiased;">
+
+  <!-- Preheader: the line a client shows beside the subject. Says who this is
+       from before it is opened, which is the whole point of the exercise. -->
+  <div style="display:none;font-size:1px;color:#f2efe9;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    Photowalks in Pune — confirm the new address on your account.
+  </div>
+
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f2efe9;" class="pw-body">
+    <tr>
+      <td align="center" style="padding:32px 12px 48px 12px;">
+
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;max-width:600px;">
+
+          <!-- contact-sheet strip -->
+          <tr>
+            <td class="pw-strip" style="background:#f2efe9;padding:0 0 14px 0;font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;">
+              <span class="pw-mute">Pune · India</span>
+              <span class="pw-mute" style="float:right;">18&#176;31&#8242;N 73&#176;51&#8242;E</span>
+            </td>
+          </tr>
+
+          <!-- the sheet -->
+          <tr>
+            <td class="pw-sheet pw-rule" style="background:#ffffff;border:1px solid #d6cfc2;">
+
+              <!-- masthead -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td class="pw-pad pw-rule" style="padding:26px 40px;border-bottom:1px solid #d6cfc2;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding-right:10px;">
+                          <!-- the lens mark, drawn in table cells so it needs no image -->
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="20" height="20" style="width:20px;height:20px;border:1px solid #16130f;border-radius:50%;">
+                            <tr><td align="center" valign="middle" style="line-height:0;">
+                              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="7" height="7" style="width:7px;height:7px;background:#c56a1b;border-radius:50%;"><tr><td style="line-height:0;font-size:0;">&nbsp;</td></tr></table>
+                            </td></tr>
+                          </table>
+                        </td>
+                        <td class="pw-ink" style="font-family:Archivo,Helvetica,Arial,sans-serif;font-size:15px;font-weight:500;letter-spacing:-0.01em;color:#16130f;">
+                          photowalksinpune
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- body -->
+                <tr>
+                  <td class="pw-pad" style="padding:40px 40px 8px 40px;">
+                    <p class="pw-mute" style="margin:0 0 18px 0;font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;">
+                      Frame 01 &middot; Email
+                    </p>
+                    <h1 class="pw-h1 pw-ink" style="margin:0;font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-weight:400;font-size:44px;line-height:0.94;letter-spacing:-0.015em;text-transform:uppercase;color:#16130f;">
+                      Confirm your<br>new email.
+                    </h1>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="pw-pad" style="padding:22px 40px 0 40px;">
+                    <p class="pw-soft" style="margin:0;font-family:Archivo,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:#45403a;">
+                      Somebody asked to move this account to
+                      <span class="pw-ink" style="color:#16130f;">{{ .NewEmail }}</span>.
+                      Confirm it below and that becomes the address you sign in
+                      with.
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- the button -->
+                <tr>
+                  <td class="pw-pad" style="padding:30px 40px 0 40px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="background:#16130f;">
+                          <a class="pw-btn" href="{{ .ConfirmationURL }}"
+                             style="display:inline-block;padding:15px 30px;font-family:'DM Mono','Courier New',Courier,monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#f2efe9;">
+                            Confirm the change &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="pw-pad" style="padding:26px 40px 0 40px;">
+                    <p class="pw-mute" style="margin:0;font-family:Archivo,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#857c70;">
+                      The link works once and expires in an hour. If you did not ask
+                      for this, ignore it — the address on the account stays exactly
+                      as it is.
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- the link in full, because some clients do not make buttons clickable -->
+                <tr>
+                  <td class="pw-pad" style="padding:26px 40px 0 40px;">
+                    <p class="pw-mute" style="margin:0 0 6px 0;font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;">
+                      Or paste this into your browser
+                    </p>
+                    <p style="margin:0;font-family:'DM Mono','Courier New',Courier,monospace;font-size:12px;line-height:1.6;word-break:break-all;overflow-wrap:anywhere;">
+                      <a href="{{ .ConfirmationURL }}" style="color:#c56a1b;">{{ .ConfirmationURL }}</a>
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- footer -->
+                <tr>
+                  <td class="pw-pad pw-rule" style="padding:32px 40px 30px 40px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr><td class="pw-rule" style="border-top:1px solid #d6cfc2;font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
+                    </table>
+                    <p class="pw-mute" style="margin:20px 0 0 0;font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;">
+                      Photowalks in Pune &middot; Walk. Photograph. Connect.
+                    </p>
+                    <p class="pw-mute" style="margin:10px 0 0 0;font-family:Archivo,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#857c70;">
+                      You are receiving this because somebody entered this address on
+                      <a href="{{ .SiteURL }}" style="color:#c56a1b;">photowalksinpune</a>.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
