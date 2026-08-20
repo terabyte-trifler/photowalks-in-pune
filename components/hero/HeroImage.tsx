@@ -8,8 +8,14 @@ import { heroFrames } from '@/data/hero';
 /* ============================================================================
  * THE HERO PHOTOGRAPH, AND THE FOUR BEHIND IT
  * ----------------------------------------------------------------------------
- * Five frames, crossfading every four seconds. The fade is long — 1.6s against
- * a 4s hold — because a hard cut behind a masthead reads as a page reloading.
+ * Five frames, crossfading slowly. A hard cut behind a masthead reads as the
+ * page reloading, and even a brisk fade reads as a slideshow — something that
+ * wants watching. This is meant to be barely noticed: you look up and the
+ * photograph is a different one.
+ *
+ * The two numbers below are the whole of it. Everything else derives from
+ * them, so changing the pace means changing one line and not hunting for a
+ * duration that was written down twice.
  * Both frames are on screen through the whole fade, which is what stops the
  * background flashing between them.
  *
@@ -36,7 +42,10 @@ import { heroFrames } from '@/data/hero';
  * is not the one that has to wait for a download.
  * ========================================================================== */
 
-const HOLD_MS = 4000;
+/** How long a frame sits before the next begins to arrive. */
+const HOLD_MS = 8000;
+/** How long the two frames overlap. Long, so the change is a drift not a cut. */
+const FADE_MS = 2400;
 
 export function HeroImage() {
   const reduced = useReducedMotion();
@@ -69,14 +78,22 @@ export function HeroImage() {
           /* Enter and exit need different clocks, and sharing one leaks. The
              slow scale is the drift while a frame holds, so it runs longer than
              the hold itself — but AnimatePresence keeps an exiting element
-             mounted until its exit transition finishes. Giving the exit that
-             same 5.6s meant every frame outlived two changes and the DOM grew
-             by an image every four seconds. The exit carries its own, shorter
+             mounted until its exit transition finishes. Sharing that figure
+             with the exit meant every frame outlived two changes and the DOM
+             grew by an image on every tick. The exit carries its own, shorter
              transition; the fade is all it needs. */
-          exit={{ opacity: 0, transition: { duration: reduced ? 0 : 1.6, ease: 'linear' } }}
+          exit={{
+            opacity: 0,
+            transition: { duration: reduced ? 0 : FADE_MS / 1000, ease: 'linear' },
+          }}
           transition={{
-            opacity: { duration: reduced ? 0 : 1.6, ease: 'linear' },
-            scale: { duration: reduced ? 0 : HOLD_MS / 1000 + 1.6, ease: [0.16, 1, 0.3, 1] },
+            opacity: { duration: reduced ? 0 : FADE_MS / 1000, ease: 'linear' },
+            /* The drift runs the whole time a frame is on screen — its hold
+               plus both fades — so it never visibly stops and restart. */
+            scale: {
+              duration: reduced ? 0 : (HOLD_MS + FADE_MS) / 1000,
+              ease: [0.16, 1, 0.3, 1],
+            },
           }}
         >
           <Image
@@ -108,8 +125,8 @@ export function HeroImage() {
       )}
 
       {/* The credit travels with the frame. aria-live is deliberately off:
-          this changes on a timer, and announcing a photographer's name every
-          four seconds would be hostile to anybody listening to the page. */}
+          this changes on a timer, and announcing a photographer's name on a
+          loop would be hostile to anybody listening to the page. */}
       <div className="pointer-events-none absolute bottom-0 right-0 z-10 p-[clamp(1rem,3vw,2rem)]">
         <AnimatePresence mode="wait" initial={false}>
           <motion.p
@@ -117,7 +134,7 @@ export function HeroImage() {
             initial={reduced ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: reduced ? 0 : 0.6 }}
+            transition={{ duration: reduced ? 0 : FADE_MS / 2000 }}
             className="font-mono text-micro uppercase tracking-[0.18em] text-[rgba(245,241,234,0.6)]"
           >
             {frame.credit}
