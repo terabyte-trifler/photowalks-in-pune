@@ -20,6 +20,8 @@ import {
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import type { PhotographerCard } from '@/lib/supabase/types';
 import { joinedLabel } from '@/lib/utils';
+import { ShareProfile } from '@/components/photographers/ShareProfile';
+import { photoUrl } from '@/lib/directory';
 
 /* A profile changes when its owner edits it, and it shows who else was on a
    walk, so it is rendered per request. Nothing on it is behind a login. */
@@ -44,6 +46,24 @@ export async function generateMetadata({
     `Explore ${photographer.full_name}'s photography, walks and interests on ${site.displayName}.` +
       (styles.length ? ` Shoots ${styles.join(', ')}.` : '');
 
+  /* A shared profile should arrive showing the photography, not a grey box.
+     Their most recent frame first, their portrait if they have not posted one
+     yet, and the site's own image only if neither exists — the whole point of
+     sending somebody a photographer's profile is what they take pictures of. */
+  const latest = await listPhotos(photographer.id, { page: 1, pageSize: 1 });
+  /* The alt travels with the image, so it has to describe whichever one was
+     actually chosen — calling somebody's portrait "a photograph by" them is
+     wrong in the one place a screen reader is all there is to go on. */
+  const { preview, previewAlt } = latest.rows[0]
+    ? {
+        preview: photoUrl(latest.rows[0]),
+        previewAlt:
+          latest.rows[0].caption?.trim() || `A photograph by ${photographer.full_name}`,
+      }
+    : photographer.avatar_url
+      ? { preview: photographer.avatar_url, previewAlt: photographer.full_name }
+      : { preview: site.seo.ogImage, previewAlt: site.displayName };
+
   return {
     title: `${photographer.full_name} — ${site.displayName}`,
     description,
@@ -53,6 +73,15 @@ export async function generateMetadata({
       title: `${photographer.full_name} — ${site.displayName}`,
       description,
       url: `/photographers/${photographer.username}`,
+      images: [{ url: preview, alt: previewAlt }],
+    },
+    /* WhatsApp and most chat apps read the OG tags above; this is for the
+       card X and a few others render instead. */
+    twitter: {
+      card: 'summary_large_image',
+      title: `${photographer.full_name} — ${site.displayName}`,
+      description,
+      images: [preview],
     },
     /* Public profiles are meant to be found. */
     robots: { index: true, follow: true },
@@ -269,30 +298,32 @@ function ProfileHeader({
               <Stat text={joinedLabel(photographer.created_at)} label="Joined" />
             </dl>
 
-            {(instagram || website || isOwner) && (
-              <div className="mt-[clamp(1.5rem,3vw,2.25rem)] flex flex-wrap items-center gap-x-8 gap-y-4">
-                {isOwner && (
-                  <Link href="/settings" className="cta-solid">
-                    Edit profile <span aria-hidden="true">→</span>
-                  </Link>
-                )}
-                {instagram && (
-                  <a
-                    href={`https://instagram.com/${instagram}`}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="cta"
-                  >
-                    Instagram @{instagram} <span aria-hidden="true">↗</span>
-                  </a>
-                )}
-                {website && (
-                  <a href={website} target="_blank" rel="noreferrer noopener me" className="cta">
-                    {websiteLabel(website)} <span aria-hidden="true">↗</span>
-                  </a>
-                )}
-              </div>
-            )}
+            {/* No longer conditional: every profile can be shared, so this row
+                is always rendered even when somebody has added no links. */}
+            <div className="mt-[clamp(1.5rem,3vw,2.25rem)] flex flex-wrap items-center gap-x-8 gap-y-4">
+              {isOwner && (
+                <Link href="/settings" className="cta-solid">
+                  Edit profile <span aria-hidden="true">→</span>
+                </Link>
+              )}
+              {instagram && (
+                <a
+                  href={`https://instagram.com/${instagram}`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="cta"
+                >
+                  Instagram @{instagram} <span aria-hidden="true">↗</span>
+                </a>
+              )}
+              {website && (
+                <a href={website} target="_blank" rel="noreferrer noopener me" className="cta">
+                  {websiteLabel(website)} <span aria-hidden="true">↗</span>
+                </a>
+              )}
+
+              <ShareProfile fullName={photographer.full_name} />
+            </div>
           </div>
         </div>
       </div>
