@@ -74,7 +74,15 @@ export function HeroImage() {
   }, [reduced]);
 
   return (
-    <div className="absolute inset-0">
+    /* `isolation: isolate` is load-bearing. The frames need a z-index between
+       themselves so the one arriving sits above the one leaving — but this
+       container is positioned with z-index auto, which does NOT open a
+       stacking context, so those z-indexes competed in the hero's context
+       instead. The active photograph painted above the scrim and above the
+       headline: "Photowalks in Pune", the tagline and both buttons vanished
+       behind the picture. Isolating keeps the frames' ordering to themselves
+       and leaves this whole block underneath the type, where it belongs. */
+    <div className="absolute inset-0 isolate">
       {heroFrames.map((frame, i) => (
         <motion.div
           key={frame.src}
