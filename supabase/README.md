@@ -169,6 +169,52 @@ update public.profiles set bio = 'nope' where true;    -- 0 rows: no policy perm
 
 ---
 
+## When an account is deleted
+
+Deleting an account cascades its rows away, but nothing reaches into a bucket.
+Two things close that, in this order:
+
+**Immediately** — an `after delete` trigger on `auth.users` asks the
+`purge-user-storage` Edge Function to empty that member's folders. It fires
+however the account goes: the dashboard, the admin API, or the app. Measured
+at about two seconds from deletion to empty buckets.
+
+It cannot fail a deletion. `pg_net` queues the request and returns, so a slow
+or unreachable function cannot hold up or roll back the delete, and the
+trigger swallows its own errors on top of that. Losing the files is bad;
+refusing to delete somebody's account because a webhook misbehaved is worse.
+
+**Eventually** — the sweep below, which catches anything the call missed.
+
+### Setting it up on a new project
+
+```bash
+supabase functions deploy purge-user-storage --no-verify-jwt
+supabase secrets set PURGE_SECRET=$(openssl rand -base64 32)
+```
+
+Then, once, in the SQL editor — with the same secret:
+
+```sql
+select vault.create_secret(
+  'https://<project-ref>.supabase.co/functions/v1/purge-user-storage',
+  'purge_function_url', 'Endpoint the delete trigger calls');
+select vault.create_secret(
+  '<the same PURGE_SECRET>',
+  'purge_secret', 'Shared secret the function checks');
+```
+
+The vault keeps both encrypted at rest and out of every dump and backup, which
+a database setting would not. Neither is in version control, and neither is
+required — with them absent the trigger does nothing and the sweep is the only
+mechanism, which is what makes the migration safe on a fresh project.
+
+The function is deployed with `--no-verify-jwt` because its caller is a
+database trigger rather than a signed-in person; the shared secret is what
+stands in for that, and it refuses anything without it.
+
+---
+
 ## Reclaiming orphaned images
 
 Deleting an account cascades its `photos` rows away, but nothing reaches into
@@ -184,8 +230,9 @@ It reports by default and deletes nothing without `--apply`. It removes files
 under a uid whose account is gone, and files that no `photos` row or
 `profiles.avatar_url` points at — an upload that failed halfway, for instance.
 
-Worth running after deleting anybody from the dashboard, and occasionally
-otherwise. On a schedule it belongs in a cron job or a scheduled Edge
+Now mostly a safety net rather than the main mechanism — the trigger above
+handles deletions as they happen — but still worth running occasionally, and
+after anything unusual. On a schedule it belongs in a cron job or a scheduled Edge
 Function, not in the app.
 
 **Why this is not a database trigger.** The obvious fix is a trigger on
