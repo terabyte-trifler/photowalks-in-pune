@@ -298,9 +298,30 @@ variable now means "accounts are on", which says nothing about RSVPs. It stays
 **Newsletter.** Set `NEXT_PUBLIC_NEWSLETTER_ENDPOINT` to anything accepting
 `POST { email }`. The local fallback switches off by itself.
 
-**Instagram.** `lib/instagram.ts` has the route handler to copy in, with hourly
-revalidation. `InstagramSection` is already an async server component and does
-not change.
+**Instagram.** Set `INSTAGRAM_ACCESS_TOKEN` and the Instagram section becomes
+the account's six most recent posts, cached for an hour; without it the section
+shows local placeholders and says so on the page. The account must be a
+Business or Creator account — full steps are at the top of `lib/instagram.ts`.
+Tokens last 60 days; `refreshInstagramToken()` extends one by another 60.
+
+Two different things, deliberately:
+
+| | Source | Why |
+|---|---|---|
+| Instagram section | live, through the API | "what we posted lately" should be current |
+| The archive | the site's own copies | it must not break when a post is deleted or a CDN URL rotates |
+
+`scripts/import-instagram.mjs` fills the second from the first: it downloads
+the account's posts, resizes them for the archive, and prints ready-made
+entries for `data/photos.ts`.
+
+```bash
+INSTAGRAM_ACCESS_TOKEN=... node scripts/import-instagram.mjs --dry-run
+```
+
+It leaves `location`, `event` and `photographerId` as TODO rather than
+guessing them. Which walk a photograph came from and who made it are things
+only a person knows, and a wrong credit is worse than no credit.
 
 **Future routes.** `/walks`, `/walks/[slug]`, `/stories`, `/gallery`,
 `/community` can each lift a component out of `page.tsx` unchanged. `Event`
