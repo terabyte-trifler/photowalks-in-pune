@@ -10,6 +10,7 @@ import { longDate, priceLabel } from '@/lib/utils';
 import {
   findExistingRsvp,
   isBackendConfigured,
+  lastRsvpDetails,
   submitRsvp,
   validateRsvp,
   type RsvpErrors,
@@ -43,6 +44,9 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
   const [failure, setFailure] = useState('');
   const [persisted, setPersisted] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
+  /* True once a previous walk's details have been filled in, so the form can
+     say so rather than silently presenting somebody's old phone number. */
+  const [remembered, setRemembered] = useState(false);
 
   /* A fresh form each time a different walk is opened. */
   useEffect(() => {
@@ -84,6 +88,32 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
       instagram: current.instagram || profile?.instagram_username || '',
     }));
   }, [event, user, profile]);
+
+  /* The rest of it — the WhatsApp number and the experience level — is not on
+     the profile, it is on the last walk they joined. Somebody joining their
+     second walk was retyping a phone number the database already had.
+     Same rule as above: only empty fields, so a half-typed form is never
+     overwritten by an answer arriving late. */
+  useEffect(() => {
+    if (!event || !user) return;
+    let active = true;
+    void lastRsvpDetails(user.id).then((previous) => {
+      if (!active || !previous) return;
+      setValues((current) => {
+        if (current.whatsapp) return current;
+        setRemembered(true);
+        return {
+          ...current,
+          whatsapp: previous.whatsapp,
+          experience: previous.experience,
+          consent: current.consent || previous.consent,
+        };
+      });
+    });
+    return () => {
+      active = false;
+    };
+  }, [event, user]);
 
   if (!event) {
     return <Dialog open={false} onClose={onClose} label="RSVP"><div /></Dialog>;
@@ -267,6 +297,17 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
           </div>
 
           <form onSubmit={handleSubmit} noValidate>
+            {/* Said once, above the fields, rather than left for somebody to
+                notice their own phone number already sitting there. It is
+                also the cue that these are editable — a number that appears
+                by itself reads as fixed unless the page says otherwise. */}
+            {remembered && (
+              <p className="mb-6 border-l-2 border-border-strong bg-subtle py-3 pl-4 pr-3 text-body text-foreground-soft">
+                We have filled this in from the last walk you joined. Change
+                anything that has moved on.
+              </p>
+            )}
+
             <Field
               id="rsvp-name"
               label="Name"

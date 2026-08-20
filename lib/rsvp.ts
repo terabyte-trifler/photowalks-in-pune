@@ -80,6 +80,40 @@ export async function findExistingRsvp(profileId: string, eventId: string): Prom
   return Boolean(data);
 }
 
+/**
+ * The details this member gave the last time they joined a walk.
+ *
+ * The name, email and Instagram handle are on the profile and already fill
+ * themselves in. The WhatsApp number and the experience level are not — they
+ * live only on walk_rsvps rows — so somebody joining their second walk was
+ * retyping a phone number the database already had, every time.
+ *
+ * Ordered newest first, so if they have corrected a number since, the
+ * correction is what comes back. RLS scopes this to the caller's own rows;
+ * there is no way to read anybody else's from here.
+ */
+export async function lastRsvpDetails(profileId: string): Promise<
+  Pick<RsvpInput, 'whatsapp' | 'experience' | 'consent'> | null
+> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from('walk_rsvps')
+    .select('whatsapp, experience, consent')
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return {
+    whatsapp: data.whatsapp,
+    experience: data.experience as RsvpInput['experience'],
+    consent: data.consent,
+  };
+}
+
 export async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
   const supabase = getSupabaseBrowserClient();
 
