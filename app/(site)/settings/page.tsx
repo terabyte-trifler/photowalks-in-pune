@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { SectionHeader } from '@/components/ui/Typography';
 import { AuthNotice } from '@/components/auth/AuthNotice';
+import { DeleteAccount } from '@/components/auth/DeleteAccount';
 import { site } from '@/data/site';
 import { getCurrentProfile } from '@/lib/auth/session';
 import { SettingsForm } from './SettingsForm';
@@ -49,6 +50,7 @@ export default async function SettingsPage({
         {current.profile ? (
           <div className="mt-[clamp(2rem,4vw,3rem)]">
             <SettingsForm profile={current.profile} email={current.user.email ?? ''} />
+            <DeleteAccount username={current.profile.username} />
           </div>
         ) : (
           <div className="mt-[clamp(2rem,4vw,3rem)] border-l-2 border-accent bg-subtle py-5 pl-5 pr-4">

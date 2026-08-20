@@ -238,6 +238,24 @@ Profiles connect back to walks. A profile lists the walks it has been on, each
 linking to that walk's RSVP, and ends with everybody else who was on them —
 which is the edge that makes this a network rather than a list.
 
+### Leaving
+
+`/settings` ends with account deletion. It removes the auth user, which
+cascades the profile, the photographs and the walk RSVPs, and clears both
+storage folders — no soft delete, no hidden copy, nothing kept as a backup.
+
+It is the only irreversible action on the site, so it is the only one that
+asks you to type your username rather than press twice.
+
+The work happens in the `delete-account` Edge Function. Removing a row from
+`auth.users` needs the service-role key, and that key bypasses Row Level
+Security for the whole project — putting it in this app's environment would
+mean every server action runs beside a key that can read and write anything,
+to buy one feature. In the function it is injected by Supabase, scoped to one
+job. The function reads who is asking from their own JWT and takes no
+parameter for whose account to delete, so the only account anybody can remove
+is their own.
+
 ### Where this runs
 
 `vercel.json` pins functions to **bom1 (Mumbai)**, because the Supabase project
