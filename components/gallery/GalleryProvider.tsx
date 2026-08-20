@@ -13,11 +13,24 @@ interface GalleryContextValue {
   /** Selecting a subject filters the grid and returns you to it. */
   selectCategory: (category: PhotoCategory) => void;
   visible: Photo[];
+  /** How many of `visible` the grid is currently drawing. */
+  shown: number;
+  showMore: () => void;
   lightboxIndex: number | null;
   openLightbox: (index: number) => void;
   closeLightbox: () => void;
   step: (delta: number) => void;
 }
+
+/**
+ * Twelve, and twelve more each time. The placement pattern in PhotoGrid
+ * repeats every six frames, so a page that is a multiple of six ends on a
+ * complete cycle and the grid's rhythm survives being revealed in instalments.
+ *
+ * The archive was thirty-three photographs deep on first paint, which is a lot
+ * of page to scroll past on the way to anything else.
+ */
+const PAGE = 12;
 
 const GalleryContext = createContext<GalleryContextValue | null>(null);
 
@@ -28,6 +41,7 @@ const GalleryContext = createContext<GalleryContextValue | null>(null);
 export function GalleryProvider({ children }: { children: ReactNode }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [shown, setShown] = useState(PAGE);
 
   const visible = useMemo(
     () => (filter === 'all' ? photos : photos.filter((photo) => photo.category === filter)),
@@ -36,6 +50,9 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
 
   const selectCategory = useCallback((category: PhotoCategory) => {
     setFilter(category);
+    /* A new subject starts from the top of its own set rather than inheriting
+       however far somebody had loaded into the last one. */
+    setShown(PAGE);
     document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
@@ -52,16 +69,19 @@ export function GalleryProvider({ children }: { children: ReactNode }) {
       filter,
       setFilter: (next: Filter) => {
         setFilter(next);
+        setShown(PAGE);
         setLightboxIndex(null);
       },
       selectCategory,
       visible,
+      shown,
+      showMore: () => setShown((current) => current + PAGE),
       lightboxIndex,
       openLightbox: setLightboxIndex,
       closeLightbox: () => setLightboxIndex(null),
       step,
     }),
-    [filter, selectCategory, visible, lightboxIndex, step],
+    [filter, selectCategory, visible, shown, lightboxIndex, step],
   );
 
   return <GalleryContext.Provider value={value}>{children}</GalleryContext.Provider>;

@@ -33,8 +33,15 @@ const DIMENSIONS: Record<Photo['aspect'], { width: number; height: number }> = {
 };
 
 export function PhotoGrid() {
-  const { visible, openLightbox } = useGallery();
+  const { visible, shown, showMore, openLightbox } = useGallery();
   const reduced = useReducedMotion();
+
+  /* The lightbox still steps through the whole filtered set, not just what has
+     been revealed — once a photograph is open, stopping the arrow keys at an
+     invisible boundary would be the strange behaviour, not the useful one.
+     Slicing from the front keeps the indices identical either way. */
+  const drawn = visible.slice(0, shown);
+  const remaining = visible.length - drawn.length;
 
   if (visible.length === 0) {
     return (
@@ -46,9 +53,10 @@ export function PhotoGrid() {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-[clamp(0.75rem,2vw,2rem)] gap-y-[clamp(1rem,2.5vw,2.5rem)] md:grid-cols-6">
+    <>
+      <div className="grid grid-cols-2 gap-x-[clamp(0.75rem,2vw,2rem)] gap-y-[clamp(1rem,2.5vw,2.5rem)] md:grid-cols-6">
       <AnimatePresence mode="popLayout">
-        {visible.map((photo, index) => {
+        {drawn.map((photo, index) => {
           const credit = getPhotographerName(photo.photographerId);
           const dims = DIMENSIONS[photo.aspect];
 
@@ -92,6 +100,20 @@ export function PhotoGrid() {
           );
         })}
       </AnimatePresence>
-    </div>
+      </div>
+
+      {remaining > 0 && (
+        <div className="mt-[clamp(2.5rem,5vw,4rem)] flex items-center gap-6 border-t border-border pt-[clamp(1.5rem,3vw,2rem)]">
+          <button type="button" onClick={showMore} className="cta">
+            Show more <span aria-hidden="true">↓</span>
+          </button>
+          {/* The count is the useful half: it says how much further this goes
+              before somebody commits to scrolling. */}
+          <span className="meta">
+            {drawn.length} of {visible.length}
+          </span>
+        </div>
+      )}
+    </>
   );
 }
