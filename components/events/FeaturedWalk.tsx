@@ -1,20 +1,23 @@
 import Image from 'next/image';
 import { featuredWalk } from '@/data/events';
 import { longDate, priceLabel, spotsLabel, isNearlyFull, weekday } from '@/lib/utils';
+import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
 
 /** Server component. Everything above this exists to get someone here. */
-export function FeaturedWalk() {
+export async function FeaturedWalk() {
   const walk = featuredWalk;
-  const low = isNearlyFull(walk.spotsRemaining, walk.capacity);
+  /* Counted from real RSVPs, not typed into data/events.ts. */
+  const remaining = spotsRemaining(walk, await getSpotsTaken());
+  const low = isNearlyFull(remaining, walk.capacity);
 
   const facts: [string, string][] = [
     ['Date', `${weekday(walk.date)} · ${walk.time}`],
     ['Meeting', walk.location],
     ['Cost', `${priceLabel(walk.price)} · All cameras welcome`],
-    ['Spots', spotsLabel(walk.spotsRemaining, walk.capacity)],
+    ['Spots', spotsLabel(remaining, walk.capacity)],
   ];
 
   return (

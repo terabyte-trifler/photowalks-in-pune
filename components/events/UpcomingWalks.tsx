@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { upcomingWalks } from '@/data/events';
+import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import {
   dayNumber, isNearlyFull, longDate, monthShort, priceLabel, spotsLabel, weekday,
 } from '@/lib/utils';
@@ -12,7 +13,9 @@ import { SectionHeader } from '@/components/ui/Typography';
  * where hovering a row brings its photograph in from the right. Below 1024px
  * the row stacks and the photograph is dropped rather than shrunk.
  */
-export function UpcomingWalks() {
+export async function UpcomingWalks() {
+  const taken = await getSpotsTaken();
+
   return (
     <section id="walks" className="border-t border-border py-section" aria-labelledby="walks-title">
       <div className="shell">
@@ -30,8 +33,9 @@ export function UpcomingWalks() {
         <Reveal className="border-t border-foreground">
           <ul>
             {upcomingWalks.map((walk) => {
-              const full = walk.spotsRemaining <= 0;
-              const low = isNearlyFull(walk.spotsRemaining, walk.capacity);
+              const remaining = spotsRemaining(walk, taken);
+              const full = remaining <= 0;
+              const low = isNearlyFull(remaining, walk.capacity);
 
               return (
                 <li key={walk.id} className="group relative border-b border-border">
@@ -67,7 +71,7 @@ export function UpcomingWalks() {
                       {priceLabel(walk.price)}
                       <br />
                       <span className={low ? 'text-accent' : 'text-muted'}>
-                        {spotsLabel(walk.spotsRemaining, walk.capacity)}
+                        {spotsLabel(remaining, walk.capacity)}
                       </span>
                     </span>
 

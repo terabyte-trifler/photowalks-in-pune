@@ -2,7 +2,8 @@
  * WALKS
  * ----------------------------------------------------------------------------
  * Set the ISO `date` and every display string is derived (see lib/utils.ts).
- * `capacity` and `spotsRemaining` drive the "N spots left" warning.
+ * `capacity` is the ceiling; how many spots are left is counted from real
+ * RSVPs at render time by lib/walks.ts, never stored here.
  *
  * IMPORTANT — `verified`
  * Event structured data is only emitted for walks marked `verified: true`.
@@ -28,7 +29,6 @@ export interface Event {
   /** INR. 0 means free. */
   price: number;
   capacity: number;
-  spotsRemaining: number;
   status: WalkStatus;
   /** True only when the details are confirmed and publishable as schema.org. */
   verified: boolean;
@@ -45,7 +45,7 @@ export const featuredWalk: Event = {
   id: 'walk-next',
   slug: 'old-pune-new-eyes',
   title: 'Old Pune, New Eyes',
-  date: '2026-08-16',
+  date: '2026-08-23',
   time: '7:00 AM',
   location: 'Kasba Peth · Shaniwar Wada',
   area: 'Kasba',
@@ -57,7 +57,6 @@ export const featuredWalk: Event = {
     'Placeholder for a photograph of the old city near Shaniwar Wada, Pune, at first light',
   price: 0,
   capacity: 30,
-  spotsRemaining: 11,
   status: 'filling',
   verified: false,
 };
@@ -78,7 +77,6 @@ export const upcomingWalks: Event[] = [
     imageAlt: 'Placeholder for a photograph of Deccan, Pune, after monsoon rain',
     price: 0,
     capacity: 25,
-    spotsRemaining: 19,
     status: 'open',
     verified: false,
   },
@@ -96,7 +94,6 @@ export const upcomingWalks: Event[] = [
     imageAlt: 'Placeholder for a photograph inside Mahatma Phule Mandai, Pune',
     price: 0,
     capacity: 20,
-    spotsRemaining: 4,
     status: 'filling',
     verified: false,
   },
@@ -114,7 +111,6 @@ export const upcomingWalks: Event[] = [
     imageAlt: 'Placeholder for a photograph of the Mula-Mutha river in Pune at dusk',
     price: 0,
     capacity: 25,
-    spotsRemaining: 25,
     status: 'open',
     verified: false,
   },

@@ -106,8 +106,10 @@ story, categories, community, Instagram, footer — is server-rendered.
 | Images | `public/images/` — see the README in that folder |
 
 Set the ISO `date` on a walk and every display string is derived
-(`lib/utils.ts`). `capacity` and `spotsRemaining` drive the "N spots left"
-warning in orange.
+(`lib/utils.ts`). `capacity` is the ceiling you set; how many spots are left is
+not stored anywhere — `lib/walks.ts` counts the real RSVPs at render time, so
+the "N spots left" warning turns orange because a walk is genuinely filling up
+rather than because somebody typed a small number.
 
 ---
 
