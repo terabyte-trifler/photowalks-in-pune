@@ -111,7 +111,9 @@ export default async function PhotographerPage({
             </div>
 
             {work.rows.length > 0 ? (
-              <WorkGrid photos={work.rows} />
+              /* Your own frames carry a ✕ here too, so a photograph can be
+                 pulled without first going to the archive page. */
+              <WorkGrid photos={work.rows} editable={isOwner} />
             ) : (
               <Empty
                 title="No photographs yet"

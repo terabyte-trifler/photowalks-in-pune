@@ -73,7 +73,7 @@ export default async function PhotographerPhotosPage({
 
         <div className="mt-[clamp(2rem,4vw,3rem)]">
           {work.rows.length > 0 ? (
-            <WorkGrid photos={work.rows} priorityCount={4} />
+            <WorkGrid photos={work.rows} priorityCount={4} editable={isOwner} />
           ) : (
             <div className="border-l-2 border-border-strong bg-subtle py-5 pl-5 pr-4">
               <p className="meta">No photographs yet</p>
