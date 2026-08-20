@@ -44,13 +44,17 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
   const [failure, setFailure] = useState('');
   const [persisted, setPersisted] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
-  /* True once a previous walk's details have been filled in, so the form can
-     say so rather than silently presenting somebody's old phone number. */
+  /* Set once a previous walk's details have been found. A member who has
+     already given them does not see the form at all — see the note by
+     `showForm` below. */
   const [remembered, setRemembered] = useState(false);
+  /* Escape hatch: pressing "Use different details" opens the form anyway. */
+  const [editing, setEditing] = useState(false);
 
   /* A fresh form each time a different walk is opened. */
   useEffect(() => {
     if (event) {
+      setEditing(false);
       setValues(EMPTY);
       setErrors({});
       setStatus('editing');
@@ -192,13 +196,37 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
     if (key in errors) setErrors((current) => ({ ...current, [key]: undefined }));
   };
 
-  async function handleSubmit(formEvent: React.FormEvent) {
-    formEvent.preventDefault();
+  /* ------------------------------------------------------------------ *
+   * Somebody who has joined a walk before has already told us everything
+   * this form asks for. Making them read it again — and re-consent, and
+   * press into a field they have no reason to change — is asking them to
+   * prove something we already know.
+   *
+   * So they do not get the form. They get their details shown back to
+   * them and one button. The form is still one press away for anybody
+   * whose number or level has changed, which is the only reason to open
+   * it, and `remembered` is what decides between the two.
+   * ------------------------------------------------------------------ */
+  const showForm = !remembered || editing;
+
+  /**
+   * The one submission path, used by the form and by the one-press button
+   * alike. Keeping them on the same function is what stops the quick route
+   * quietly drifting from the careful one — a second copy of this is where a
+   * missing consent flag or an untrimmed number would eventually come from.
+   */
+  async function confirmSpot() {
     if (status === 'submitting' || !event) return;
 
+    /* Validated even on the one-press route. The values came from a previous
+       row rather than a keyboard, but "it was fine last time" is an assumption
+       and this is the last point at which it can be checked. If something is
+       wrong, the form opens on the offending field rather than failing at the
+       database. */
     const found = validateRsvp(values);
     if (Object.keys(found).length > 0) {
       setErrors(found);
+      setEditing(true);
       return;
     }
 
@@ -227,6 +255,11 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
     setPersisted(result.persisted);
     setAlreadyJoined(Boolean(result.alreadyJoined));
     setStatus('confirmed');
+  }
+
+  function handleSubmit(formEvent: React.FormEvent) {
+    formEvent.preventDefault();
+    void confirmSpot();
   }
 
   return (
@@ -296,15 +329,51 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
             <DialogClose onClose={onClose} />
           </div>
 
+          {!showForm ? (
+            <div>
+              <p className="text-body text-foreground-soft">
+                You have walked with us before, so there is nothing to fill in.
+                We will use the details you gave last time.
+              </p>
+
+              {/* Shown, not assumed. A one-press confirmation that does not say
+                  which number it is about to use is asking for blind trust. */}
+              <dl className="mt-6 grid gap-x-6 gap-y-3 border-t border-border pt-5 sm:grid-cols-[8rem_minmax(0,1fr)]">
+                <dt className="meta">Name</dt>
+                <dd className="text-body text-foreground">{values.name || '—'}</dd>
+                <dt className="meta">WhatsApp</dt>
+                <dd className="text-body text-foreground">{values.whatsapp || '—'}</dd>
+                <dt className="meta">Experience</dt>
+                <dd className="text-body text-foreground">{values.experience}</dd>
+              </dl>
+
+              {failure && (
+                <p role="alert" className="mt-6 border-l-2 border-accent bg-subtle py-3 pl-4 font-mono text-micro uppercase text-foreground-soft">
+                  {failure}
+                </p>
+              )}
+
+              <div className="mt-[clamp(2rem,4vw,2.5rem)] flex flex-wrap items-center gap-x-8 gap-y-4">
+                <button
+                  type="button"
+                  disabled={status === 'submitting'}
+                  aria-busy={status === 'submitting'}
+                  onClick={() => void confirmSpot()}
+                  className="cta-solid justify-between disabled:opacity-60"
+                >
+                  {status === 'submitting' ? 'Holding your spot' : 'Confirm my spot'}{' '}
+                  <span aria-hidden="true">→</span>
+                </button>
+                <button type="button" onClick={() => setEditing(true)} className="cta">
+                  Use different details
+                </button>
+              </div>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} noValidate>
-            {/* Said once, above the fields, rather than left for somebody to
-                notice their own phone number already sitting there. It is
-                also the cue that these are editable — a number that appears
-                by itself reads as fixed unless the page says otherwise. */}
             {remembered && (
               <p className="mb-6 border-l-2 border-border-strong bg-subtle py-3 pl-4 pr-3 text-body text-foreground-soft">
-                We have filled this in from the last walk you joined. Change
-                anything that has moved on.
+                Change anything that has moved on since your last walk.
               </p>
             )}
 
@@ -395,6 +464,7 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
                 : 'Preview build — submissions are not stored on a server yet.'}
             </p>
           </form>
+          )}
         </>
       )}
     </Dialog>
