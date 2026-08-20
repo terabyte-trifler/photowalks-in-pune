@@ -44,6 +44,12 @@ export interface SiteLinks {
   emailAddress: string;
 }
 
+/** Who made the site, credited once in the footer. */
+export interface SiteCredit {
+  name: string;
+  url: string;
+}
+
 export interface SiteConfig {
   name: string;
   displayName: string;
@@ -55,6 +61,7 @@ export interface SiteConfig {
   /** Drop the existing circular logo at /public/images/logo/ and set this. */
   logo: string | null;
   links: SiteLinks;
+  builtBy: SiteCredit;
   seo: {
     title: string;
     description: string;
@@ -81,6 +88,11 @@ export const site: SiteConfig = {
     whatsapp: 'https://chat.whatsapp.com/REPLACE_WITH_YOUR_INVITE_CODE',
     email: 'mailto:hello@photowalksinpune.com',
     emailAddress: 'hello@photowalksinpune.com',
+  },
+
+  builtBy: {
+    name: 'Fennr Studio',
+    url: 'https://fennrstudio.com',
   },
 
   seo: {
