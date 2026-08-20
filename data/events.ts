@@ -41,20 +41,25 @@ export interface Event {
   hostUsername?: string;
 }
 
+/*
+ * The id stays `walk-next` through any change of place or name. Five people
+ * have already joined this one, and walk_rsvps rows point at the id — renaming
+ * it would strand their spots.
+ */
 export const featuredWalk: Event = {
   id: 'walk-next',
-  slug: 'old-pune-new-eyes',
-  title: 'Old Pune, New Eyes',
+  slug: 'camp-colonial-lines',
+  title: 'Camp / Colonial Lines',
   date: '2026-08-23',
   time: '7:00 AM',
-  location: 'Kasba Peth · Shaniwar Wada',
-  area: 'Kasba',
+  location: 'Camp · MG Road',
+  area: 'Camp',
   description:
-    'We meet early, walk slowly and photograph the old city before it wakes up.',
+    'Arcades, bakeries and old shopfronts, photographed before Camp opens for the day.',
   theme: 'Heritage · morning light',
-  image: '/images/walks/old-pune.jpg',
+  image: '/images/walks/camp.jpg',
   imageAlt:
-    'An old Pune shopfront with its shutter down, Marathi signage above and a man walking past the railings',
+    'A wide tree-lined street in black and white, a church spire in the distance and motorbikes coming towards the camera',
   price: 0,
   capacity: 30,
   status: 'filling',
@@ -65,16 +70,18 @@ export const upcomingWalks: Event[] = [
   featuredWalk,
   {
     id: 'walk-02',
-    slug: 'monsoon-city-after-rain',
-    title: 'Monsoon / City After Rain',
+    slug: 'balewadi-high-street',
+    title: 'Balewadi / The New City',
     date: '2026-08-24',
     time: '4:30 PM',
-    location: 'Deccan · FC Road',
-    area: 'Deccan',
-    description: 'Wet tar, umbrellas, reflected neon. Bring a cloth for your lens.',
-    theme: 'Monsoon',
-    image: '/images/walks/monsoon.jpg',
-    imageAlt: 'Curry leaves holding beads of rain after a monsoon shower',
+    location: 'Balewadi High Street',
+    area: 'Balewadi',
+    description:
+      'Glass, signage and evening light — the Pune that was built this decade.',
+    theme: 'Contemporary · evening',
+    image: '/images/walks/balewadi.jpg',
+    imageAlt:
+      'A busy street at dusk, scooters and people moving between lit shopfronts',
     price: 0,
     capacity: 25,
     status: 'open',
