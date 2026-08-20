@@ -1,27 +1,33 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { Avatar } from '@/components/navigation/Avatar';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { updateAvatar } from '@/app/(site)/settings/actions';
 import {
   ACCEPT_ATTRIBUTE,
   checkFile,
   pathFromPublicUrl,
   publicUrlFor,
-  removeImage,
+  removeImageSurely,
   uploadImage,
 } from '@/lib/uploads';
 
-type State = 'idle' | 'uploading' | 'done';
+type State = 'idle' | 'working';
 
 /**
- * The profile photograph. Uploads straight to Supabase Storage under the
- * member's own uid folder, then hands the resulting URL to the settings form
- * through a hidden input, so the picture and the rest of the profile are saved
- * by the same server action rather than by two competing writes.
+ * The profile photograph, which saves itself.
  *
- * The old file is deleted after the new one lands — never before, so a failed
- * upload cannot leave somebody with no picture at all.
+ * It used to hand its URL to the profile form through a hidden field, so
+ * "Replace" and "Remove" did nothing until somebody also pressed Save — and if
+ * they never did, the file had already been deleted from storage while the
+ * profile still pointed at it, leaving a permanently broken avatar. Buttons
+ * labelled Replace and Remove have to actually replace and remove.
+ *
+ * So each action writes the profile row through `updateAvatar` and only then
+ * tidies up the file it replaced. That order is the whole point: if the write
+ * fails, the old photograph is still there and still referenced.
  */
 export function AvatarUpload({
   initialUrl,
@@ -30,12 +36,14 @@ export function AvatarUpload({
   initialUrl: string | null;
   fullName: string;
 }) {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [url, setUrl] = useState(initialUrl);
   const [preview, setPreview] = useState<string | null>(null);
   const [state, setState] = useState<State>('idle');
+  const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
   async function handleFile(file: File | undefined) {
@@ -48,36 +56,83 @@ export function AvatarUpload({
     }
 
     setError('');
+    setNote('');
     setPreview(URL.createObjectURL(file));
-    setState('uploading');
+    setState('working');
 
-    const result = await uploadImage(file, 'avatar', user.id);
-    if (!result.ok || !result.path) {
-      setError(result.error ?? 'That did not upload.');
+    const uploaded = await uploadImage(file, 'avatar', user.id);
+    if (!uploaded.ok || !uploaded.path) {
+      setError(uploaded.error ?? 'That did not upload.');
+      setPreview(null);
+      setState('idle');
+      return;
+    }
+
+    const nextUrl = publicUrlFor('avatars', uploaded.path);
+    const saved = await updateAvatar(nextUrl);
+
+    if (!saved.ok) {
+      /* The row still points at the old photograph, so take the new file back
+         out rather than leaving it behind unreferenced. */
+      await removeImageSurely('avatar', uploaded.path);
+      setError(saved.error ?? 'That did not save.');
       setPreview(null);
       setState('idle');
       return;
     }
 
     const previousPath = pathFromPublicUrl(url, 'avatars');
-    setUrl(publicUrlFor('avatars', result.path));
+    setUrl(nextUrl);
     setPreview(null);
-    setState('done');
 
-    /* Tidy up the file it replaced. Failing here is harmless. */
-    if (previousPath) void removeImage('avatar', previousPath);
+    /* Only now is the old file safe to delete: nothing points at it. Awaited,
+       because a replaced photograph should not linger in the bucket. */
+    if (previousPath) {
+      const gone = await removeImageSurely('avatar', previousPath);
+      if (!gone) setNote('Saved — the old file could not be deleted');
+      else setNote('Saved');
+    } else {
+      setNote('Saved');
+    }
+
+    setState('idle');
+    void refreshProfile();
+    router.refresh();
   }
 
   async function handleRemove() {
+    if (!url) return;
+
+    setError('');
+    setNote('');
+    setState('working');
+
+    const saved = await updateAvatar(null);
+    if (!saved.ok) {
+      setError(saved.error ?? 'That did not save.');
+      setState('idle');
+      return;
+    }
+
     const path = pathFromPublicUrl(url, 'avatars');
     setUrl(null);
     setPreview(null);
-    setError('');
+
+    /* Removing the photograph has to take the file with it. */
+    if (path) {
+      const gone = await removeImageSurely('avatar', path);
+      setNote(gone ? 'Removed' : 'Removed — the file could not be deleted');
+    } else {
+      setNote('Removed');
+    }
+
     setState('idle');
-    if (path) void removeImage('avatar', path);
+    void refreshProfile();
+    router.refresh();
   }
 
   const shown = preview ?? url;
+  const busy = state === 'working';
 
   return (
     <div className="mb-8 border-b border-border pb-8">
@@ -86,7 +141,7 @@ export function AvatarUpload({
       <div className="mt-1 flex flex-wrap items-center gap-5">
         <span className="relative">
           <Avatar src={shown} name={fullName} size={84} />
-          {state === 'uploading' && (
+          {busy && (
             <span
               className="absolute inset-0 grid place-items-center rounded-full bg-[rgba(14,12,10,0.55)] font-mono text-micro uppercase text-[#F5F1EA]"
               role="status"
@@ -100,13 +155,13 @@ export function AvatarUpload({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={state === 'uploading'}
+            disabled={busy}
             className="font-mono text-micro uppercase text-foreground underline underline-offset-4 transition-colors hover:text-accent disabled:opacity-60"
           >
-            {state === 'uploading' ? 'Uploading' : url ? 'Replace' : 'Upload a photograph'}
+            {busy ? 'Saving' : url ? 'Change photograph' : 'Upload a photograph'}
           </button>
 
-          {url && state !== 'uploading' && (
+          {url && !busy && (
             <button
               type="button"
               onClick={handleRemove}
@@ -117,7 +172,7 @@ export function AvatarUpload({
           )}
 
           <span className="meta normal-case tracking-[0.06em]">
-            JPEG, PNG, WebP or AVIF · compressed for you
+            JPEG, PNG, WebP or AVIF · compressed for you · saved straight away
           </span>
         </div>
       </div>
@@ -125,6 +180,11 @@ export function AvatarUpload({
       {error && (
         <p role="alert" className="mt-3 font-mono text-micro uppercase text-accent">
           {error}
+        </p>
+      )}
+      {note && !error && (
+        <p role="status" className="mt-3 font-mono text-micro uppercase text-muted">
+          {note}
         </p>
       )}
 
@@ -139,9 +199,6 @@ export function AvatarUpload({
           event.target.value = '';
         }}
       />
-
-      {/* What the server action actually reads. */}
-      <input type="hidden" name="avatar_url" value={url ?? ''} />
     </div>
   );
 }

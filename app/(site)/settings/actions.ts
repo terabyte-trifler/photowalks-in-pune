@@ -64,18 +64,6 @@ export async function saveProfile(
   const website = normaliseWebsite(String(formData.get('website_url') ?? ''));
   const interests = sanitiseInterests(formData.getAll('photography_interests'));
 
-  /* The avatar is uploaded straight to Storage by the browser; what arrives
-     here is the resulting public URL. Accept only a URL inside this project's
-     own storage, so this field cannot be used to point a profile picture at
-     an arbitrary host. */
-  const avatarRaw = String(formData.get('avatar_url') ?? '').trim();
-  const avatarAllowedPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/avatars/`;
-  const avatar =
-    avatarRaw && avatarAllowedPrefix.length > '/storage/v1/object/public/avatars/'.length
-      ? avatarRaw.startsWith(avatarAllowedPrefix)
-        ? avatarRaw
-        : null
-      : null;
 
   const errors: SaveProfileState['errors'] = {};
   const fullNameError = validateFullName(fullName);
@@ -105,7 +93,6 @@ export async function saveProfile(
       bio: bio || null,
       instagram_username: instagram || null,
       website_url: website || null,
-      avatar_url: avatar,
       photography_interests: interests.length > 0 ? interests : null,
     })
     .eq('id', user.id);
@@ -128,4 +115,54 @@ export async function saveProfile(
   revalidatePath('/settings');
 
   return { status: 'saved', username, message: 'Your profile has been saved.' };
+}
+
+/* ============================================================================
+ * THE PROFILE PHOTOGRAPH
+ * ----------------------------------------------------------------------------
+ * Its own action, separate from the form above, because the buttons beside it
+ * say "Replace" and "Remove" and those words are a promise. Folding it into
+ * the form meant pressing Remove and then having the photograph reappear on
+ * reload because nobody pressed Save — and, worse, the file was already gone
+ * from storage by then, so the profile pointed at something deleted.
+ *
+ * Order matters here: the row is updated first, and only then is the old file
+ * removed. Doing it the other way round is what produced the broken avatar.
+ * ========================================================================== */
+export async function updateAvatar(url: string | null): Promise<{ ok: boolean; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: 'Your session has expired. Log in again.' };
+
+  const supabase = await getSupabaseServerClient();
+  if (!supabase) return { ok: false, error: 'Accounts are not connected on this build.' };
+
+  /* Only a URL inside this project's own avatars bucket. Without this the
+     field would happily point a profile picture at any host on the internet. */
+  let value: string | null = null;
+  if (url) {
+    const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/avatars/`;
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !url.startsWith(prefix)) {
+      return { ok: false, error: 'That image is not one of ours.' };
+    }
+    value = url;
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ avatar_url: value })
+    .eq('id', user.id);
+
+  if (error) return { ok: false, error: authErrorMessage(error, 'profile') };
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (profile?.username) revalidatePath(`/photographers/${profile.username}`);
+  revalidatePath('/photographers');
+  revalidatePath('/settings');
+
+  return { ok: true };
 }

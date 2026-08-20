@@ -9,7 +9,7 @@ import {
   ACCEPT_ATTRIBUTE,
   checkFile,
   photoInsertError,
-  removeImage,
+  removeImageSurely,
   uploadImage,
 } from '@/lib/uploads';
 import type { PhotoRecord } from '@/lib/supabase/types';
@@ -30,6 +30,7 @@ export function PhotoManager({
   total,
 }: {
   profileId: string;
+  /** Only used to know whether anything is there to remove. */
   photos: PhotoRecord[];
   /** Everything they hold, not just this page — the limit counts all of it. */
   total: number;
@@ -96,8 +97,9 @@ export function PhotoManager({
       });
 
       if (insertError) {
-        /* Do not leave an orphan file in the bucket. */
-        void removeImage('photo', uploaded.path);
+        /* Do not leave an orphan file in the bucket. Awaited, so the rollback
+           is as certain as the upload was. */
+        await removeImageSurely('photo', uploaded.path);
         setError(photoInsertError(insertError.message));
         break;
       }
@@ -107,22 +109,6 @@ export function PhotoManager({
 
     setBusy(false);
     setProgress({ done: 0, total: 0 });
-    router.refresh();
-  }
-
-  async function handleDelete(photo: PhotoRecord) {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-
-    setBusy(true);
-    const { error: deleteError } = await supabase.from('photos').delete().eq('id', photo.id);
-    if (deleteError) {
-      setError('We could not remove that.');
-      setBusy(false);
-      return;
-    }
-    void removeImage('photo', photo.storage_path);
-    setBusy(false);
     router.refresh();
   }
 
@@ -154,7 +140,9 @@ export function PhotoManager({
         </button>
 
         {photos.length > 0 && (
-          <PhotoRemover photos={photos} onDelete={handleDelete} disabled={busy} />
+          <span className="meta normal-case tracking-[0.06em]">
+            To remove one, hover it below and press ✕
+          </span>
         )}
       </div>
 
@@ -175,85 +163,6 @@ export function PhotoManager({
           event.target.value = '';
         }}
       />
-    </div>
-  );
-}
-
-/** Removing a frame is two presses, like giving up a walk. */
-function PhotoRemover({
-  photos,
-  onDelete,
-  disabled,
-}: {
-  photos: PhotoRecord[];
-  onDelete: (photo: PhotoRecord) => void;
-  disabled: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [confirming, setConfirming] = useState<string | null>(null);
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        disabled={disabled}
-        className="font-mono text-micro uppercase text-muted transition-colors hover:text-accent disabled:opacity-60"
-      >
-        Remove photographs
-      </button>
-    );
-  }
-
-  return (
-    <div className="w-full">
-      <div className="flex items-baseline justify-between gap-4">
-        <p className="meta">Remove which?</p>
-        <button
-          type="button"
-          onClick={() => { setOpen(false); setConfirming(null); }}
-          className="font-mono text-micro uppercase text-muted transition-colors hover:text-foreground"
-        >
-          Done
-        </button>
-      </div>
-
-      <ul className="mt-3 border-t border-border">
-        {photos.map((photo) => (
-          <li key={photo.id} className="flex items-center justify-between gap-4 border-b border-border py-2.5">
-            <span className="min-w-0 truncate font-mono text-micro uppercase text-foreground-soft">
-              {photo.caption || photo.location || photo.storage_path.split('/').pop()}
-            </span>
-            {confirming === photo.id ? (
-              <span className="flex flex-none items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => onDelete(photo)}
-                  disabled={disabled}
-                  className="font-mono text-micro uppercase text-accent disabled:opacity-60"
-                >
-                  Remove it
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirming(null)}
-                  className="font-mono text-micro uppercase text-muted hover:text-foreground"
-                >
-                  Keep
-                </button>
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirming(photo.id)}
-                className="flex-none font-mono text-micro uppercase text-muted transition-colors hover:text-accent"
-              >
-                Remove
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

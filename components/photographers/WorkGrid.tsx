@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { PhotoDeleteButton } from '@/components/photographers/PhotoDeleteButton';
 import { photoUrl } from '@/lib/directory';
 import { cn } from '@/lib/utils';
 import type { PhotoRecord } from '@/lib/supabase/types';
@@ -34,11 +35,14 @@ export function WorkGrid({
   photos,
   priorityCount = 2,
   className,
+  editable = false,
 }: {
   photos: PhotoRecord[];
   /** How many load eagerly. The rest wait until they are scrolled towards. */
   priorityCount?: number;
   className?: string;
+  /** Owner's own archive: each frame gets a ✕ on hover. Never for visitors. */
+  editable?: boolean;
 }) {
   return (
     <div
@@ -48,8 +52,9 @@ export function WorkGrid({
       )}
     >
       {photos.map((photo, index) => (
-        <figure key={photo.id} className={PLACEMENT[index % PLACEMENT.length]}>
+        <figure key={photo.id} className={cn('group/frame', PLACEMENT[index % PLACEMENT.length])}>
           <div className={cn('relative overflow-hidden bg-subtle', aspectFor(photo))}>
+            {editable && <PhotoDeleteButton photo={photo} />}
             <Image
               src={photoUrl(photo)}
               alt={photo.caption ?? photo.location ?? 'Photograph'}
