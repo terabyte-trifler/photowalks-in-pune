@@ -49,11 +49,19 @@ export function PhotoDeleteButton({ photo }: { photo: PhotoRecord }) {
       return;
     }
 
-    const { error: deleteError } = await supabase.from('photos').delete().eq('id', photo.id);
-    if (deleteError) {
-      /* The file is gone but the row survived — visible as a broken frame, and
-         the next save or the storage sweep tidies it. Better than the silent
-         alternative. */
+    /* And now the row, with the same insistence. A row left pointing at a file
+       that is already gone renders as a broken frame on a public profile, so
+       "deleted" has to mean both halves — not one and a good intention. */
+    let rowGone = false;
+    for (let attempt = 0; attempt < 3 && !rowGone; attempt += 1) {
+      const { error: deleteError } = await supabase.from('photos').delete().eq('id', photo.id);
+      rowGone = !deleteError;
+      if (!rowGone && attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+      }
+    }
+
+    if (!rowGone) {
       setError('Could not remove');
       setBusy(false);
       setConfirming(false);
