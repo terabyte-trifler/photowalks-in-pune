@@ -4,65 +4,11 @@ import type { NextConfig } from 'next';
 /* ============================================================================
  * SECURITY HEADERS
  * ----------------------------------------------------------------------------
- * The audit found the site sending none of these. Vercel adds HSTS and nothing
- * else, so the page could be framed by any site on the internet — a login form
- * and a "Delete my account" button are exactly what clickjacking is for.
- *
- * ABOUT script-src AND 'unsafe-inline'
- * The honest answer is that this CSP does not stop inline script, and it is
- * worth saying why rather than quietly shipping a header that looks stronger
- * than it is. Next's App Router hydrates through inline <script> tags carrying
- * the flight payload. Locking those down needs a per-request nonce, a nonce
- * has to be generated in middleware, and reading it forces every page to
- * render dynamically — which would throw away the static prerendering and ISR
- * this site depends on to stay fast from Mumbai.
- *
- * So the trade is deliberate: keep the app fast and static, and spend the CSP
- * where it still pays. The directives below are the ones that hold even with
- * inline script allowed —
- *
- *   connect-src     an injected script cannot post stolen data anywhere but
- *                   this origin and Supabase, which is the step that turns an
- *                   XSS into an actual breach
- *   frame-ancestors clickjacking, closed outright
- *   base-uri        stops a <base> tag repointing every relative URL
- *   form-action     stops a form being redirected to collect credentials
- *   object-src      no plugins, ever
- *
- * React's own escaping is what stops the injection in the first place, and the
- * audit found no dangerouslySetInnerHTML carrying user data.
+ * Everything except the Content Security Policy, which is assembled in
+ * middleware instead: it needs a per-request nonce on the pages that are
+ * rendered per request, and a config file cannot mint one. See lib/security/csp.ts.
  * ========================================================================== */
-const csp = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "form-action 'self'",
-  /* Supabase storage, Google OAuth avatars, and Instagram's CDNs — the same
-     hosts next/image is configured for above. blob: and data: are the
-     browser-side downscaler, which previews a canvas before upload. */
-  "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com https://*.cdninstagram.com https://*.fbcdn.net",
-  "script-src 'self' 'unsafe-inline'",
-  /* Tailwind ships a stylesheet; framer-motion animates through inline style
-     attributes, which style-src governs. */
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self' data:",
-  /* The only place the app may talk to. wss: is Supabase realtime. */
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
-  "media-src 'self'",
-  "worker-src 'self' blob:",
-  "manifest-src 'self'",
-  "frame-src 'none'",
-  /* Production only. On http://localhost this directive rewrites Next's own
-     prefetches to https, which fails the TLS handshake and breaks client-side
-     navigation — caught by a control run that removed it and watched the
-     errors disappear. Production is https end to end, so it costs nothing to
-     leave out locally and would cost a working dev server to leave in. */
-  ...(process.env.NODE_ENV === 'production' ? ['upgrade-insecure-requests'] : []),
-].join('; ');
-
 const securityHeaders = [
-  { key: 'Content-Security-Policy', value: csp },
   /* Vercel already sends HSTS; stated here so the guarantee survives a move. */
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
