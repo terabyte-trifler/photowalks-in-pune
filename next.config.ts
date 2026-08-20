@@ -67,6 +67,21 @@ const nextConfig: NextConfig = {
     ],
     /* next/image refuses a quality it has not been told about from v16. */
     qualities: [70, 72, 74, 80],
+
+    /* Next's default top widths are 2048 and 3840. Members upload through the
+       browser-side downscaler, which caps the long edge at 2000px — so a
+       request for 3840 returns exactly what 2048 returns, byte for byte:
+       measured at 91,666 bytes for both on the same photograph. Next does not
+       upscale, and there is nothing above 2000px to serve.
+       
+       Keeping 3840 therefore bought a second cache entry and a second fetch of
+       the source from Supabase for an identical image. Retina screens ask for
+       those top widths, so it was a real share of the per-photo egress spent
+       on a duplicate.
+       
+       Capped at 2048, which still exceeds every source on the project. Nothing
+       is served smaller than before — the pixels at 2048 are unchanged. */
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
   },
 };
 
