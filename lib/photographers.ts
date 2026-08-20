@@ -15,6 +15,7 @@ import { unstable_cache } from 'next/cache';
 import { photographyStyles } from '@/data/photography';
 import {
   CARD_PHOTO_COUNT,
+  FOUNDER_USERNAME,
   DIRECTORY_PAGE_SIZE,
   PHOTOS_PAGE_SIZE,
   type DirectorySort,
@@ -70,11 +71,43 @@ export async function listPhotographers(query: DirectoryQuery): Promise<Director
   const supabase = getSupabasePublicClient();
   if (!supabase) return empty;
 
+  const q = forFilter(query.q ?? '');
+
+  /* ------------------------------------------------------------------ *
+   * The founder is pinned to the front and is not subject to the style,
+   * city or sort controls — see FOUNDER_USERNAME in lib/directory.ts.
+   *
+   * Fetched separately and excluded from the query below rather than
+   * sorted to the top, because a filtered query cannot return somebody
+   * the filter excludes, and "first" has to mean first on page one and
+   * nowhere else.
+   *
+   * The search box is deliberately still honoured. Typing a name is a
+   * lookup, not a filter, and answering it with somebody you did not ask
+   * for would be the strange behaviour.
+   * ------------------------------------------------------------------ */
+  const pinFounder = page === 1 && !q;
+
+  let founder: PhotographerCard | null = null;
+  if (pinFounder) {
+    const { data: founderRow } = await supabase
+      .from('photographer_cards')
+      .select(PHOTOGRAPHER_CARD_COLUMNS)
+      .eq('username', FOUNDER_USERNAME)
+      .maybeSingle();
+    founder = (founderRow as PhotographerCard | null) ?? null;
+  }
+
   let builder = supabase
     .from('photographer_cards')
-    .select('*', { count: 'exact' });
+    /* This one kept `select('*')` when the others were given explicit
+       columns — the count argument gave it a different shape and it was
+       missed. Named now, like the rest. */
+    .select(PHOTOGRAPHER_CARD_COLUMNS, { count: 'exact' });
 
-  const q = forFilter(query.q ?? '');
+  /* Left out of the page so the pinned copy is not also a duplicate. */
+  if (founder) builder = builder.neq('username', FOUNDER_USERNAME);
+
   if (q) {
     const lower = q.toLowerCase();
     const terms = [
@@ -112,8 +145,12 @@ export async function listPhotographers(query: DirectoryQuery): Promise<Director
 
   if (error) return empty;
 
-  const rows = (data ?? []) as PhotographerCard[];
-  const total = count ?? 0;
+  /* One fewer from the query when the founder was excluded, so the page still
+     holds DIRECTORY_PAGE_SIZE cards and the count still describes everybody. */
+  const rows = founder
+    ? [founder, ...((data ?? []) as PhotographerCard[]).slice(0, DIRECTORY_PAGE_SIZE - 1)]
+    : ((data ?? []) as PhotographerCard[]);
+  const total = (count ?? 0) + (founder ? 1 : 0);
 
   /* Is the directory itself empty, or did the search simply match nothing?
      The two need different words on screen. */
@@ -202,7 +239,7 @@ export async function listPhotos(
   const from = (page - 1) * pageSize;
   const { data, count, error } = await supabase
     .from('photos')
-    .select('*', { count: 'exact' })
+    .select(PHOTO_COLUMNS, { count: 'exact' })
     .eq('profile_id', profileId)
     .order('created_at', { ascending: false })
     .range(from, from + pageSize - 1);

@@ -4,6 +4,7 @@ import { Avatar } from '@/components/navigation/Avatar';
 import { StyleLine } from '@/components/photographers/StyleTags';
 import { photoUrl } from '@/lib/directory';
 import type { PhotoRecord, PhotographerCard as Card } from '@/lib/supabase/types';
+import { FOUNDER_USERNAME } from '@/lib/directory';
 
 /**
  * A photographer, filed like a contact sheet entry rather than a business
@@ -71,8 +72,16 @@ export function PhotographerCard({
           <Avatar src={photographer.avatar_url} name={photographer.full_name} size={46} />
 
           <div className="min-w-0 flex-1">
-            <h3 className="display text-[clamp(1.1rem,2.2vw,1.45rem)] leading-tight transition-colors duration-300 group-hover:text-accent">
+            <h3 className="display flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[clamp(1.1rem,2.2vw,1.45rem)] leading-tight transition-colors duration-300 group-hover:text-accent">
               {photographer.full_name}
+              {photographer.username === FOUNDER_USERNAME && (
+                /* Outlined in the accent rather than filled: this is a label,
+                   not a call to action, and a solid badge beside a name would
+                   pull harder than the name itself. */
+                <span className="border border-accent px-2 py-0.5 font-mono text-micro uppercase tracking-[0.16em] text-accent">
+                  Founder
+                </span>
+              )}
             </h3>
             <p className="meta mt-1 normal-case tracking-[0.08em]">
               @{photographer.username}

@@ -14,6 +14,19 @@
 import { SUPABASE_URL } from '@/lib/supabase/config';
 import type { PhotoRecord } from '@/lib/supabase/types';
 
+/**
+ * The person who started this. Their card is pinned to the top of the
+ * directory and shown whatever is filtered or sorted, because the founder of a
+ * community is not a search result — somebody arriving should be able to see
+ * who runs it without knowing to look.
+ *
+ * A username rather than a uuid so it is readable, and so this file does not
+ * need to know anything about the database. If they ever change their handle
+ * the pin quietly stops applying, which is the right way for it to fail: the
+ * directory still works and nobody is shown in the wrong place.
+ */
+export const FOUNDER_USERNAME = 'ankushgupta';
+
 export const DIRECTORY_PAGE_SIZE = 12;
 export const PHOTOS_PAGE_SIZE = 24;
 /** How many frames ride along on a directory card. */
