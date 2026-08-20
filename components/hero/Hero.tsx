@@ -11,10 +11,8 @@ export function Hero() {
   return (
     <section id="hero" aria-labelledby="hero-title">
       <div className="relative h-[clamp(520px,82vh,880px)] overflow-hidden bg-night">
-        <HeroImage
-          src="/images/hero/pune-hero.jpg"
-          alt="A narrow Pune lane with people walking away between old buildings, an autorickshaw parked to one side and greenery overhead"
-        />
+        {/* Frames and their credits live in data/hero.ts. */}
+        <HeroImage />
 
         {/* Scrim, so the type holds contrast over any photograph put here. */}
         <div

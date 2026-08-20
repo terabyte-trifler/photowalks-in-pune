@@ -102,7 +102,9 @@ export const site: SiteConfig = {
     description:
       'Photowalks in Pune is a community for photographers and curious people exploring Pune one walk and one photograph at a time.',
     url: resolveSiteUrl(),
-    ogImage: '/images/hero/pune-hero.jpg',
+    /* The first hero frame — what somebody sees on arrival, so it is also
+       what the link should show when the site is shared. */
+    ogImage: '/images/hero/pune-hero-01.jpg',
     keywords: [
       'photowalk Pune',
       'photowalks in Pune',
