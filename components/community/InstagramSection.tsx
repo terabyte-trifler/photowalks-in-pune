@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { site } from '@/data/site';
-import { getInstagramPosts } from '@/lib/instagram';
+import { getInstagramPosts, isInstagramConfigured } from '@/lib/instagram';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
 
@@ -58,6 +58,13 @@ export async function InstagramSection() {
             Follow the community <span aria-hidden="true">→</span>
           </a>
         </div>
+
+        {!isInstagramConfigured() && (
+          <p className="meta mt-5 normal-case tracking-[0.06em]">
+            Placeholders — set INSTAGRAM_ACCESS_TOKEN and these become the six most
+            recent posts from {site.links.instagramHandle}.
+          </p>
+        )}
       </div>
     </section>
   );

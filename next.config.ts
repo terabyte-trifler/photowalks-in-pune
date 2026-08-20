@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
         hostname: '**.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      /* Instagram serves media from these two, and which one varies by region
+         and by post. Only reached when INSTAGRAM_ACCESS_TOKEN is set. */
+      { protocol: 'https', hostname: '**.cdninstagram.com', pathname: '/**' },
+      { protocol: 'https', hostname: '**.fbcdn.net', pathname: '/**' },
     ],
     /* next/image refuses a quality it has not been told about from v16. */
     qualities: [70, 72, 74, 80],
