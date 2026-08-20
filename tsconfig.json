@@ -18,5 +18,8 @@
     "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  /* Edge Functions are Deno, not Node: different globals, different module
+     resolution, and their own type checking through `supabase functions`.
+     Checking them with this config only produces noise. */
+  "exclude": ["node_modules", "supabase/functions"]
 }
