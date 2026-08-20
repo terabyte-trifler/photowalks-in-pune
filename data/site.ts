@@ -84,8 +84,10 @@ export const site: SiteConfig = {
   links: {
     instagram: 'https://instagram.com/photowalksinpune',
     instagramHandle: '@photowalksinpune',
-    // TODO: paste your WhatsApp community invite link
-    whatsapp: 'https://chat.whatsapp.com/REPLACE_WITH_YOUR_INVITE_CODE',
+    /* The bare invite code. The link WhatsApp hands you when you share a group
+       carries ?s=sh&p=i&mlu=4&amv=2 — share-source telemetry describing how
+       the link was copied, which nobody visiting the site needs to send back. */
+    whatsapp: 'https://chat.whatsapp.com/FhKZBvgVqBHFa6odK1gjGF',
     email: 'mailto:hello@photowalksinpune.com',
     emailAddress: 'hello@photowalksinpune.com',
   },
