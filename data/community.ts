@@ -1,8 +1,10 @@
 /* ============================================================================
  * COMMUNITY
  * ----------------------------------------------------------------------------
- * Two of the three statistics are "XX" on purpose. Put the real walk count and
- * the real number of years in before launch rather than inventing them.
+ * The real numbers, given by the organiser. Two of these were "XX" and the
+ * member count said 1000+, which was a placeholder rather than a claim — worth
+ * correcting downwards, because a community that says a thousand and turns out
+ * to be a hundred has told its first visitor something untrue on the way in.
  * ========================================================================== */
 
 export interface CommunityStats {
@@ -12,15 +14,25 @@ export interface CommunityStats {
 }
 
 export const communityStats: CommunityStats = {
-  members: '1000+',
-  walks: 'XX',   // TODO: real number of walks run
-  years: 'XX',   // TODO: real number of years
+  members: '100+',
+  walks: '10+',
+  years: '1',
 };
+
+/**
+ * The year label follows the number rather than being written down twice.
+ * "1 Years of Pune" reads as a bug, and so does "2 Year" the day this becomes
+ * two — pluralising here means neither can happen by forgetting.
+ */
+const yearsLabel = (value: string): string =>
+  value.replace(/\D/g, '') === '1' && !value.includes('+')
+    ? 'Year of Pune'
+    : 'Years of Pune';
 
 export const statsDisplay = [
   { value: communityStats.members, label: 'Photographers' },
   { value: communityStats.walks, label: 'Walks' },
-  { value: communityStats.years, label: 'Years of Pune' },
+  { value: communityStats.years, label: yearsLabel(communityStats.years) },
 ] as const;
 
 export interface InstagramPost {
