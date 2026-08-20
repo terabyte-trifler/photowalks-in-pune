@@ -124,7 +124,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en-IN"
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
     >
-      <body>
+      {/* Browser extensions — password managers, Grammarly, dark-mode tools —
+          add attributes to <body> before React hydrates, and React reports the
+          page it received as not matching the one it rendered. The warning is
+          about the extension, not this app, but it lands in the console of
+          whoever is testing and reads as a broken site.
+
+          This suppresses mismatches on this element's own attributes only, one
+          level deep. Nothing here sets any, so no real problem can hide behind
+          it, and children are unaffected. */}
+      <body suppressHydrationWarning>
         <a
           href="#next-walk"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[200] focus:border focus:border-foreground focus:bg-background focus:px-4 focus:py-2 focus:font-mono focus:text-meta focus:uppercase"
