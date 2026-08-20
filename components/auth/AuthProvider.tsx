@@ -16,6 +16,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured, siteOrigin } from '@/lib/supabase/config';
 import type { Profile } from '@/lib/supabase/types';
 import { authErrorMessage } from '@/lib/auth/errors';
+import { PROFILE_COLUMNS } from '@/lib/supabase/columns';
 
 /* ============================================================================
  * AUTH STATE
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profileFor.current = nextUser.id;
       const { data } = await supabase
         .from('profiles')
-        .select('*')
+        .select(PROFILE_COLUMNS)
         .eq('id', nextUser.id)
         .maybeSingle();
 

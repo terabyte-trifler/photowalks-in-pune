@@ -13,6 +13,7 @@
 import { cache } from 'react';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import type { Profile } from '@/lib/supabase/types';
+import { PROFILE_COLUMNS } from '@/lib/supabase/columns';
 
 /* Wrapped in React's cache so generateMetadata and the page itself share one
    query per request rather than asking twice for the same row. */
@@ -22,7 +23,7 @@ export const getProfileByUsername = cache(async (username: string): Promise<Prof
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_COLUMNS)
     .eq('username', username.toLowerCase())
     .maybeSingle();
 

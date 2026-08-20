@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import type { Profile } from '@/lib/supabase/types';
+import { PROFILE_COLUMNS } from '@/lib/supabase/columns';
 
 /* ============================================================================
  * SERVER-SIDE SESSION
@@ -39,7 +40,7 @@ export async function getCurrentProfile(): Promise<{ user: User; profile: Profil
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_COLUMNS)
     .eq('id', user.id)
     .maybeSingle();
 

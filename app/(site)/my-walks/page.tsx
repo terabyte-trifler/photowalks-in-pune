@@ -9,6 +9,7 @@ import { getCurrentProfile } from '@/lib/auth/session';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import type { WalkRsvp } from '@/lib/supabase/types';
 import { dayNumber, longDate, monthShort, priceLabel } from '@/lib/utils';
+import { WALK_RSVP_COLUMNS } from '@/lib/supabase/columns';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,7 @@ export default async function MyWalksPage() {
   const { data } = supabase
     ? await supabase
         .from('walk_rsvps')
-        .select('*')
+        .select(WALK_RSVP_COLUMNS)
         .eq('profile_id', current.user.id)
         .order('event_date', { ascending: false })
     : { data: null };

@@ -21,6 +21,7 @@ import {
 } from '@/lib/directory';
 import { getSupabasePublicClient } from '@/lib/supabase/public';
 import type { PhotoRecord, PhotographerCard, WalkAttendance } from '@/lib/supabase/types';
+import { PHOTO_COLUMNS, PHOTOGRAPHER_CARD_COLUMNS, WALK_ATTENDANCE_COLUMNS } from '@/lib/supabase/columns';
 
 export {
   CARD_PHOTO_COUNT,
@@ -152,7 +153,7 @@ async function photosForProfiles(profileIds: string[]): Promise<Map<string, Phot
 
   const { data } = await supabase
     .from('photos')
-    .select('*')
+    .select(PHOTO_COLUMNS)
     .in('profile_id', profileIds)
     .order('created_at', { ascending: false })
     .limit(profileIds.length * CARD_PHOTO_COUNT * 2);
@@ -175,7 +176,7 @@ export const getPhotographerCard = cache(
 
     const { data, error } = await supabase
       .from('photographer_cards')
-      .select('*')
+      .select(PHOTOGRAPHER_CARD_COLUMNS)
       .eq('username', username.toLowerCase())
       .maybeSingle();
 
@@ -224,7 +225,7 @@ export async function listAttendance(profileId: string): Promise<WalkAttendance[
 
   const { data, error } = await supabase
     .from('walk_attendance')
-    .select('*')
+    .select(WALK_ATTENDANCE_COLUMNS)
     .eq('profile_id', profileId)
     .order('event_date', { ascending: false });
 
@@ -259,7 +260,7 @@ export async function listCompanions(
 
   const { data } = await supabase
     .from('photographer_cards')
-    .select('*')
+    .select(PHOTOGRAPHER_CARD_COLUMNS)
     .in('id', ids.slice(0, limit));
 
   return (data ?? []) as PhotographerCard[];
@@ -299,7 +300,7 @@ export async function listFeaturedPhotographers(limit = 4): Promise<{
 
   const { data } = await supabase
     .from('photographer_cards')
-    .select('*')
+    .select(PHOTOGRAPHER_CARD_COLUMNS)
     .order('photo_count', { ascending: false })
     .order('walks_attended', { ascending: false })
     .order('created_at', { ascending: false })

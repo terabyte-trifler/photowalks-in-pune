@@ -19,6 +19,25 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const BUCKETS = ['photos', 'avatars'];
 
+/**
+ * `!==` on a secret returns as soon as two bytes differ, so how long the answer
+ * takes leaks how much of the guess was right. Over a network that signal is
+ * buried in noise and this was never a practical way in — but a constant-time
+ * comparison costs one function and removes the argument entirely.
+ *
+ * Length is compared first and separately: it is not secret (it is fixed by
+ * whoever set PURGE_SECRET), and comparing byte arrays of different lengths
+ * would otherwise short-circuit anyway.
+ */
+function secretsMatch(offered: string, expected: string): boolean {
+  const a = new TextEncoder().encode(offered);
+  const b = new TextEncoder().encode(expected);
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
 Deno.serve(async (request: Request): Promise<Response> => {
   if (request.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 });
@@ -28,7 +47,8 @@ Deno.serve(async (request: Request): Promise<Response> => {
      a database trigger rather than a signed-in person. This is what stands in
      for that. */
   const expected = Deno.env.get('PURGE_SECRET');
-  if (!expected || request.headers.get('x-purge-secret') !== expected) {
+  const offered = request.headers.get('x-purge-secret');
+  if (!expected || !offered || !secretsMatch(offered, expected)) {
     return new Response('Forbidden', { status: 403 });
   }
 

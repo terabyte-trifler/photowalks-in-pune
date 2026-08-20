@@ -26,13 +26,44 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+/* ============================================================================
+ * WHO MAY CALL THIS FROM A BROWSER
+ * ----------------------------------------------------------------------------
+ * This was `Access-Control-Allow-Origin: *`, and an audit judged that safe —
+ * correctly. The function authorises on a bearer token the caller has to put
+ * in a header, not on an ambient cookie, and a page on another origin cannot
+ * read this site's cookies to obtain one. A wide CORS header hands a stranger
+ * nothing, because they have nothing to send.
+ *
+ * It is narrowed anyway. `*` states an intention the app does not have — no
+ * other origin has any business calling this — and the cost of being precise
+ * is one array. Anything not on the list simply gets no CORS headers back, so
+ * the browser refuses the response.
+ * ========================================================================== */
+const ALLOWED_ORIGINS = [
+  'https://photowalks-in-pune-gold.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3100',
+];
+
+function corsFor(request: Request): Record<string, string> {
+  const origin = request.headers.get('Origin') ?? '';
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    Vary: 'Origin',
+  };
+  /* Preview deployments get their own hostname per build, so match the shape
+     rather than listing them. */
+  const allowed =
+    ALLOWED_ORIGINS.includes(origin) ||
+    /^https:\/\/photowalks-in-pune[a-z0-9-]*\.vercel\.app$/.test(origin);
+  if (allowed) headers['Access-Control-Allow-Origin'] = origin;
+  return headers;
+}
 
 Deno.serve(async (request: Request): Promise<Response> => {
+  const cors = corsFor(request);
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: cors });
   }
