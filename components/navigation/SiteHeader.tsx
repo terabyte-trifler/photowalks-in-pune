@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { MobileMenu } from './MobileMenu';
 import { UserMenu } from './UserMenu';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 /**
  * Client because it reacts to scroll and owns the mobile menu. Small enough
@@ -75,6 +76,12 @@ export function SiteHeader() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Furthest from the walk CTA: it is a preference, not an action,
+                and it should not compete with the one button that matters.
+                Hidden below lg — the mobile menu carries it instead, where
+                there is room for it to be a labelled row. */}
+            <ThemeToggle className="hidden lg:inline-flex" />
+
             {/* Account controls sit to the left of the walk CTA, separated by a
                 hairline. Booking a walk is the product; this is the account. */}
             <UserMenu />

@@ -4,6 +4,7 @@ import { featuredWalk } from '@/data/events';
 import { site } from '@/data/site';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import './globals.css';
+import { THEME_SCRIPT } from '@/lib/security/theme-script';
 
 /* Two faces plus a mono for metadata. Instrument Serif holds up set very large
    and all-caps, which is where the whole page's voice comes from; Archivo runs
@@ -123,7 +124,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en-IN"
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
+      /* The theme script writes data-theme here before React sees the page,
+         so what the server sent and what React expects will differ by exactly
+         that attribute. Suppressing it on this element only is the documented
+         way to run a no-flash theme script; nothing else sets attributes on
+         <html>. */
+      suppressHydrationWarning
     >
+      <head>
+        {/* Runs synchronously, before the first paint. Without it the page
+            renders in light and then snaps to dark once React hydrates — a
+            full-screen flash on a #14110e background. Allowed by hash in the
+            CSP; see lib/security/theme-script.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       {/* Browser extensions — password managers, Grammarly, dark-mode tools —
           add attributes to <body> before React hydrates, and React reports the
           page it received as not matching the one it rendered. The warning is

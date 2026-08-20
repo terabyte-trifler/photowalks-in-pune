@@ -30,6 +30,55 @@
   :root { --rail: 84px; }
 }
 
+/* ============================================================================
+   DARK MODE
+   ----------------------------------------------------------------------------
+   Almost free, because the palette was already built to invert: the statement
+   section has flipped these same tokens since the first commit. Every Tailwind
+   colour utility in the app reads from them, so switching the values at the
+   root switches the whole site — there is no second stylesheet to keep in step.
+
+   Three states, not two. An explicit choice writes data-theme on <html>; the
+   default writes nothing at all and follows the operating system. So the media
+   query is guarded, or somebody who has deliberately chosen light on a machine
+   set to dark would be overruled by their own laptop.
+
+   The accent lifts from #c56a1b to #d4772a on dark. It is the same Pune
+   orange — a mid-tone that sits correctly on paper reads dull against
+   near-black, and this brings it back to 5.8:1 where the light version manages
+   4.9:1 on the same ground.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --background: #14110e;
+    --foreground: #f2efe9;
+    --foreground-soft: #c9c2b8;
+    --muted: #9a9186;
+    --border: #35302a;
+    --border-strong: #4a443c;
+    --accent: #d4772a;
+    --subtle: #1c1815;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --background: #14110e;
+  --foreground: #f2efe9;
+  --foreground-soft: #c9c2b8;
+  --muted: #9a9186;
+  --border: #35302a;
+  --border-strong: #4a443c;
+  --accent: #d4772a;
+  --subtle: #1c1815;
+}
+
 /* The statement section inverts the palette by redeclaring the same tokens,
    so every Tailwind colour utility inside it follows automatically. */
 .on-night {
@@ -40,6 +89,33 @@
   --border: #35302a;
   --border-strong: #4a443c;
   --subtle: #1c1815;
+}
+
+/* ...and inverts the other way once the page itself is dark. Its whole job is
+   to be the one section that is not the same colour as the rest; leaving it
+   dark on a dark page would erase it. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .on-night {
+    --background: #f2efe9;
+    --foreground: #16130f;
+    --foreground-soft: #45403a;
+    --muted: #857c70;
+    --border: #d6cfc2;
+    --border-strong: #b9b0a0;
+    --accent: #c56a1b;
+    --subtle: #eae5dc;
+  }
+}
+
+:root[data-theme='dark'] .on-night {
+  --background: #f2efe9;
+  --foreground: #16130f;
+  --foreground-soft: #45403a;
+  --muted: #857c70;
+  --border: #d6cfc2;
+  --border-strong: #b9b0a0;
+  --accent: #c56a1b;
+  --subtle: #eae5dc;
 }
 
 @layer base {

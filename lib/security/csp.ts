@@ -31,6 +31,8 @@
  * one response.
  * ========================================================================== */
 
+import { THEME_SCRIPT_HASH } from './theme-script';
+
 /** The three prerendered pages. Nothing user-controlled renders on any of them. */
 export const STATIC_PAGES = ['/', '/privacy', '/terms'];
 
@@ -83,9 +85,24 @@ export function buildCsp({
 }): string {
   const directives = shared();
 
+  /* The theme script has to run before the first paint or the page flashes
+     light before going dark, so each policy has to admit it — but by different
+     means, and getting this wrong breaks the site rather than the theme.
+     
+     Strict pages: by hash. strict-dynamic ignores 'self' and 'unsafe-inline',
+     but it does not ignore a hash, and a hash is fixed where a nonce would
+     force these pages to render per request.
+     
+     Relaxed pages: by 'unsafe-inline', and the hash must NOT be added here.
+     A CSP that names any hash or nonce makes the browser ignore
+     'unsafe-inline' entirely — so adding it would have admitted the theme
+     script and refused every one of Next's own hydration scripts, leaving the
+     three prerendered pages rendering correctly and doing nothing at all.
+     That is exactly what happened when this was first written, and the test
+     below is what caught it. */
   directives.push(
     nonce
-      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
+      ? `script-src 'self' '${THEME_SCRIPT_HASH}' 'nonce-${nonce}' 'strict-dynamic'`
       : "script-src 'self' 'unsafe-inline'",
   );
 

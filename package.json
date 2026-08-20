@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "dev:webpack": "next dev",
     "check:images": "node scripts/check-images.mjs",
-    "images:prep": "node scripts/prepare-images.mjs"
+    "images:prep": "node scripts/prepare-images.mjs",
+    "check:csp": "node scripts/check-csp.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

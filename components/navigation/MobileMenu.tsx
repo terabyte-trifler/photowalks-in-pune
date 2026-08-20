@@ -9,6 +9,7 @@ import { featuredWalk } from '@/data/events';
 import { useRSVP } from '@/components/rsvp/RSVPProvider';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Avatar } from './Avatar';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const reduced = useReducedMotion();
@@ -128,6 +129,13 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
               )}
             </div>
           )}
+
+          {/* A labelled row of its own down here, rather than squeezed into the
+              header: on a phone there is room to say what it does. */}
+          <div className="mt-8 flex items-center justify-between border-t border-border pt-5">
+            <span className="meta">Appearance</span>
+            <ThemeToggle />
+          </div>
 
           <div className="mt-auto pt-8">
             <button
