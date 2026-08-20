@@ -11,6 +11,7 @@
  * ========================================================================== */
 
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { photographyStyles } from '@/data/photography';
 import {
   CARD_PHOTO_COUNT,
@@ -264,18 +265,29 @@ export async function listCompanions(
   return (data ?? []) as PhotographerCard[];
 }
 
-/** The cities that actually have photographers in them. */
-export async function listCities(): Promise<string[]> {
-  const supabase = getSupabasePublicClient();
-  if (!supabase) return [];
+/**
+ * The cities that actually have photographers in them.
+ *
+ * Cached across requests, not just within one: this reads every profile's city
+ * to build the filter list, and the answer changes when somebody joins from a
+ * new city — which is rare enough that a fresh round trip on every page view
+ * is a poor trade. Five minutes is generous for a list of place names.
+ */
+export const listCities = unstable_cache(
+  async (): Promise<string[]> => {
+    const supabase = getSupabasePublicClient();
+    if (!supabase) return [];
 
-  const { data } = await supabase.from('photographer_cards').select('city');
-  const cities = new Set<string>();
-  for (const row of (data ?? []) as { city: string | null }[]) {
-    if (row.city) cities.add(row.city);
-  }
-  return [...cities].sort((a, b) => a.localeCompare(b));
-}
+    const { data } = await supabase.from('photographer_cards').select('city');
+    const cities = new Set<string>();
+    for (const row of (data ?? []) as { city: string | null }[]) {
+      if (row.city) cities.add(row.city);
+    }
+    return [...cities].sort((a, b) => a.localeCompare(b));
+  },
+  ['photographer-cities'],
+  { revalidate: 300, tags: ['photographers'] },
+);
 
 /** A handful of photographers for the homepage strip. */
 export async function listFeaturedPhotographers(limit = 4): Promise<{

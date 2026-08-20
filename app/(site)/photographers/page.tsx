@@ -48,13 +48,17 @@ export default async function PhotographersPage({
   const page = Math.max(1, Number.parseInt(single('page') ?? '1', 10) || 1);
 
   const configured = isSupabaseConfigured();
-  const [result, cities, viewer] = configured
+  const [result, cities] = configured
     ? await Promise.all([
         listPhotographers({ q, style, city, sort, page }),
         listCities(),
-        getCurrentUser(),
       ])
-    : [null, [], null];
+    : [null, []];
+
+  /* Who is asking only matters for the wording of the empty state, which
+     almost nobody sees. Asking Supabase on every directory view for something
+     used that rarely is a round trip spent on nothing. */
+  const viewer = result?.directoryIsEmpty ? await getCurrentUser() : null;
 
   return (
     <>

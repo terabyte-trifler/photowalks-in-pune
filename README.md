@@ -238,6 +238,18 @@ Profiles connect back to walks. A profile lists the walks it has been on, each
 linking to that walk's RSVP, and ends with everybody else who was on them —
 which is the edge that makes this a network rather than a list.
 
+### Where this runs
+
+`vercel.json` pins functions to **bom1 (Mumbai)**, because the Supabase project
+is in `ap-south-1` and Vercel otherwise defaults to `iad1` (Washington). That
+default meant every query on a dynamic page crossed the Atlantic and came back:
+the directory took ~900ms to first byte against ~70ms for the static homepage,
+and `x-vercel-id: bom1::iad1::…` gave it away — entering the network in Mumbai,
+executing in Washington.
+
+If the database ever moves, move this with it. Compute belongs next to the
+data it waits on.
+
 ### Photographs and storage
 
 `photos` holds what members upload; the files live in Supabase Storage under
