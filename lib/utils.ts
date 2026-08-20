@@ -5,20 +5,46 @@ export function cn(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(' ');
 }
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/* ----------------------------------------------------------------------------
+ * WALK DATES ARE PUNE DATES, WHEREVER THEY ARE RENDERED
+ * ----------------------------------------------------------------------------
+ * These used to parse at IST and then read the result back with getDate() and
+ * getDay(), which are local-timezone getters. That is correct on a laptop set
+ * to IST and wrong everywhere else: Vercel renders in UTC, five and a half
+ * hours behind, so midnight in Pune fell on the previous day and every walk on
+ * the live site showed a date one day early.
+ *
+ * It was invisible in development for exactly the reason it was dangerous —
+ * the machine writing the code was in the same timezone as the walks.
+ *
+ * A walk on Sunday morning in Kasba Peth is on that Sunday no matter where the
+ * server is, so the timezone is pinned rather than inherited. Intl does the
+ * conversion; there is no arithmetic here to get wrong.
+ * -------------------------------------------------------------------------- */
 
-/** Walk dates are Pune local time, so they are parsed at IST rather than UTC. */
+const PUNE = 'Asia/Kolkata';
+
+/** Parsed at IST so the instant is right; formatted at IST so the reading is. */
 const parse = (iso: string): Date => new Date(`${iso}T00:00:00+05:30`);
 
-export const weekday = (iso: string): string => DAYS[parse(iso).getDay()];
-export const dayNumber = (iso: string): string => String(parse(iso).getDate()).padStart(2, '0');
-export const monthShort = (iso: string): string => MONTHS[parse(iso).getMonth()];
+const inPune = (iso: string, options: Intl.DateTimeFormatOptions): string =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: PUNE, ...options }).format(parse(iso));
 
-export const longDate = (iso: string): string => {
+export const weekday = (iso: string): string => inPune(iso, { weekday: 'long' });
+export const dayNumber = (iso: string): string => inPune(iso, { day: '2-digit' });
+export const monthShort = (iso: string): string => inPune(iso, { month: 'short' });
+
+/** "23 Aug 2026" — a photograph's date, with no weekday. */
+export const shortDate = (iso: string): string => {
   const d = parse(iso);
-  return `${weekday(iso)} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  if (Number.isNaN(d.getTime())) return '';
+  return inPune(iso, { day: 'numeric', month: 'short', year: 'numeric' });
 };
+
+export const longDate = (iso: string): string =>
+  inPune(iso, { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
+    /* en-GB gives "Sunday 23 Aug 2026" with a comma after the weekday. */
+    .replace(',', '');
 
 export const priceLabel = (price: number): string => (price === 0 ? 'Free' : `₹${price}`);
 

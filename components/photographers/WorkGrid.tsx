@@ -3,6 +3,7 @@ import { PhotoDeleteButton } from '@/components/photographers/PhotoDeleteButton'
 import { photoUrl } from '@/lib/directory';
 import { cn } from '@/lib/utils';
 import type { PhotoRecord } from '@/lib/supabase/types';
+import { shortDate } from '@/lib/utils';
 
 /**
  * The same asymmetric six-column rhythm the archive uses (see
@@ -87,10 +88,7 @@ export function WorkGrid({
   );
 }
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-function frameDate(iso: string): string {
-  const date = new Date(`${iso}T00:00:00+05:30`);
-  if (Number.isNaN(date.getTime())) return '';
-  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
-}
+/* Was a second copy of the date formatting, with the same timezone bug the
+   walk dates had: parsed at IST, then read back with local getters, so a
+   photograph taken on the 23rd was captioned the 22nd anywhere but India. */
+const frameDate = shortDate;
