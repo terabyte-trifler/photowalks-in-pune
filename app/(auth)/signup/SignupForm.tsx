@@ -148,6 +148,16 @@ export function SignupForm({
         </AuthNotice>
       )}
 
+      {/* Google first: it is one press and no password to remember, so it is
+          the shorter way in for most people. The email form stays directly
+          beneath for anybody who would rather not involve Google at all. */}
+      {googleEnabled && (
+        <>
+          <GoogleButton next={destination} label="Continue with Google" enabled />
+          <AuthDivider label="or with email" />
+        </>
+      )}
+
       <form onSubmit={handleSubmit} noValidate>
         <AuthField
           id="signup-name"
@@ -239,12 +249,6 @@ export function SignupForm({
         </p>
       </form>
 
-      {googleEnabled && (
-        <>
-          <AuthDivider />
-          <GoogleButton next={destination} label="Continue with Google" enabled />
-        </>
-      )}
     </>
   );
 }
