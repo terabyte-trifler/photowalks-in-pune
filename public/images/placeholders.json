@@ -1,0 +1,26 @@
+{
+  "_comment": "SHA-256 of each generated placeholder, recorded so scripts/check-images.mjs can tell which are still placeholders. A file that has been replaced no longer matches. Delete an entry once its photograph is in and you never want it flagged again.",
+  "hashes": {
+    "gallery/photo-01.jpg": "387c36e1c47c8b11f0eb335f0535c16621317147ab7bc0b1f7e15095f347fcca",
+    "gallery/photo-02.jpg": "1427ed5eab5296d38e0189ef6a9cc5eed461d330be12170779cf46c6afb32c4f",
+    "gallery/photo-03.jpg": "15ed05e94440bb938d91cc57b2e416d06942e5660e6484a0a7e45bb0c9487e76",
+    "gallery/photo-04.jpg": "6749101b9cf3c2b3b4ce7107a109176d362ccc768e3627423c3aaa50aff55e51",
+    "gallery/photo-05.jpg": "6c4bc835bf6817d87b9c3c30997f1f9ac78bd4e93f9c65bc2f80d1ec095154ff",
+    "gallery/photo-06.jpg": "e3f47ae433d52b97623b7b09b3f1ff33140f94a74ed99ba408481ca15632a3aa",
+    "gallery/photo-07.jpg": "47d4e7881696c55f5d166ab740290898fca84912445397bd0c26aa4ab813bf2b",
+    "gallery/photo-08.jpg": "9c2c9494b634e1edebdb9575c9c60c5cb65b32196b2c846f6161a87bfa2b0bad",
+    "gallery/photo-09.jpg": "faa648aab9c3c4f599757cb2b043adea24767dd57359b8aa3007b0f14f39ef2b",
+    "hero/pune-hero.jpg": "dbb98d521cd4d11bf9bd1380abaff067e8640e352bb4f55742e837d1845c9cc8",
+    "instagram/post-01.jpg": "c656b24d1e0a12aaba63a2c9bd634d6e0271c1840053e1ee26c26ce0bc85e7de",
+    "instagram/post-02.jpg": "e5d699d8a3e10a2830e1e8c5d3a829cb85219827ee201737cc599ce1169ca246",
+    "instagram/post-03.jpg": "6f3d627b1ade89e7ce67962db2a2311a3dcbbb639c91feedd786ca85499e57cc",
+    "instagram/post-04.jpg": "19ee64a8495fcfa831a80b08566e2be70931ff36030f6c6b22a1dfea6459a0c3",
+    "instagram/post-05.jpg": "0dddde6a44ee88c12c1264b095b8e414388531ffce521fb5126d660a689bd821",
+    "instagram/post-06.jpg": "62fb57c6ed65d9b677a1899610e3e3c72772c0e429cdd414dd0accf640c98552",
+    "stories/before-the-city-wakes.jpg": "1f626da77855471dbbdf9e4d10ddd3f2903a080c307a0a9dc3d5adca0f2f8d6f",
+    "walks/mandai.jpg": "ab57d85325ded1a75337a166bcd188d86472bc2102eaf3ec3962f2bbb3ea7cd5",
+    "walks/monsoon.jpg": "edb0d0f7f9ef8dd894d7a73cce0cf007438ee7eeee2221db9bd2ab1308a3ae46",
+    "walks/old-pune.jpg": "a268895ef8f1d822d4e949e98bef6dd0149109971be8f169e2d01b1692576e0b",
+    "walks/river.jpg": "c67c97486bfef024f58e5fb513e1327ad3a326ccd42f93cc309cf5bd9c8a7a91"
+  }
+}
