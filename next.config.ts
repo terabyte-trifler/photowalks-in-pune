@@ -53,7 +53,12 @@ const csp = [
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "frame-src 'none'",
-  'upgrade-insecure-requests',
+  /* Production only. On http://localhost this directive rewrites Next's own
+     prefetches to https, which fails the TLS handshake and breaks client-side
+     navigation — caught by a control run that removed it and watched the
+     errors disappear. Production is https end to end, so it costs nothing to
+     leave out locally and would cost a working dev server to leave in. */
+  ...(process.env.NODE_ENV === 'production' ? ['upgrade-insecure-requests'] : []),
 ].join('; ');
 
 const securityHeaders = [
