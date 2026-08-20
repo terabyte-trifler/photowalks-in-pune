@@ -30,7 +30,7 @@ export default async function LoginPage({
       }
       standfirst="Pick up where you left off — your walks, your archive, your profile."
       image="/images/walks/river.jpg"
-      imageAlt="Placeholder for a photograph made along the Mula-Mutha river, Pune"
+      imageAlt="A woman in a patterned sari sitting on the ghat steps beside the water, arches behind her"
       caption="Mula-Mutha · 6:00 PM"
       footer={
         <p className="font-mono text-micro uppercase text-muted">

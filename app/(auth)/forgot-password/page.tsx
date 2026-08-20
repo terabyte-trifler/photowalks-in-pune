@@ -28,7 +28,7 @@ export default async function ForgotPasswordPage({
       }
       standfirst="Tell us the email on your account and we will send a link to set a new password."
       image="/images/walks/monsoon.jpg"
-      imageAlt="Placeholder for a monsoon photograph made on FC Road, Pune"
+      imageAlt="Curry leaves holding beads of rain after a monsoon shower"
       caption="FC Road · after the rain"
       footer={
         <p className="font-mono text-micro uppercase text-muted">

@@ -35,7 +35,7 @@ export default async function ResetPasswordPage() {
       }
       standfirst="Choose something you have not used here before. You will stay logged in on this device."
       image="/images/walks/mandai.jpg"
-      imageAlt="Placeholder for a photograph made in Mahatma Phule Mandai, Pune"
+      imageAlt="Shoppers moving through a covered flower market under orange canopies, bags full"
       caption="Mandai · Saturday morning"
     >
       <ResetPasswordForm />

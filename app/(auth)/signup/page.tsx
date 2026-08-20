@@ -30,7 +30,7 @@ export default async function SignupPage({
       }
       standfirst="An account keeps your walks, your photographs and your profile in one place. Bring whatever camera you have."
       image="/images/walks/old-pune.jpg"
-      imageAlt="Placeholder for a photograph of the old city near Shaniwar Wada, Pune, at first light"
+      imageAlt="An old Pune shopfront with its shutter down, Marathi signage above and a man walking past the railings"
       caption="Kasba Peth · 7:04 AM"
       footer={
         <p className="font-mono text-micro uppercase text-muted">

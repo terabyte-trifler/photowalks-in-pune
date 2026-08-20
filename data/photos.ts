@@ -1,9 +1,22 @@
 /* ============================================================================
  * PHOTOGRAPHS
  * ----------------------------------------------------------------------------
- * `photographer` is null until a real community photograph with a real credit
- * replaces the placeholder. No credit has been invented; null renders as
- * UNCREDITED. Add people to `photographers` first, then reference the id.
+ * These are members' own photographs, taken from their profiles on this site.
+ * The terms they agreed to grant display here — "on your profile and in the
+ * community pages" — and every one carries its photographer's name and their
+ * Instagram, because a credit is the least this can do in exchange.
+ *
+ * `location` says Pune and nothing more precise. Uploads do not record where a
+ * frame was made, and the placeholders this replaced named specific streets —
+ * Tulshibaug, Laxmi Road, Shaniwar Wada. Carrying those over would have
+ * attached a claim to somebody's real work that nobody had made. If a
+ * photographer tells you where one was taken, put it in then.
+ *
+ * `event` is left as the general archive for the same reason: which walk a
+ * photograph came from is not recorded either.
+ *
+ * The alt text describes what is actually in each frame, written from looking
+ * at them.
  * ========================================================================== */
 
 export type PhotoCategory =
@@ -15,7 +28,8 @@ export interface Photographer {
   name: string;
   instagram: string;
   avatar: string | null;
-  bio: string;
+  /** Null where we have not been given one. Nothing here is invented. */
+  bio: string | null;
 }
 
 export interface Photo {
@@ -32,9 +46,18 @@ export interface Photo {
 }
 
 export const photographers: Photographer[] = [
-  // Deliberately empty. Add real community members here:
-  // { id: 'p-01', name: '...', instagram: 'https://instagram.com/...',
-  //   avatar: null, bio: '...' },
+  { id: 'p-baguette', name: 'Baguette',
+    instagram: 'https://instagram.com/framesbybaguette', avatar: null, bio: null },
+  { id: 'p-gurnoor', name: 'Gurnoor Singh',
+    instagram: 'https://instagram.com/terabyte_trifler', avatar: null, bio: null },
+  { id: 'p-ankush', name: 'Ankush Gupta',
+    instagram: 'https://instagram.com/cine.ankush', avatar: null, bio: null },
+  { id: 'p-aditya', name: 'Aditya Rohanekar',
+    instagram: 'https://instagram.com/kalakar_pardyamagcha', avatar: null, bio: null },
+  { id: 'p-naman', name: 'Naman Gupta',
+    instagram: 'https://instagram.com/dr.tasveer', avatar: null, bio: null },
+  { id: 'p-sutirth', name: 'Sutirth',
+    instagram: 'https://instagram.com/sutirth.jpg', avatar: null, bio: null },
 ];
 
 export const getPhotographerName = (id: string | null): string | null =>
@@ -52,42 +75,42 @@ export const categories: { id: PhotoCategory; label: string; note: string }[] = 
 ];
 
 export const photos: Photo[] = [
-  { id: 'photo-01', image: '/images/gallery/photo-01.jpg', photographerId: null,
-    location: 'Tulshibaug', event: 'Old Pune / Morning Stories',
-    category: 'old-city', aspect: 'portrait',
-    alt: 'Placeholder for a photograph made in Tulshibaug, old Pune' },
-  { id: 'photo-02', image: '/images/gallery/photo-02.jpg', photographerId: null,
-    location: 'Mahatma Phule Mandai', event: 'Market / People of Mandai',
-    category: 'markets', aspect: 'landscape',
-    alt: 'Placeholder for a photograph made in Mahatma Phule Mandai, Pune' },
-  { id: 'photo-03', image: '/images/gallery/photo-03.jpg', photographerId: null,
-    location: 'Laxmi Road', event: 'Old Pune / Morning Stories',
-    category: 'street', aspect: 'square',
-    alt: 'Placeholder for a street photograph made on Laxmi Road, Pune' },
-  { id: 'photo-04', image: '/images/gallery/photo-04.jpg', photographerId: null,
-    location: 'Shaniwar Wada', event: 'Old Pune / Morning Stories',
+  { id: 'photo-01', image: '/images/gallery/photo-01.jpg', photographerId: 'p-baguette',
+    location: 'Pune', event: 'From the community archive',
+    category: 'street', aspect: 'landscape',
+    alt: 'Two men in a narrow Pune lane, one walking towards the camera and one standing with his arms folded, in black and white' },
+  { id: 'photo-02', image: '/images/gallery/photo-02.jpg', photographerId: 'p-naman',
+    location: 'Pune', event: 'From the community archive',
+    category: 'people', aspect: 'landscape',
+    alt: 'Someone in a white cap holding up a phone to photograph a decorated Ganpati pandal, autorickshaws waiting behind' },
+  { id: 'photo-03', image: '/images/gallery/photo-03.jpg', photographerId: 'p-gurnoor',
+    location: 'Pune', event: 'From the community archive',
     category: 'architecture', aspect: 'portrait',
-    alt: 'Placeholder for a photograph of heritage architecture at Shaniwar Wada, Pune' },
-  { id: 'photo-05', image: '/images/gallery/photo-05.jpg', photographerId: null,
-    location: 'FC Road', event: 'Monsoon / City After Rain',
-    category: 'monsoon', aspect: 'landscape',
-    alt: 'Placeholder for a monsoon photograph made on FC Road, Pune' },
-  { id: 'photo-06', image: '/images/gallery/photo-06.jpg', photographerId: null,
-    location: 'Kasba Peth', event: 'Market / People of Mandai',
-    category: 'people', aspect: 'square',
-    alt: 'Placeholder for a portrait made in Kasba Peth, Pune' },
-  { id: 'photo-07', image: '/images/gallery/photo-07.jpg', photographerId: null,
-    location: 'Deccan', event: 'Monsoon / City After Rain',
-    category: 'night', aspect: 'landscape',
-    alt: 'Placeholder for a night photograph made in Deccan, Pune' },
-  { id: 'photo-08', image: '/images/gallery/photo-08.jpg', photographerId: null,
-    location: 'Mula-Mutha', event: 'River / Light & Reflection',
-    category: 'nature', aspect: 'portrait',
-    alt: 'Placeholder for a photograph made along the Mula-Mutha river, Pune' },
-  { id: 'photo-09', image: '/images/gallery/photo-09.jpg', photographerId: null,
-    location: 'Bhide Wada', event: 'Old Pune / Morning Stories',
-    category: 'architecture', aspect: 'square',
-    alt: 'Placeholder for a photograph of a wada in old Pune' },
+    alt: 'A weathered yellow wooden door in an old Pune wada, its paint flaking and its panels lit from the side' },
+  { id: 'photo-04', image: '/images/gallery/photo-04.jpg', photographerId: 'p-baguette',
+    location: 'Pune', event: 'From the community archive',
+    category: 'people', aspect: 'portrait',
+    alt: 'A woman in a bright green shawl and dark glasses, arms crossed, against a teal shop shutter' },
+  { id: 'photo-05', image: '/images/gallery/photo-05.jpg', photographerId: 'p-gurnoor',
+    location: 'Pune', event: 'From the community archive',
+    category: 'street', aspect: 'portrait',
+    alt: 'A disused BSNL STD and ISD telephone booth in black and white, wedged against a stone wall' },
+  { id: 'photo-06', image: '/images/gallery/photo-06.jpg', photographerId: 'p-baguette',
+    location: 'Pune', event: 'From the community archive',
+    category: 'old-city', aspect: 'landscape',
+    alt: 'A chai stall at work in black and white, the menu boards overhead listing paratha, vada and samosa' },
+  { id: 'photo-07', image: '/images/gallery/photo-07.jpg', photographerId: 'p-ankush',
+    location: 'Pune', event: 'From the community archive',
+    category: 'street', aspect: 'landscape',
+    alt: 'A cyclist crossing an empty road, colour drained from everything but the rider and a passing autorickshaw' },
+  { id: 'photo-08', image: '/images/gallery/photo-08.jpg', photographerId: 'p-aditya',
+    location: 'Pune', event: 'From the community archive',
+    category: 'architecture', aspect: 'portrait',
+    alt: 'An ornate temple facade in blue and gold, lit and layered with carved figures' },
+  { id: 'photo-09', image: '/images/gallery/photo-09.jpg', photographerId: 'p-gurnoor',
+    location: 'Pune', event: 'From the community archive',
+    category: 'people', aspect: 'portrait',
+    alt: 'A dhol player in a white cap and orange scarf mid-beat during a procession, the crowd close around him' },
 ];
 
 export interface Story {
@@ -108,7 +131,8 @@ export const featuredStory: Story = {
   label: 'A photowalk in old Pune',
   title: 'Before the City Wakes',
   image: '/images/stories/before-the-city-wakes.jpg',
-  imageAlt: 'Placeholder for a photograph of old Pune before the shops open',
+  imageAlt:
+    'Early light coming through trees over a quiet Pune street, a traffic signal still red and almost nothing moving',
   standfirst:
     'There is another Pune before the shops open, before the traffic builds and before the streets fill with noise.',
   body: [
@@ -116,5 +140,5 @@ export const featuredStory: Story = {
     'Nobody hurries. That is the whole method. You walk a hundred metres, you stop, you wait for the light to move down a wall, and you make one frame instead of forty.',
     'By half past eight the shutters are up and Laxmi Road is Laxmi Road again. We end at a tea shop and look at each other’s screens, which is the actual point of the morning.',
   ],
-  photographerId: null,
+  photographerId: 'p-baguette',
 };

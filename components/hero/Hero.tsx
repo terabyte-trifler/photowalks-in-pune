@@ -13,7 +13,7 @@ export function Hero() {
       <div className="relative h-[clamp(520px,82vh,880px)] overflow-hidden bg-night">
         <HeroImage
           src="/images/hero/pune-hero.jpg"
-          alt="Placeholder for a photograph of early morning in the old city of Pune"
+          alt="A narrow Pune lane with people walking away between old buildings, an autorickshaw parked to one side and greenery overhead"
         />
 
         {/* Scrim, so the type holds contrast over any photograph put here. */}
