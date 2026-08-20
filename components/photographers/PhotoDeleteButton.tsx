@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
-import { removeImage } from '@/lib/uploads';
+import { removeImageSurely } from '@/lib/uploads';
 import type { PhotoRecord } from '@/lib/supabase/types';
 
 /**
@@ -20,9 +20,11 @@ import type { PhotoRecord } from '@/lib/supabase/types';
  *     somebody a photograph, and this is the same two-press pattern as
  *     giving up a walk.
  *
- * The row goes first and the file second: if the row delete fails the
- * photograph is still whole, whereas the other order would leave a row
- * pointing at nothing.
+ * The file goes first and the row second. Deleting a photograph is supposed
+ * to take the bytes with it, so if storage will not let go of the file the
+ * whole thing is abandoned and the photograph stays intact and consistent —
+ * rather than dropping the row and leaving an invisible copy behind that
+ * nobody can see, nobody asked for, and everybody pays for.
  */
 export function PhotoDeleteButton({ photo }: { photo: PhotoRecord }) {
   const router = useRouter();
@@ -37,15 +39,27 @@ export function PhotoDeleteButton({ photo }: { photo: PhotoRecord }) {
     setBusy(true);
     setError('');
 
-    const { error: deleteError } = await supabase.from('photos').delete().eq('id', photo.id);
-    if (deleteError) {
+    /* The bytes first. If this fails nothing else happens, so the photograph
+       is never half-deleted. */
+    const fileGone = await removeImageSurely('photo', photo.storage_path);
+    if (!fileGone) {
       setError('Could not remove');
       setBusy(false);
       setConfirming(false);
       return;
     }
 
-    void removeImage('photo', photo.storage_path);
+    const { error: deleteError } = await supabase.from('photos').delete().eq('id', photo.id);
+    if (deleteError) {
+      /* The file is gone but the row survived — visible as a broken frame, and
+         the next save or the storage sweep tidies it. Better than the silent
+         alternative. */
+      setError('Could not remove');
+      setBusy(false);
+      setConfirming(false);
+      return;
+    }
+
     router.refresh();
   }
 

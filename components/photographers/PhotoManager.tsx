@@ -9,7 +9,7 @@ import {
   ACCEPT_ATTRIBUTE,
   checkFile,
   photoInsertError,
-  removeImage,
+  removeImageSurely,
   uploadImage,
 } from '@/lib/uploads';
 import type { PhotoRecord } from '@/lib/supabase/types';
@@ -97,8 +97,9 @@ export function PhotoManager({
       });
 
       if (insertError) {
-        /* Do not leave an orphan file in the bucket. */
-        void removeImage('photo', uploaded.path);
+        /* Do not leave an orphan file in the bucket. Awaited, so the rollback
+           is as certain as the upload was. */
+        await removeImageSurely('photo', uploaded.path);
         setError(photoInsertError(insertError.message));
         break;
       }

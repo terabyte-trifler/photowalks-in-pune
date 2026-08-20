@@ -352,6 +352,31 @@ export async function removeImage(kind: UploadKind, path: string): Promise<boole
   return !error;
 }
 
+/**
+ * Remove a file and be sure about it.
+ *
+ * Deleting a photograph has to take the bytes with it — a file left in the
+ * bucket after its row is gone is invisible, permanent and still billed, and
+ * nobody asked for a backup. So this retries rather than hoping, and reports
+ * honestly when it could not.
+ *
+ * `storage.remove` answers without error for a path that is already absent,
+ * so a second attempt after a network blip is safe.
+ */
+export async function removeImageSurely(
+  kind: UploadKind,
+  path: string,
+  attempts = 3,
+): Promise<boolean> {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (await removeImage(kind, path)) return true;
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+    }
+  }
+  return false;
+}
+
 /** The stored `avatar_url` is a full URL; storage needs the path inside it. */
 export function pathFromPublicUrl(url: string | null, bucket: 'avatars' | 'photos'): string | null {
   if (!url) return null;

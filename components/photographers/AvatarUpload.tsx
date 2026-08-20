@@ -10,7 +10,7 @@ import {
   checkFile,
   pathFromPublicUrl,
   publicUrlFor,
-  removeImage,
+  removeImageSurely,
   uploadImage,
 } from '@/lib/uploads';
 
@@ -74,7 +74,7 @@ export function AvatarUpload({
     if (!saved.ok) {
       /* The row still points at the old photograph, so take the new file back
          out rather than leaving it behind unreferenced. */
-      void removeImage('avatar', uploaded.path);
+      await removeImageSurely('avatar', uploaded.path);
       setError(saved.error ?? 'That did not save.');
       setPreview(null);
       setState('idle');
@@ -84,12 +84,18 @@ export function AvatarUpload({
     const previousPath = pathFromPublicUrl(url, 'avatars');
     setUrl(nextUrl);
     setPreview(null);
+
+    /* Only now is the old file safe to delete: nothing points at it. Awaited,
+       because a replaced photograph should not linger in the bucket. */
+    if (previousPath) {
+      const gone = await removeImageSurely('avatar', previousPath);
+      if (!gone) setNote('Saved — the old file could not be deleted');
+      else setNote('Saved');
+    } else {
+      setNote('Saved');
+    }
+
     setState('idle');
-    setNote('Saved');
-
-    /* Only now is the old file safe to delete: nothing points at it. */
-    if (previousPath) void removeImage('avatar', previousPath);
-
     void refreshProfile();
     router.refresh();
   }
@@ -111,11 +117,16 @@ export function AvatarUpload({
     const path = pathFromPublicUrl(url, 'avatars');
     setUrl(null);
     setPreview(null);
+
+    /* Removing the photograph has to take the file with it. */
+    if (path) {
+      const gone = await removeImageSurely('avatar', path);
+      setNote(gone ? 'Removed' : 'Removed — the file could not be deleted');
+    } else {
+      setNote('Removed');
+    }
+
     setState('idle');
-    setNote('Removed');
-
-    if (path) void removeImage('avatar', path);
-
     void refreshProfile();
     router.refresh();
   }
