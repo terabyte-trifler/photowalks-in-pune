@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { featuredWalk } from '@/data/events';
-import { longDate, priceLabel, spotsLabel, isNearlyFull, weekday } from '@/lib/utils';
+import { longDate, priceLabel, spotsLabel, isNearlyFull } from '@/lib/utils';
 import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { Reveal } from '@/components/ui/Reveal';
@@ -14,7 +14,11 @@ export async function FeaturedWalk() {
   const low = isNearlyFull(remaining, walk.capacity);
 
   const facts: [string, string][] = [
-    ['Date', `${weekday(walk.date)} · ${walk.time}`],
+    /* The full date, not just the weekday. "Saturday · Afternoon" is fine on a
+       page you are already reading this week and useless in a screenshot, a
+       shared link, or three weeks from now — and this is the one line somebody
+       checks before deciding to come. */
+    ['Date', `${longDate(walk.date)} · ${walk.time}`],
     ['Meeting', walk.location],
     ['Cost', `${priceLabel(walk.price)} · All cameras welcome`],
     ['Spots', spotsLabel(remaining, walk.capacity)],
