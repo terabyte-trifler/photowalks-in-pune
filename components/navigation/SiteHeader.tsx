@@ -60,7 +60,11 @@ export function SiteHeader() {
             {site.name}
           </a>
 
-          <div className="hidden items-center gap-9 lg:flex">
+          {/* xl, not lg. Six nav items plus the theme toggle, the account links
+              and the walk button do not fit a 1024px laptop — the header ran
+              past the viewport from 1024 up to about 1230. Below xl the mobile
+              menu carries the same items with room to read them. */}
+          <div className="hidden items-center gap-9 xl:flex">
             {navigation.map((item) => (
               <a
                 key={item.label}
@@ -78,9 +82,9 @@ export function SiteHeader() {
           <div className="flex items-center gap-3">
             {/* Furthest from the walk CTA: it is a preference, not an action,
                 and it should not compete with the one button that matters.
-                Hidden below lg — the mobile menu carries it instead, where
+                Hidden below xl — the mobile menu carries it instead, where
                 there is room for it to be a labelled row. */}
-            <ThemeToggle className="hidden lg:inline-flex" />
+            <ThemeToggle className="hidden xl:inline-flex" />
 
             {/* Account controls sit to the left of the walk CTA, separated by a
                 hairline. Booking a walk is the product; this is the account. */}
@@ -98,7 +102,7 @@ export function SiteHeader() {
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
               onClick={() => setMenuOpen(true)}
-              className="flex flex-col gap-1 px-1 py-2.5 lg:hidden"
+              className="flex flex-col gap-1 px-1 py-2.5 xl:hidden"
             >
               <span className="h-px w-5 bg-foreground" />
               <span className="h-px w-5 bg-foreground" />

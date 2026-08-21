@@ -138,6 +138,10 @@ export const sections = [
  */
 export const navigation = [
   { label: 'Walks', href: '#walks' },
+  /* The archive. Placed here rather than at the end because it follows the
+     walks on the page, and a nav that runs in a different order to the page it
+     points at makes somebody scroll looking for what they just clicked. */
+  { label: 'Explore', href: '#gallery' },
   { label: 'Photographers', href: '/photographers' },
   { label: 'Stories', href: '#story' },
   { label: 'Community', href: '#community' },
