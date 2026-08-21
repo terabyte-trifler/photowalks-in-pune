@@ -50,8 +50,12 @@ export const featuredWalk: Event = {
   id: 'walk-next',
   slug: 'camp-colonial-lines',
   title: 'Camp / Colonial Lines',
-  date: '2026-08-23',
-  time: '4:00 PM',
+  date: '2026-08-22',
+  /* A part of the day rather than a clock time — `time` is rendered as free
+     text everywhere it appears, so "Afternoon" reads correctly beside the
+     weekday without any special handling. The exact hour goes out on WhatsApp,
+     where it can be changed on the morning without a deploy. */
+  time: 'Afternoon',
   location: 'Camp · MG Road',
   area: 'Camp',
   description:
@@ -72,8 +76,8 @@ export const upcomingWalks: Event[] = [
     id: 'walk-02',
     slug: 'balewadi-high-street',
     title: 'Balewadi / The New City',
-    date: '2026-08-24',
-    time: '4:30 PM',
+    date: '2026-08-23',
+    time: 'Afternoon',
     location: 'Balewadi High Street',
     area: 'Balewadi',
     description:
