@@ -77,7 +77,24 @@ export const categories: { id: PhotoCategory; label: string; note: string }[] = 
   { id: 'nature',       label: 'Nature',       note: 'River, hills, trees' },
 ];
 
-export const photos: Photo[] = [
+/* ----------------------------------------------------------------------------
+ * THE ARCHIVE, AS A STACK
+ * ----------------------------------------------------------------------------
+ * Push, don't insert. Rows below are in the order they were added — oldest
+ * first — so adding a photograph means appending to the end, which is the
+ * natural thing to do and the thing anybody will do without being told.
+ *
+ * The grid wants the opposite: newest on top, because the twelve frames it
+ * opens on should be what members have just put up rather than the oldest
+ * thing here. So the display order is popped off the end.
+ *
+ * The previous version kept the array in display order with a comment asking
+ * for new rows to go at the TOP. That is a convention a comment cannot
+ * enforce, and appending — the obvious move — silently buried new work behind
+ * two "load more" presses. Making it a stack means the ordering holds whether
+ * or not anybody reads this.
+ * ========================================================================== */
+const photoStack: Photo[] = [
   { id: 'photo-01', image: '/images/gallery/photo-01.jpg', photographerId: 'p-baguette',
     location: 'Pune', event: 'From the community archive',
     category: 'street', aspect: 'landscape',
@@ -217,7 +234,7 @@ export const photos: Photo[] = [
     category: 'nature', aspect: 'landscape',
     alt: 'Two monkeys grooming each other in low light' },
 
-  /* ---- Added from members' profiles, second pass ---------------------- */
+  /* Added in a later pass, appended as new work always is. */
   { id: 'photo-34', image: '/images/gallery/photo-34.jpg', photographerId: 'p-aditya',
     location: 'Pune', event: 'From the community archive',
     category: 'people', aspect: 'portrait',
@@ -318,7 +335,12 @@ export const photos: Photo[] = [
     location: 'Pune', event: 'From the community archive',
     category: 'nature', aspect: 'portrait',
     alt: 'Looking straight up the trunk of a bare tree into a night sky with the moon behind its branches' },
+
 ];
+
+/** Newest first. A copy, so the stack itself is never reversed in place. */
+export const photos: Photo[] = [...photoStack].reverse();
+
 
 export interface Story {
   id: string;
