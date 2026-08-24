@@ -160,9 +160,24 @@
     @apply mx-auto w-full max-w-shell px-gutter;
   }
 
-  /* Editorial display type: always uppercase, always the serif. */
+  /* Editorial display type: always uppercase, always the serif.
+   *
+   * The tracking here is a floor, not a fixed value. Most display type takes
+   * its size from the scale in tailwind.config.ts (text-hero, text-display-lg
+   * and friends), and those tokens carry their own letter-spacing — being
+   * utilities, they are emitted after this components layer and win.
+   *
+   * But a good deal of display type is sized with an arbitrary
+   * `text-[clamp(...)]` instead, and an arbitrary font-size sets *only* the
+   * font-size. Those got no tracking at all: photographer names in the
+   * directory, the mobile menu links, category buttons, walk titles — all set
+   * in caps at 0, which is precisely where the type looked most jammed.
+   *
+   * So this class carries its own. Anything sized off the scale inherits a
+   * sensible amount, and anything sized on the scale overrides it.
+   */
   .display {
-    @apply font-display font-normal uppercase;
+    @apply font-display font-normal uppercase tracking-[0.03em];
   }
 
   /* Small mono metadata — the voice of the contact sheet. */
