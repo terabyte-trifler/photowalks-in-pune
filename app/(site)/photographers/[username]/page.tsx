@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Avatar } from '@/components/navigation/Avatar';
+import { PhotoManager } from '@/components/photographers/PhotoManager';
 import { StyleTags } from '@/components/photographers/StyleTags';
 import { WalkList } from '@/components/photographers/WalkList';
 import { WorkGrid } from '@/components/photographers/WorkGrid';
@@ -139,24 +140,40 @@ export default async function PhotographerPage({
               )}
             </div>
 
+            {/* Uploading used to live only on the archive page, which meant
+                the way to add a photograph was to click "View all 20 photos"
+                — a link that reads like browsing, not like uploading, and is
+                not there at all until somebody already has more than six.
+                Somebody with no photographs had the worst version of it: the
+                one place to upload was behind a link that did not exist yet.
+
+                `total` is the whole archive rather than the six shown here, so
+                the "N of 20" counter and the room-left check stay right on a
+                page that is only ever showing a slice. */}
+            {isOwner && (
+              <div className="mb-[clamp(1.5rem,3vw,2.25rem)]">
+                <PhotoManager
+                  profileId={photographer.id}
+                  photos={work.rows}
+                  total={work.total}
+                />
+              </div>
+            )}
+
             {work.rows.length > 0 ? (
               /* Your own frames carry a ✕ here too, so a photograph can be
                  pulled without first going to the archive page. */
               <WorkGrid photos={work.rows} editable={isOwner} />
             ) : (
-              <Empty
-                title="No photographs yet"
-                body={
-                  isOwner
-                    ? 'Nothing uploaded yet. Add a few frames and this is where they will sit.'
-                    : `${firstName} has not put any photographs up yet.`
-                }
-                action={
-                  isOwner
-                    ? { label: 'Add photographs', href: `/photographers/${photographer.username}/photos` }
-                    : undefined
-                }
-              />
+              /* Only for visitors now. The owner has the upload block directly
+                 above, and stacking an empty-state box under it would be two
+                 bordered panels saying the same thing. */
+              !isOwner && (
+                <Empty
+                  title="No photographs yet"
+                  body={`${firstName} has not put any photographs up yet.`}
+                />
+              )
             )}
           </Reveal>
         </div>
