@@ -25,6 +25,18 @@ export type PhotoCategory =
 
 export interface Photographer {
   id: string;
+  /**
+   * The member's username on this site, which is the join key onto their
+   * profile. Names change — this does not, because changing it would break
+   * their profile URL too. Null for anyone who has no account here.
+   */
+  username: string | null;
+  /**
+   * The name to fall back to when the live one cannot be read. NOT the name
+   * normally displayed: `resolveCredit` prefers whatever their profile says
+   * right now. Kept so the archive still credits people if Supabase is
+   * unreachable, rather than printing "Uncredited" over somebody's work.
+   */
   name: string;
   /** Null where the photographer has not given one. */
   instagram: string | null;
@@ -47,24 +59,47 @@ export interface Photo {
 }
 
 export const photographers: Photographer[] = [
-  { id: 'p-baguette', name: 'Baguette',
+  { id: 'p-baguette', username: 'baguette', name: 'Baguette',
     instagram: 'https://instagram.com/framesbybaguette', avatar: null, bio: null },
-  { id: 'p-gurnoor', name: 'Gurnoor Singh',
+  { id: 'p-gurnoor', username: 'gurnoorsingh', name: 'Gurnoor Singh',
     instagram: 'https://instagram.com/terabyte_trifler', avatar: null, bio: null },
-  { id: 'p-ankush', name: 'Ankush Gupta',
+  { id: 'p-ankush', username: 'ankushgupta', name: 'Ankush Gupta',
     instagram: 'https://instagram.com/cine.ankush', avatar: null, bio: null },
-  { id: 'p-aditya', name: 'Aditya Rohanekar',
+  { id: 'p-aditya', username: 'aditya', name: 'Aditya Rohanekar',
     instagram: 'https://instagram.com/kalakar_pardyamagcha', avatar: null, bio: null },
-  { id: 'p-naman', name: 'Naman Gupta',
+  { id: 'p-naman', username: 'namangupta', name: 'Naman Gupta',
     instagram: 'https://instagram.com/dr.tasveer', avatar: null, bio: null },
-  { id: 'p-hariharan', name: 'Hariharan Kalagudi',
+  { id: 'p-hariharan', username: 'hariharan', name: 'Hariharan Kalagudi',
     instagram: null, avatar: null, bio: null },
-  { id: 'p-sutirth', name: 'Sutirth',
+  { id: 'p-sutirth', username: 'sutirth', name: 'Sutirth',
     instagram: 'https://instagram.com/sutirth.jpg', avatar: null, bio: null },
 ];
 
+/** The stored fallback name. Prefer `resolveCredit` — see below. */
 export const getPhotographerName = (id: string | null): string | null =>
   id ? (photographers.find((p) => p.id === id)?.name ?? null) : null;
+
+/** A member's current display name, keyed by the id used on each photograph. */
+export type CreditMap = Record<string, string>;
+
+/**
+ * What to print under a photograph.
+ *
+ * A member who renames themselves — Gurnoor Singh to Terabyte Trifler — should
+ * be renamed everywhere their work appears, and the archive used to be the one
+ * place that kept the old name, because the name was written into this file by
+ * hand. It now lives only on their profile; this file holds the username that
+ * points at it.
+ *
+ * `live` comes from the database and wins. The stored name is the fallback for
+ * two cases: the read failed, or the photograph belongs to somebody with no
+ * account here. Falling back beats failing closed — a stale name is a smaller
+ * wrong than erasing the credit.
+ */
+export function resolveCredit(id: string | null, live?: CreditMap): string | null {
+  if (!id) return null;
+  return live?.[id] ?? getPhotographerName(id);
+}
 
 export const categories: { id: PhotoCategory; label: string; note: string }[] = [
   { id: 'old-city',     label: 'Old City',     note: 'Peths, wadas, doorways' },

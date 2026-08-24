@@ -19,6 +19,7 @@ import { Newsletter } from '@/components/newsletter/Newsletter';
 import { SiteFooter } from '@/components/footer/SiteFooter';
 import { RSVPProvider } from '@/components/rsvp/RSVPProvider';
 import { GalleryProvider } from '@/components/gallery/GalleryProvider';
+import { getGalleryCredits } from '@/lib/credits';
 
 /**
  * Rebuilt every five minutes so the photographers strip picks up new members
@@ -35,10 +36,16 @@ export const revalidate = 300;
  * When these sections graduate into /walks, /stories and /gallery, each block
  * lifts out unchanged and only this composition file is replaced.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  /* Read once here rather than in each client component: names come from the
+     database, and the grid, the lightbox and the story dialog should all print
+     the same one. Cached for five minutes, so this does not cost the page its
+     static rendering. */
+  const credits = await getGalleryCredits();
+
   return (
     <RSVPProvider>
-      <GalleryProvider>
+      <GalleryProvider credits={credits}>
         <ContactSheetRail city={site.city} coordinates={site.coordinates} />
         <AnnouncementBar />
         <SiteHeader />

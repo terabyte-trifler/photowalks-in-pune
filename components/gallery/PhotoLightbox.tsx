@@ -3,12 +3,11 @@
 import Image from 'next/image';
 import { useEffect } from 'react';
 import { Dialog, DialogClose } from '@/components/ui/Dialog';
-import { getPhotographerName } from '@/data/photos';
 import { padIndex } from '@/lib/utils';
 import { useGallery } from './GalleryProvider';
 
 export function PhotoLightbox() {
-  const { visible, lightboxIndex, closeLightbox, step } = useGallery();
+  const { visible, lightboxIndex, closeLightbox, step, creditFor } = useGallery();
   const open = lightboxIndex !== null;
 
   useEffect(() => {
@@ -47,7 +46,7 @@ export function PhotoLightbox() {
 
           <div className="flex items-center justify-between gap-4 border-t border-white/10 px-gutter py-4 text-[rgba(245,241,234,0.75)]">
             <span className="font-mono text-micro uppercase">
-              {getPhotographerName(photo.photographerId) ?? 'Uncredited'} · {photo.location}
+              {creditFor(photo.photographerId) ?? 'Uncredited'} · {photo.location}
               <br />
               {photo.event}
             </span>

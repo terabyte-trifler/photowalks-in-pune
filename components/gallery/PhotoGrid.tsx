@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { getPhotographerName, type Photo } from '@/data/photos';
+import { type Photo } from '@/data/photos';
 import { cn } from '@/lib/utils';
 import { useGallery } from './GalleryProvider';
 
@@ -33,7 +33,7 @@ const DIMENSIONS: Record<Photo['aspect'], { width: number; height: number }> = {
 };
 
 export function PhotoGrid() {
-  const { visible, shown, showMore, openLightbox } = useGallery();
+  const { visible, shown, showMore, openLightbox, creditFor } = useGallery();
   const reduced = useReducedMotion();
 
   /* The lightbox still steps through the whole filtered set, not just what has
@@ -57,7 +57,7 @@ export function PhotoGrid() {
       <div className="grid grid-cols-2 gap-x-[clamp(0.75rem,2vw,2rem)] gap-y-[clamp(1rem,2.5vw,2.5rem)] md:grid-cols-6">
       <AnimatePresence mode="popLayout">
         {drawn.map((photo, index) => {
-          const credit = getPhotographerName(photo.photographerId);
+          const credit = creditFor(photo.photographerId);
           const dims = DIMENSIONS[photo.aspect];
 
           return (

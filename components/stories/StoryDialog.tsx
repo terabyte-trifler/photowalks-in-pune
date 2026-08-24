@@ -3,13 +3,17 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { Dialog, DialogClose } from '@/components/ui/Dialog';
-import { featuredStory, getPhotographerName } from '@/data/photos';
+import { featuredStory } from '@/data/photos';
+import { useGallery } from '@/components/gallery/GalleryProvider';
 
 /**
  * The story opens over the page rather than on a route, because /stories does
  * not exist yet and the MVP is one page.
  */
 export function StoryDialog() {
+  /* Same source as the grid and the lightbox, so one member cannot appear
+     under two different names on one page. */
+  const { creditFor } = useGallery();
   const [open, setOpen] = useState(false);
 
   return (
@@ -52,7 +56,7 @@ export function StoryDialog() {
         </div>
 
         <p className="meta mt-6">
-          Photographs · {getPhotographerName(featuredStory.photographerId) ?? 'Uncredited'}
+          Photographs · {creditFor(featuredStory.photographerId) ?? 'Uncredited'}
         </p>
       </Dialog>
     </>
