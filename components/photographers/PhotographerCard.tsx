@@ -78,12 +78,12 @@ export function PhotographerCard({
                 /* Outlined in the accent rather than filled: this is a label,
                    not a call to action, and a solid badge beside a name would
                    pull harder than the name itself. */
-                <span className="border border-accent px-2 py-0.5 font-mono text-micro uppercase tracking-[0.16em] text-accent">
+                <span className="border border-accent px-2 py-0.5 font-mono text-micro uppercase tracking-[0.18em] text-accent">
                   Founder
                 </span>
               )}
             </h3>
-            <p className="meta mt-1 normal-case tracking-[0.08em]">
+            <p className="meta mt-1 normal-case tracking-[0.1em]">
               @{photographer.username}
               {photographer.city ? ` · ${photographer.city}` : ''}
             </p>

@@ -116,7 +116,7 @@ export function PhotoManager({
     <div className="border-l-2 border-border-strong bg-subtle py-5 pl-5 pr-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <p className="meta">Your archive</p>
-        <span className="meta normal-case tracking-[0.06em]">
+        <span className="meta normal-case tracking-[0.08em]">
           {total} of {MAX_PHOTOS_PER_MEMBER} · compressed to under 200KB before upload
         </span>
       </div>
@@ -140,7 +140,7 @@ export function PhotoManager({
         </button>
 
         {photos.length > 0 && (
-          <span className="meta normal-case tracking-[0.06em]">
+          <span className="meta normal-case tracking-[0.08em]">
             To remove one, hover it below and press ✕
           </span>
         )}

@@ -166,7 +166,7 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
           </Link>
         </div>
 
-        <p className="meta mt-5 normal-case tracking-[0.06em]">
+        <p className="meta mt-5 normal-case tracking-[0.08em]">
           The rest of the site stays open — the walks, the archive and the community
           ask nothing of you.
         </p>

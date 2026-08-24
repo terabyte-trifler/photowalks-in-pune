@@ -120,7 +120,7 @@ export function HeroImage() {
             transition={{ duration: reduced ? 0 : FADE_MS / 2000 }}
             /* Stacked in one grid cell so they occupy the same spot without
                absolute positioning, and the box is sized by the longest name. */
-            className="col-start-1 row-start-1 text-right font-mono text-micro uppercase tracking-[0.18em] text-[rgba(245,241,234,0.6)]"
+            className="col-start-1 row-start-1 text-right font-mono text-micro uppercase tracking-[0.2em] text-[rgba(245,241,234,0.6)]"
           >
             {frame.credit}
           </motion.span>

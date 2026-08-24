@@ -178,7 +178,7 @@
   /* Text CTA: a rule, a label and an arrow that steps away on hover. */
   .cta {
     @apply inline-flex items-center gap-[0.7em] border-b border-current pb-[0.45em]
-           font-mono text-xs uppercase tracking-[0.16em]
+           font-mono text-xs uppercase tracking-[0.18em]
            transition-[gap,color] duration-300 ease-editorial;
   }
   .cta:hover { gap: 1.2em; color: var(--accent); }

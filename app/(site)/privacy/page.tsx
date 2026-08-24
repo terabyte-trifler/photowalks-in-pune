@@ -38,7 +38,7 @@ function Clause({
   return (
     <section className="border-t border-border pt-[clamp(1.5rem,3vw,2rem)]">
       <div className="flex items-baseline gap-4">
-        <span className="font-mono text-micro tracking-[0.18em] text-accent">{index}</span>
+        <span className="font-mono text-micro tracking-[0.2em] text-accent">{index}</span>
         <h2 className="display text-display-sm">{title}</h2>
       </div>
       <div className="mt-4 max-w-[62ch] space-y-4 text-body text-foreground-soft">{children}</div>
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
             position in the homepage scroll, and this page is not in it. The numbers
             below are clause numbers, which do mean something. */}
         <div className="mb-[clamp(2rem,4vw,3.5rem)] flex items-baseline">
-          <span className="meta label-rule flex flex-1 items-center tracking-[0.2em]">
+          <span className="meta label-rule flex flex-1 items-center tracking-[0.22em]">
             Privacy
           </span>
         </div>

@@ -160,7 +160,7 @@ export function SettingsForm({ profile, email }: { profile: Profile; email: stri
         <div className="mb-8 border-t border-border pt-6">
           <p className="field-label">Email</p>
           <p className="text-[0.9375rem] text-foreground-soft">{email}</p>
-          <p className="meta mt-2 normal-case tracking-[0.06em]">
+          <p className="meta mt-2 normal-case tracking-[0.08em]">
             Held by Supabase Auth, never published on your profile. Changing it is not
             built yet.
           </p>

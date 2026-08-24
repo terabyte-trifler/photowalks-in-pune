@@ -60,7 +60,7 @@ export function AuthShell({
         />
 
         <div className="relative flex h-full flex-col justify-between p-[clamp(1.25rem,3vw,2.5rem)] text-[#F5F1EA]">
-          <div className="flex justify-between gap-4 font-mono text-micro uppercase tracking-[0.2em] text-[rgba(245,241,234,0.72)]">
+          <div className="flex justify-between gap-4 font-mono text-micro uppercase tracking-[0.22em] text-[rgba(245,241,234,0.72)]">
             <span>
               {site.city} · India
             </span>
@@ -73,7 +73,7 @@ export function AuthShell({
               <br />
               Connect.
             </p>
-            <p className="mt-4 font-mono text-micro uppercase tracking-[0.2em] text-[rgba(245,241,234,0.8)]">
+            <p className="mt-4 font-mono text-micro uppercase tracking-[0.22em] text-[rgba(245,241,234,0.8)]">
               {frame} · {caption}
             </p>
           </div>
@@ -85,7 +85,7 @@ export function AuthShell({
         <header className="flex items-center justify-between gap-4 border-b border-border px-gutter py-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2.5 text-[0.9375rem] font-medium tracking-tight"
+            className="inline-flex items-center gap-2.5 text-[0.9375rem] font-medium tracking-normal"
           >
             <span
               aria-hidden="true"

@@ -21,7 +21,7 @@ export function Hero() {
         />
 
         <div className="shell relative flex h-full flex-col justify-between py-[clamp(1.5rem,4vw,3rem)] text-[#F5F1EA]">
-          <div className="flex justify-between gap-4 font-mono text-micro uppercase tracking-[0.2em] text-[rgba(245,241,234,0.72)]">
+          <div className="flex justify-between gap-4 font-mono text-micro uppercase tracking-[0.22em] text-[rgba(245,241,234,0.72)]">
             <span>{site.city} · India</span>
             <span>{site.coordinates}</span>
           </div>
@@ -32,7 +32,7 @@ export function Hero() {
               <span className="block">in Pune</span>
             </h1>
 
-            <p className="mt-[clamp(1rem,2vw,1.6rem)] max-w-[34ch] font-mono text-[clamp(0.625rem,1.3vw,0.8125rem)] uppercase leading-[1.9] tracking-[0.22em] text-[rgba(245,241,234,0.86)]">
+            <p className="mt-[clamp(1rem,2vw,1.6rem)] max-w-[34ch] font-mono text-[clamp(0.625rem,1.3vw,0.8125rem)] uppercase leading-[1.9] tracking-[0.24em] text-[rgba(245,241,234,0.86)]">
               We walk. We photograph. We see the city differently.
             </p>
 

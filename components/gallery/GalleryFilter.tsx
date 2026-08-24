@@ -15,7 +15,7 @@ export function GalleryFilter() {
     .filter((category) => category.count > 0);
 
   const base =
-    'border-b border-transparent pb-1.5 font-mono text-meta uppercase tracking-[0.16em] transition-colors hover:text-foreground';
+    'border-b border-transparent pb-1.5 font-mono text-meta uppercase tracking-[0.18em] transition-colors hover:text-foreground';
 
   return (
     <div

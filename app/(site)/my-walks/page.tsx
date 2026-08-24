@@ -132,7 +132,7 @@ function WalkList({
                 <span className="display block text-[clamp(1.15rem,2.4vw,1.6rem)] leading-tight">
                   {rsvp.event_title}
                 </span>
-                <span className="meta mt-1.5 block normal-case tracking-[0.08em]">
+                <span className="meta mt-1.5 block normal-case tracking-[0.1em]">
                   {longDate(rsvp.event_date)}
                   {detailsFor(rsvp.event_id)}
                 </span>

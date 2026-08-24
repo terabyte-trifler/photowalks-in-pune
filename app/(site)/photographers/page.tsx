@@ -101,7 +101,7 @@ export default async function PhotographersPage({
               ) : (
                 <>
                   {result.rankingIsEmpty && (
-                    <p className="meta mt-[clamp(1.5rem,3vw,2rem)] border-l-2 border-border-strong bg-subtle py-3 pl-4 normal-case tracking-[0.06em]">
+                    <p className="meta mt-[clamp(1.5rem,3vw,2rem)] border-l-2 border-border-strong bg-subtle py-3 pl-4 normal-case tracking-[0.08em]">
                       Nobody has walked or uploaded anything yet, so this order is not a
                       ranking — it is just everybody, newest first.
                     </p>

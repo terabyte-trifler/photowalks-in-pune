@@ -78,10 +78,10 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
                   <div className="flex items-center gap-3 border-b border-border pb-4">
                     <Avatar src={profile?.avatar_url} name={profile?.full_name ?? 'Photographer'} size={34} />
                     <span className="min-w-0">
-                      <span className="block truncate text-[0.9375rem] font-medium tracking-tight">
+                      <span className="block truncate text-[0.9375rem] font-medium tracking-normal">
                         {profile?.full_name ?? 'Photographer'}
                       </span>
-                      <span className="meta block truncate normal-case tracking-[0.08em]">
+                      <span className="meta block truncate normal-case tracking-[0.1em]">
                         {profile ? `@${profile.username}` : user.email}
                       </span>
                     </span>

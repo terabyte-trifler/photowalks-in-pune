@@ -49,7 +49,7 @@ export function SiteHeader() {
         <nav className="shell flex min-h-[62px] items-center justify-between gap-6" aria-label="Primary">
           <a
             href={sectionHref('#hero')}
-            className="inline-flex items-center gap-2.5 text-[0.9375rem] font-medium tracking-tight"
+            className="inline-flex items-center gap-2.5 text-[0.9375rem] font-medium tracking-normal"
           >
             <span
               aria-hidden="true"

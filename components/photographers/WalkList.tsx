@@ -32,7 +32,7 @@ export function WalkList({ attendance }: { attendance: WalkAttendance[] }) {
               <span className="display block text-[clamp(1.15rem,2.4vw,1.6rem)] leading-tight transition-colors duration-300 group-hover:text-accent">
                 {walk.event_title}
               </span>
-              <span className="meta mt-1.5 block normal-case tracking-[0.08em]">
+              <span className="meta mt-1.5 block normal-case tracking-[0.1em]">
                 {known ? `${known.location} · ` : ''}
                 {longDate(walk.event_date)}
                 {known ? ` · ${priceLabel(known.price)}` : ''}

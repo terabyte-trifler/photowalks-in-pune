@@ -72,7 +72,7 @@ export async function PhotographersStrip() {
                         <span className="display block text-[1.0625rem] leading-tight transition-colors duration-300 group-hover:text-accent">
                           {person.full_name}
                         </span>
-                        <span className="meta mt-0.5 block truncate normal-case tracking-[0.08em]">
+                        <span className="meta mt-0.5 block truncate normal-case tracking-[0.1em]">
                           @{person.username}
                         </span>
                         <StyleLine

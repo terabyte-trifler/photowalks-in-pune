@@ -60,7 +60,7 @@ export default async function PhotographerPhotosPage({
             <span aria-hidden="true">←</span> Back to profile
           </Link>
         </div>
-        <p className="meta mt-3 normal-case tracking-[0.1em]">
+        <p className="meta mt-3 normal-case tracking-[0.12em]">
           @{photographer.username}
           {work.total > 0 ? ` · ${work.total} ${work.total === 1 ? 'photograph' : 'photographs'}` : ''}
         </p>
@@ -119,7 +119,7 @@ export default async function PhotographerPhotosPage({
           </nav>
         )}
 
-        <p className="meta mt-[clamp(2rem,4vw,3rem)] normal-case tracking-[0.06em]">
+        <p className="meta mt-[clamp(2rem,4vw,3rem)] normal-case tracking-[0.08em]">
           {PHOTOS_PAGE_SIZE} photographs a page, loaded as you reach them.
         </p>
       </div>

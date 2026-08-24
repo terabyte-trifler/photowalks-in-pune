@@ -243,7 +243,7 @@ export function SignupForm({
           <span aria-hidden="true">→</span>
         </button>
 
-        <p className="meta mt-5 normal-case tracking-[0.06em]">
+        <p className="meta mt-5 normal-case tracking-[0.08em]">
           By joining you agree to walk considerately and to ask before photographing
           people. We only use your email for walk details.
         </p>

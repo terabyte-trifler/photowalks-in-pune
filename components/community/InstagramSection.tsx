@@ -46,7 +46,7 @@ export async function InstagramSection() {
                 sizes="(min-width: 768px) 17vw, 50vw"
                 className="aspect-square w-full object-cover transition-[transform,opacity] duration-700 ease-editorial group-hover:scale-105 group-hover:opacity-75"
               />
-              <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,rgba(10,9,8,0.75),transparent)] p-3 font-mono text-[0.5625rem] uppercase tracking-[0.14em] text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,rgba(10,9,8,0.75),transparent)] p-3 font-mono text-[0.5625rem] uppercase tracking-[0.16em] text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                 {post.caption}
               </span>
             </a>
@@ -60,7 +60,7 @@ export async function InstagramSection() {
         </div>
 
         {!isInstagramConfigured() && (
-          <p className="meta mt-5 normal-case tracking-[0.06em]">
+          <p className="meta mt-5 normal-case tracking-[0.08em]">
             Placeholders — set INSTAGRAM_ACCESS_TOKEN and these become the six most
             recent posts from {site.links.instagramHandle}.
           </p>

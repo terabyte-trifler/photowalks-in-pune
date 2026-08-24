@@ -166,7 +166,7 @@ export function AvatarUpload({
             </button>
           )}
 
-          <span className="meta normal-case tracking-[0.06em]">
+          <span className="meta normal-case tracking-[0.08em]">
             JPEG, PNG, WebP or AVIF · compressed for you · saved straight away
           </span>
         </div>

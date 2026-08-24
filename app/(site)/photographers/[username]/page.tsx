@@ -245,10 +245,10 @@ export default async function PhotographerPage({
                     >
                       <Avatar src={person.avatar_url} name={person.full_name} size={38} />
                       <span>
-                        <span className="block text-[0.9375rem] font-medium tracking-tight transition-colors group-hover:text-accent">
+                        <span className="block text-[0.9375rem] font-medium tracking-normal transition-colors group-hover:text-accent">
                           {person.full_name}
                         </span>
-                        <span className="meta normal-case tracking-[0.08em]">
+                        <span className="meta normal-case tracking-[0.1em]">
                           @{person.username}
                         </span>
                       </span>
@@ -290,7 +290,7 @@ function ProfileHeader({
             <h1 id="profile-name" className="display text-display-xl">
               {photographer.full_name}
             </h1>
-            <p className="meta mt-3 normal-case tracking-[0.1em]">
+            <p className="meta mt-3 normal-case tracking-[0.12em]">
               @{photographer.username}
               {photographer.city ? ` · ${photographer.city}` : ''}
             </p>

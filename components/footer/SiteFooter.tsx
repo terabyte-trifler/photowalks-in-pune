@@ -17,7 +17,7 @@ export function SiteFooter() {
     <footer className="border-t border-foreground py-section-sm">
       <div className="shell grid gap-[clamp(2rem,4vw,3rem)] md:grid-cols-[5fr_3fr_3fr]">
         <div>
-          <p className="inline-flex items-center gap-2.5 text-[0.9375rem] font-medium tracking-tight">
+          <p className="inline-flex items-center gap-2.5 text-[0.9375rem] font-medium tracking-normal">
             <span
               aria-hidden="true"
               className="grid h-[22px] w-[22px] flex-none place-items-center rounded-full border border-foreground"

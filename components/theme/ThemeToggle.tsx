@@ -69,7 +69,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
          decorative and hidden from one. */
       aria-label={`Theme: ${LABEL[current]}. Switch to ${LABEL[NEXT[current]]}.`}
       title={`Theme: ${LABEL[current]}`}
-      className={`group inline-flex items-center gap-2 border border-border px-2.5 py-1.5 font-mono text-micro uppercase tracking-[0.16em] text-muted transition-colors hover:border-border-strong hover:text-foreground ${className}`}
+      className={`group inline-flex items-center gap-2 border border-border px-2.5 py-1.5 font-mono text-micro uppercase tracking-[0.18em] text-muted transition-colors hover:border-border-strong hover:text-foreground ${className}`}
     >
       <span aria-hidden="true" className="grid h-3 w-3 place-items-center">
         {/* A contact-sheet lens rather than a sun and a moon: filled for dark,

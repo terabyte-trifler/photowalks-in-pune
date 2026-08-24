@@ -15,8 +15,8 @@ export function SectionHeader({
 }) {
   return (
     <div className={cn('mb-[clamp(2rem,4vw,3.5rem)] flex items-baseline gap-5', className)}>
-      <span className="font-mono text-meta tracking-[0.14em] text-accent">{index}</span>
-      <span className="meta label-rule flex flex-1 items-center tracking-[0.2em]">{label}</span>
+      <span className="font-mono text-meta tracking-[0.16em] text-accent">{index}</span>
+      <span className="meta label-rule flex flex-1 items-center tracking-[0.22em]">{label}</span>
     </div>
   );
 }

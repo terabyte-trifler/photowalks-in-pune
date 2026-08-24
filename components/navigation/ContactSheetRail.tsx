@@ -40,7 +40,7 @@ export function ContactSheetRail({ coordinates, city }: { coordinates: string; c
       className="pointer-events-none fixed inset-y-0 left-0 z-50 hidden w-[84px] border-r border-border xl:block"
     >
       <div
-        className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 rotate-180 items-center gap-7 font-mono text-micro uppercase tracking-[0.24em] text-muted"
+        className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 rotate-180 items-center gap-7 font-mono text-micro uppercase tracking-[0.26em] text-muted"
         style={{ writingMode: 'vertical-rl' }}
       >
         <span>

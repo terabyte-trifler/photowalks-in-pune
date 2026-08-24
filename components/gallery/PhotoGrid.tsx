@@ -91,7 +91,7 @@ export function PhotoGrid() {
                 </span>
 
                 {/* Rebate strip — metadata printed on the film edge. */}
-                <span className="mt-2.5 flex justify-between gap-4 border-t border-border pt-2.5 font-mono text-micro uppercase tracking-[0.14em] text-muted transition-colors group-hover:text-foreground-soft">
+                <span className="mt-2.5 flex justify-between gap-4 border-t border-border pt-2.5 font-mono text-micro uppercase tracking-[0.16em] text-muted transition-colors group-hover:text-foreground-soft">
                   <span>{credit ?? 'Uncredited'}</span>
                   <span>{photo.location}</span>
                 </span>

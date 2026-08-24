@@ -126,8 +126,8 @@ export function UserMenu() {
             transition={{ duration: reduced ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="border-b border-border px-4 py-3.5">
-              <p className="truncate text-[0.875rem] font-medium tracking-tight">{name}</p>
-              <p className="meta mt-1 truncate normal-case tracking-[0.08em]">
+              <p className="truncate text-[0.875rem] font-medium tracking-normal">{name}</p>
+              <p className="meta mt-1 truncate normal-case tracking-[0.1em]">
                 {profile ? `@${profile.username}` : user.email}
               </p>
             </div>
