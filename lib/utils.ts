@@ -46,6 +46,43 @@ export const longDate = (iso: string): string =>
     /* en-GB gives "Sunday 23 Aug 2026" with a comma after the weekday. */
     .replace(',', '');
 
+/* ----------------------------------------------------------------------------
+ * WHEN A WALK STOPS TAKING PEOPLE
+ * ----------------------------------------------------------------------------
+ * Registration closes at 18:00 on the walk's own date, Pune time. After that
+ * the walk is over, or close enough that somebody turning up would be turning
+ * up to an empty street.
+ *
+ * The offset is written out rather than inferred, for the same reason the
+ * dates above are: this has to give the same answer on a laptop in Pune and on
+ * a Vercel box in UTC. India has no daylight saving, so a fixed +05:30 is
+ * correct all year — which is not something to assume about a timezone in
+ * general, but is true of this one.
+ *
+ * The database enforces the same rule (migration 0014). This is what stops the
+ * button being offered; that is what stops the row being written.
+ * -------------------------------------------------------------------------- */
+
+/** Registration closes at this hour, IST, on the day of the walk. */
+export const REGISTRATION_CLOSES_HOUR_IST = 18;
+
+/** The instant registration closes. Invalid dates give an invalid Date. */
+export const registrationClosesAt = (iso: string): Date =>
+  new Date(`${iso}T${String(REGISTRATION_CLOSES_HOUR_IST).padStart(2, '0')}:00:00+05:30`);
+
+/**
+ * Whether this walk has stopped taking people.
+ *
+ * `now` is a parameter so the behaviour either side of the cutoff can be
+ * tested without waiting for six in the evening.
+ */
+export const registrationClosed = (iso: string, now: Date = new Date()): boolean => {
+  const closes = registrationClosesAt(iso).getTime();
+  /* A malformed date should not silently close a walk that is still open. */
+  if (Number.isNaN(closes)) return false;
+  return now.getTime() >= closes;
+};
+
 export const priceLabel = (price: number): string => (price === 0 ? 'Free' : `₹${price}`);
 
 export const isNearlyFull = (spots: number, capacity: number): boolean =>

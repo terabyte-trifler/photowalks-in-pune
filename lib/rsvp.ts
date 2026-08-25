@@ -17,6 +17,7 @@
 import type { ExperienceLevel } from '@/data/events';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { registrationClosed } from '@/lib/utils';
 
 export interface RsvpInput {
   eventId: string;
@@ -114,7 +115,19 @@ export async function lastRsvpDetails(profileId: string): Promise<
   };
 }
 
+/** The sentence shown wherever a walk has stopped taking people. */
+export const REGISTRATION_CLOSED_MESSAGE =
+  'Registration for this walk closed at 6pm on the day of the walk.';
+
 export async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
+  /* Ahead of the branch below so it covers the no-backend path too: without a
+     Supabase project the row only reaches localStorage, where no trigger can
+     refuse it, and a confirmation screen for a walk that has been is worse
+     than one that never persisted. */
+  if (registrationClosed(input.eventDate)) {
+    return { ok: false, persisted: false, error: REGISTRATION_CLOSED_MESSAGE };
+  }
+
   const supabase = getSupabaseBrowserClient();
 
   if (supabase && input.profileId) {
@@ -134,6 +147,13 @@ export async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
         if (error.code === '23505') return { ok: true, persisted: true, alreadyJoined: true };
 
         if (error.code === '23514') {
+          /* Shared code, two senders: the column constraints in migration 0002
+             and the cutoff trigger in 0014. Only the trigger says
+             "Registration", and it is worth telling apart — "check the details
+             above" is unhelpful advice for a walk that has already happened. */
+          if (error.message?.includes('Registration for this walk closed')) {
+            return { ok: false, persisted: false, error: REGISTRATION_CLOSED_MESSAGE };
+          }
           return {
             ok: false,
             persisted: false,

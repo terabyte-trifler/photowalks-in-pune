@@ -6,7 +6,7 @@ import { Dialog, DialogClose } from '@/components/ui/Dialog';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { experienceLevels, type Event, type ExperienceLevel } from '@/data/events';
 import { site } from '@/data/site';
-import { longDate, priceLabel } from '@/lib/utils';
+import { longDate, priceLabel, registrationClosed } from '@/lib/utils';
 import {
   findExistingRsvp,
   isBackendConfigured,
@@ -134,6 +134,61 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
    * dialog opens as it always did, still showing the walk, and asks.
    * `next` carries the walk back so the form reopens on it afterwards.
    * ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------------
+   * REGISTRATION HAS CLOSED
+   * ------------------------------------------------------------------
+   * Ahead of the sign-in gate on purpose: asking somebody to create an
+   * account for a walk they cannot join would be a waste of their time
+   * and would read as a trick.
+   *
+   * Reached rarely, because the buttons that open this dialog are
+   * disabled past the cutoff — but a prerendered page can be minutes
+   * stale, and a tab left open all afternoon can be hours stale, so the
+   * dialog says so itself rather than relying on how it was opened.
+   * ------------------------------------------------------------------ */
+  if (registrationClosed(event.date) && !alreadyJoined) {
+    return (
+      <Dialog
+        open
+        onClose={onClose}
+        label={`Registration closed for ${event.title}`}
+        className="max-w-[560px]"
+      >
+        <div className="mb-7 flex items-start justify-between gap-4 border-b border-border pb-4">
+          <div>
+            <p className="meta">Registration closed</p>
+            <h2 className="display mt-2 text-display-md">{event.title}</h2>
+            <p className="meta mt-2">
+              {longDate(event.date)} · {event.time} · {priceLabel(event.price)}
+            </p>
+          </div>
+          <DialogClose onClose={onClose} />
+        </div>
+
+        <p className="display text-display-md">This one has been and gone.</p>
+        <p className="mt-4 font-display text-lead text-foreground-soft">
+          Registration for a walk closes at six on the evening of the walk
+          itself. There is another one coming — the walks are announced first on
+          WhatsApp, usually a week or so ahead.
+        </p>
+
+        <div className="mt-[clamp(2rem,4vw,2.5rem)] grid gap-4">
+          <a
+            href={site.links.whatsapp}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="cta-solid justify-between"
+          >
+            Join the WhatsApp community <span aria-hidden="true">→</span>
+          </a>
+          <button type="button" onClick={onClose} className="cta-ghost justify-between">
+            Look at the upcoming walks <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </Dialog>
+    );
+  }
+
   if (!authLoading && !user) {
     const back = `/?rsvp=${encodeURIComponent(event.slug)}`;
     return (
@@ -217,6 +272,15 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
    */
   async function confirmSpot() {
     if (status === 'submitting' || !event) return;
+
+    /* Opened at 17:59 and submitted at 18:01 is the case this catches. The
+       database refuses it too; this is only so the answer is a sentence rather
+       than a constraint violation. */
+    if (registrationClosed(event.date)) {
+      setFailure('Registration for this walk closed at 6pm on the day of the walk.');
+      setStatus('failed');
+      return;
+    }
 
     /* Validated even on the one-press route. The values came from a previous
        row rather than a keyboard, but "it was fine last time" is an assumption

@@ -1,7 +1,7 @@
 'use client';
 
 import type { Event } from '@/data/events';
-import { cn } from '@/lib/utils';
+import { cn, registrationClosed } from '@/lib/utils';
 import { useRSVP } from './RSVPProvider';
 
 /**
@@ -23,10 +23,20 @@ export function RSVPButton({
 }) {
   const { open } = useRSVP();
 
+  /* Checked again here, on the click, rather than trusting the `disabled` the
+     server worked out. The homepage is prerendered and revalidates on a timer,
+     so a copy of it can outlive the cutoff by a few minutes — and somebody who
+     left the tab open over lunch is holding a copy that is hours stale. This
+     is a client island, so `new Date()` here is the real present. */
+  const handleClick = () => {
+    if (registrationClosed(event.date)) return;
+    open(event);
+  };
+
   return (
     <button
       type="button"
-      onClick={() => open(event)}
+      onClick={handleClick}
       disabled={disabled}
       aria-label={ariaLabel}
       aria-haspopup="dialog"

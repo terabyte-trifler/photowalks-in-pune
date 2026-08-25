@@ -1,4 +1,4 @@
-import { featuredWalk } from '@/data/events';
+import { nextOpenWalk } from '@/data/events';
 import { site } from '@/data/site';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { HeroImage } from './HeroImage';
@@ -8,6 +8,10 @@ import { HeroImage } from './HeroImage';
  * client islands.
  */
 export function Hero() {
+  /* Server component, so this is the walk as of the last render of the page —
+     the same one section 02 leads with. */
+  const nextWalk = nextOpenWalk();
+
   return (
     <section id="hero" aria-labelledby="hero-title">
       <div className="relative h-[clamp(520px,82vh,880px)] overflow-hidden bg-night">
@@ -37,9 +41,11 @@ export function Hero() {
             </p>
 
             <div className="mt-[clamp(1.75rem,3vw,2.75rem)] flex flex-wrap gap-x-10 gap-y-5">
-              <RSVPButton event={featuredWalk} className="cta text-[#F5F1EA]">
-                Join the next walk <span aria-hidden="true">→</span>
-              </RSVPButton>
+              {nextWalk && (
+                <RSVPButton event={nextWalk} className="cta text-[#F5F1EA]">
+                  Join the next walk <span aria-hidden="true">→</span>
+                </RSVPButton>
+              )}
               <a href="#statement" className="cta text-[#F5F1EA]">
                 Explore the community <span aria-hidden="true">↓</span>
               </a>

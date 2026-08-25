@@ -11,6 +11,8 @@
  * published. Flip it once the date, time, meeting point and cost are real.
  * ========================================================================== */
 
+import { registrationClosed } from '@/lib/utils';
+
 export type WalkStatus = 'open' | 'filling' | 'full' | 'past';
 
 export interface Event {
@@ -45,6 +47,10 @@ export interface Event {
  * The id stays `walk-next` through any change of place or name. Five people
  * have already joined this one, and walk_rsvps rows point at the id — renaming
  * it would strand their spots.
+ *
+ * NOT what section 02 shows. This is the first entry of `upcomingWalks`, and
+ * once it has been it is simply a past walk like any other; the page leads with
+ * whatever `nextOpenWalk()` returns. Import that, not this.
  */
 export const featuredWalk: Event = {
   id: 'walk-next',
@@ -135,3 +141,54 @@ export const experienceLevels = [
 ] as const;
 
 export type ExperienceLevel = (typeof experienceLevels)[number];
+
+/* ----------------------------------------------------------------------------
+ * WHICH WALK SECTION 02 LEADS WITH
+ * ----------------------------------------------------------------------------
+ * It used to lead with `featuredWalk`, a fixed reference — so the morning after
+ * that walk, the top of the page was still advertising it. Now the walk is
+ * chosen: the earliest one still taking people, by the same 18:00 IST cutoff
+ * the RSVP buttons use.
+ *
+ * ON THE CHOICE OF STRUCTURE
+ * A queue is the obvious fit — the walks are in date order, so shift the front
+ * one off as it passes — and it is the wrong one here, for a reason that has
+ * nothing to do with how fast it is. Rendering is stateless: nothing survives
+ * between requests, so there is no queue to have been shifted. Making one
+ * module-level and mutating it would be worse than useless, because module
+ * state in a server outlives the request and is shared by everybody it renders
+ * — one visitor arriving after six would pop the walk for every other visitor
+ * that worker went on to serve.
+ *
+ * So the answer is recomputed each time, which makes this a single-pass
+ * minimum: O(n) time, O(1) space, no allocation, one comparison per walk. That
+ * is already optimal for the operation, because a walk that has closed cannot
+ * be recognised without looking at it — any structure claiming better has to
+ * have been maintained by somebody, which is the thing that cannot happen here.
+ *
+ * Sorting first would be O(n log n) to answer a question that does not need the
+ * order. Binary search would be O(log n) but only holds while the array is
+ * sorted by date, which nothing in this file enforces — an out-of-order entry
+ * would silently skip a walk. The scan does not care.
+ *
+ * n is four.
+ * -------------------------------------------------------------------------- */
+
+/**
+ * The earliest walk still taking people, or null when every one has closed.
+ *
+ * `now` is a parameter so the transition either side of six can be tested
+ * without waiting for the evening.
+ */
+export function nextOpenWalk(now: Date = new Date()): Event | null {
+  let next: Event | null = null;
+
+  for (const walk of upcomingWalks) {
+    if (registrationClosed(walk.date, now)) continue;
+    /* ISO dates are lexicographically ordered, so `<` on the strings is a
+       comparison of the dates. No parsing, and no timezone to get wrong. */
+    if (next === null || walk.date < next.date) next = walk;
+  }
+
+  return next;
+}

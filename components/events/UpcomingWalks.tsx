@@ -2,7 +2,8 @@ import Image from 'next/image';
 import { upcomingWalks } from '@/data/events';
 import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import {
-  dayNumber, isNearlyFull, longDate, monthShort, priceLabel, spotsLabel, weekday,
+  dayNumber, isNearlyFull, longDate, monthShort, priceLabel, registrationClosed,
+  spotsLabel, weekday,
 } from '@/lib/utils';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { Reveal } from '@/components/ui/Reveal';
@@ -34,15 +35,23 @@ export async function UpcomingWalks() {
           <ul>
             {upcomingWalks.map((walk) => {
               const remaining = spotsRemaining(walk, taken);
+              const closed = registrationClosed(walk.date);
               const full = remaining <= 0;
               const low = isNearlyFull(remaining, walk.capacity);
+              /* "Closed" first: a walk that has been and gone is not "Full",
+                 whatever the count says. */
+              const label = closed ? 'Closed' : full ? 'Full' : 'RSVP';
 
               return (
                 <li key={walk.id} className="group relative border-b border-border">
                   <RSVPButton
                     event={walk}
-                    disabled={full}
-                    ariaLabel={`RSVP for ${walk.title}, ${longDate(walk.date)}`}
+                    disabled={full || closed}
+                    ariaLabel={
+                      closed
+                        ? `${walk.title}, ${longDate(walk.date)} — registration closed`
+                        : `RSVP for ${walk.title}, ${longDate(walk.date)}`
+                    }
                     className="grid w-full grid-cols-1 gap-x-6 gap-y-2 py-[clamp(1.5rem,3vw,2.25rem)] text-left transition-[background-color,padding] duration-500 lg:grid-cols-[5rem_minmax(0,1.6fr)_minmax(0,1fr)_8rem_auto] lg:items-center lg:group-hover:bg-subtle lg:group-hover:px-5"
                   >
                     <span className="flex items-baseline gap-3">
@@ -70,13 +79,13 @@ export async function UpcomingWalks() {
                     <span className="meta block">
                       {priceLabel(walk.price)}
                       <br />
-                      <span className={low ? 'text-accent' : 'text-muted'}>
-                        {spotsLabel(remaining, walk.capacity)}
+                      <span className={!closed && low ? 'text-accent' : 'text-muted'}>
+                        {closed ? 'Registration closed' : spotsLabel(remaining, walk.capacity)}
                       </span>
                     </span>
 
                     <span className="meta inline-flex items-center gap-2.5 text-foreground">
-                      {full ? 'Full' : 'RSVP'} <span aria-hidden="true">→</span>
+                      {label} {!closed && <span aria-hidden="true">→</span>}
                     </span>
                   </RSVPButton>
 

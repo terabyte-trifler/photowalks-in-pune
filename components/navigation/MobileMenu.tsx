@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { navigation } from '@/data/site';
-import { featuredWalk } from '@/data/events';
+import { nextOpenWalk } from '@/data/events';
 import { useRSVP } from '@/components/rsvp/RSVPProvider';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Avatar } from './Avatar';
@@ -14,6 +14,9 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const reduced = useReducedMotion();
   const { open: openRSVP } = useRSVP();
+  /* Only ever rendered once somebody has opened the menu, so reading the
+     clock here cannot disagree with a prerendered page. */
+  const nextWalk = nextOpenWalk();
   const { user, profile, loading, signOut } = useAuth();
 
   /* Same reason as SiteHeader: the sections only exist on the homepage. */
@@ -137,18 +140,20 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
             <ThemeToggle />
           </div>
 
-          <div className="mt-auto pt-8">
-            <button
-              type="button"
-              className="cta-solid w-full justify-between"
-              onClick={() => {
-                onClose();
-                openRSVP(featuredWalk);
-              }}
-            >
-              Join the next walk <span aria-hidden="true">→</span>
-            </button>
-          </div>
+          {nextWalk && (
+            <div className="mt-auto pt-8">
+              <button
+                type="button"
+                className="cta-solid w-full justify-between"
+                onClick={() => {
+                  onClose();
+                  openRSVP(nextWalk);
+                }}
+              >
+                Join the next walk <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

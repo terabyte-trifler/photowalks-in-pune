@@ -1,5 +1,6 @@
 import Image from 'next/image';
-import { featuredWalk } from '@/data/events';
+import { nextOpenWalk } from '@/data/events';
+import { site } from '@/data/site';
 import { longDate, priceLabel, spotsLabel, isNearlyFull } from '@/lib/utils';
 import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
@@ -8,7 +9,45 @@ import { SectionHeader } from '@/components/ui/Typography';
 
 /** Server component. Everything above this exists to get someone here. */
 export async function FeaturedWalk() {
-  const walk = featuredWalk;
+  /* Chosen, not fixed: the earliest walk still taking people. */
+  const walk = nextOpenWalk();
+
+  /* Every walk in the file has been. Saying so is better than leading the page
+     with one that is over, and far better than an empty section — somebody who
+     scrolled here wants a date, and the honest answer is where to get one. */
+  if (!walk) {
+    return (
+      <section
+        id="next-walk"
+        className="border-t border-border py-section"
+        aria-labelledby="next-walk-title"
+      >
+        <div className="shell">
+          <SectionHeader index="02" label="Next walk" />
+          <Reveal>
+            <h2 id="next-walk-title" className="display max-w-[18ch] text-display-xl">
+              The next one is being planned.
+            </h2>
+            <p className="mt-6 max-w-[46ch] font-display text-lead text-foreground-soft">
+              Walks are announced first on WhatsApp, usually a week or so ahead —
+              that is where the date lands before it reaches this page.
+            </p>
+            <div className="mt-[clamp(1.5rem,3vw,2.25rem)]">
+              <a
+                className="cta-solid"
+                href={site.links.whatsapp}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                Join the WhatsApp community <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+    );
+  }
+
   /* Counted from real RSVPs, not typed into data/events.ts. */
   const remaining = spotsRemaining(walk, await getSpotsTaken());
   const low = isNearlyFull(remaining, walk.capacity);

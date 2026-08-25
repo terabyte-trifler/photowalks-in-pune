@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif, Archivo, DM_Mono } from 'next/font/google';
-import { featuredWalk } from '@/data/events';
+import { nextOpenWalk } from '@/data/events';
 import { site } from '@/data/site';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import './globals.css';
@@ -86,18 +86,23 @@ function structuredData() {
     },
   ];
 
-  if (featuredWalk.verified) {
+  /* Whichever walk is actually next, and only while it is still open: an Event
+     schema for a walk that has been is a wrong answer sitting in search results
+     for weeks. Null once every walk has closed, and then nothing is emitted. */
+  const nextWalk = nextOpenWalk();
+
+  if (nextWalk?.verified) {
     schemas.push({
       '@context': 'https://schema.org',
       '@type': 'Event',
-      name: featuredWalk.title,
-      startDate: featuredWalk.date,
+      name: nextWalk.title,
+      startDate: nextWalk.date,
       eventStatus: 'https://schema.org/EventScheduled',
       eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-      description: featuredWalk.description,
+      description: nextWalk.description,
       location: {
         '@type': 'Place',
-        name: featuredWalk.location,
+        name: nextWalk.location,
         address: {
           '@type': 'PostalAddress',
           addressLocality: 'Pune',
@@ -108,7 +113,7 @@ function structuredData() {
       organizer: { '@type': 'Organization', name: site.displayName, url: site.seo.url },
       offers: {
         '@type': 'Offer',
-        price: featuredWalk.price,
+        price: nextWalk.price,
         priceCurrency: 'INR',
         availability: 'https://schema.org/InStock',
         url: site.seo.url,

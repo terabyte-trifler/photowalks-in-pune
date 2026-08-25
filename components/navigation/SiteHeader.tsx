@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { featuredWalk } from '@/data/events';
+import { nextOpenWalk } from '@/data/events';
 import { navigation, site } from '@/data/site';
 import { cn } from '@/lib/utils';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
@@ -17,6 +17,13 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  /* This is a client component on a prerendered page, so at the moment the last
+     walk closes a cached copy can still be carrying the button while the
+     browser has stopped agreeing. The window is one revalidate long, once, and
+     the modal refuses the walk anyway — not worth deferring the button to an
+     effect and having it appear late on every other load. */
+  const nextWalk = nextOpenWalk();
 
   /* The sections live on the homepage. Now that the header also appears on the
      account pages, a bare "#walks" would scroll nowhere — so off the homepage
@@ -90,12 +97,14 @@ export function SiteHeader() {
                 hairline. Booking a walk is the product; this is the account. */}
             <UserMenu />
 
-            <RSVPButton
-              event={featuredWalk}
-              className="border border-foreground px-4 py-2.5 font-mono text-meta uppercase transition-colors hover:bg-foreground hover:text-background"
-            >
-              Join a walk
-            </RSVPButton>
+            {nextWalk && (
+              <RSVPButton
+                event={nextWalk}
+                className="border border-foreground px-4 py-2.5 font-mono text-meta uppercase transition-colors hover:bg-foreground hover:text-background"
+              >
+                Join a walk
+              </RSVPButton>
+            )}
 
             <button
               type="button"
