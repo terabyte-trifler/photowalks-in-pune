@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { MAX_PHOTOS_PER_MEMBER } from '@/lib/directory';
@@ -37,6 +37,16 @@ const NO_WALK = 'none';
  * The caption stays optional. The walk stays selected between uploads, so
  * filing a morning's work is pick-file, caption, repeat.
  *
+ * ---- CHOOSE, THEN LOOK, THEN PUSH ------------------------------------------
+ * Picking a file does not upload it. It shows the frame and waits, because a
+ * caption is written about a photograph somebody is looking at — asking for
+ * one before it is on screen gets you the filename or nothing.
+ *
+ * The preview is an object URL: a handle on the file already on disk, not a
+ * copy of it in memory, and one at a time. It is revoked the moment the
+ * photograph is pushed, discarded, or this unmounts, so nothing is held after
+ * it stops being looked at.
+ *
  * The walk is what puts a photograph on /walks/[slug]. It is a plain select
  * rather than free text: the walks are known, and a typed name would not match
  * anything.
@@ -65,6 +75,14 @@ export function PhotoManager({
   /* Distinct from '' (nothing chosen yet), which is what the button waits on. */
   const [eventId, setEventId] = useState('');
   const [caption, setCaption] = useState('');
+  /* Chosen and being looked at, not yet uploaded. */
+  const [pending, setPending] = useState<{ file: File; url: string } | null>(null);
+
+  /* Last resort: navigating away with a frame on screen should not leak its
+     handle. Everywhere else revokes as it clears. */
+  useEffect(() => () => {
+    if (pending) URL.revokeObjectURL(pending.url);
+  }, [pending]);
 
   const walks = allWalksNewestFirst();
 
@@ -74,9 +92,10 @@ export function PhotoManager({
   const remaining = Math.max(0, MAX_PHOTOS_PER_MEMBER - total);
   const full = remaining === 0;
 
-  async function handleFile(files: FileList | null) {
+  /** Picking a file only shows it. Nothing leaves the machine until Push. */
+  function chooseFile(files: FileList | null) {
     const file = files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
 
     const rejected = checkFile(file, 'photo');
     if (rejected) {
@@ -84,9 +103,34 @@ export function PhotoManager({
       return;
     }
 
-    /* Resolved before anything is uploaded, so a walk that cannot be found is
-       a message rather than a file in the bucket waiting to be rolled back.
-       The button is disabled until something is chosen; this is the belt to
+    if (remaining === 0) {
+      setError(
+        `That is ${MAX_PHOTOS_PER_MEMBER} photographs — the most a profile holds. Remove one to add another.`,
+      );
+      return;
+    }
+
+    setError('');
+    setPending((current) => {
+      /* One at a time: whatever was on screen is let go before the next. */
+      if (current) URL.revokeObjectURL(current.url);
+      return { file, url: URL.createObjectURL(file) };
+    });
+  }
+
+  /** Put the frame back down without uploading it. */
+  function discard() {
+    setPending((current) => {
+      if (current) URL.revokeObjectURL(current.url);
+      return null;
+    });
+    setError('');
+  }
+
+  async function pushToGallery() {
+    if (!pending || !user || busy) return;
+
+    /* The button is disabled until something is chosen; this is the belt to
        that brace, and what somebody sees if they arrive here another way. */
     if (!eventId) {
       setError('Choose which walk this came from, or say it is not from one.');
@@ -99,14 +143,6 @@ export function PhotoManager({
       return;
     }
 
-    /* The trigger would refuse this anyway; saying so first saves the upload. */
-    if (remaining === 0) {
-      setError(
-        `That is ${MAX_PHOTOS_PER_MEMBER} photographs — the most a profile holds. Remove one to add another.`,
-      );
-      return;
-    }
-
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
 
@@ -115,7 +151,7 @@ export function PhotoManager({
 
     /* uploadImage downscales to 2000px WebP first, and reports the dimensions
        of what it actually stored. */
-    const uploaded = await uploadImage(file, 'photo', user.id);
+    const uploaded = await uploadImage(pending.file, 'photo', user.id);
 
     if (!uploaded.ok || !uploaded.path) {
       setError(uploaded.error ?? 'That did not upload.');
@@ -147,6 +183,7 @@ export function PhotoManager({
     }
 
     setBusy(false);
+    discard();
     /* The walk stays selected — somebody filing a morning's work adds several,
        one after another. The caption does not: it described that photograph
        and the next one is a different frame. */
@@ -162,6 +199,30 @@ export function PhotoManager({
           {total} of {MAX_PHOTOS_PER_MEMBER} · compressed to under 200KB before upload
         </span>
       </div>
+
+      {pending && (
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
+          {/* An object URL, so this is the file on disk rather than a copy of
+              it — and next/image cannot optimise a blob, nor should it: the
+              point is to see exactly what is about to be sent. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={pending.url}
+            alt="The photograph you are about to add"
+            className="h-40 w-full flex-none border border-border object-cover sm:w-56"
+          />
+          <div className="min-w-0">
+            <p className="meta">Ready to push</p>
+            <p className="mt-1.5 truncate text-[0.9375rem] text-foreground-soft">
+              {pending.file.name}
+            </p>
+            <p className="meta mt-1 normal-case tracking-[0.08em]">
+              Caption it below while you can see it. It is resized and
+              compressed on the way up, so what lands is a fraction of this.
+            </p>
+          </div>
+        </div>
+      )}
 
       {!full && (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -206,29 +267,44 @@ export function PhotoManager({
           <p className="meta normal-case tracking-[0.08em] sm:col-span-2">
             Naming the walk is what puts the photograph on that walk&rsquo;s
             page, and how anyone finds it again — but &ldquo;not from a
-            walk&rdquo; is a fair answer. The caption is yours to skip. Both
-            belong to the one photograph you add next.
+            walk&rdquo; is a fair answer. The caption is yours to skip.
           </p>
         </div>
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3">
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={busy || full || !eventId}
-          aria-busy={busy}
-          className="cta-solid disabled:opacity-60"
-        >
-          {busy
-            ? 'Uploading'
-            : full
-              ? 'No room left'
-              : !eventId
-                ? 'Choose a walk first'
-                : 'Add a photograph'}{' '}
-          <span aria-hidden="true">→</span>
-        </button>
+        {pending ? (
+          <>
+            <button
+              type="button"
+              onClick={() => void pushToGallery()}
+              disabled={busy || !eventId}
+              aria-busy={busy}
+              className="cta-solid disabled:opacity-60"
+            >
+              {busy ? 'Pushing' : !eventId ? 'Choose a walk first' : 'Push to gallery'}{' '}
+              <span aria-hidden="true">→</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={discard}
+              disabled={busy}
+              className="cta disabled:opacity-60"
+            >
+              Choose another
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={busy || full}
+            className="cta-solid disabled:opacity-60"
+          >
+            {full ? 'No room left' : 'Add a photograph'} <span aria-hidden="true">→</span>
+          </button>
+        )}
 
         {photos.length > 0 && (
           <span className="meta normal-case tracking-[0.08em]">
@@ -249,7 +325,7 @@ export function PhotoManager({
         accept={ACCEPT_ATTRIBUTE}
         className="sr-only"
         onChange={(event) => {
-          void handleFile(event.target.files);
+          chooseFile(event.target.files);
           event.target.value = '';
         }}
       />
