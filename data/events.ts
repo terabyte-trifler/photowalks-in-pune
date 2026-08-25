@@ -61,7 +61,7 @@ export const featuredWalk: Event = {
      text everywhere it appears, so "Afternoon" reads correctly beside the
      weekday without any special handling. The exact hour goes out on WhatsApp,
      where it can be changed on the morning without a deploy. */
-  time: 'Afternoon',
+  time: 'Evening',
   location: 'Camp · MG Road',
   area: 'Camp',
   description:
@@ -72,7 +72,7 @@ export const featuredWalk: Event = {
     'A wide tree-lined street in black and white, a church spire in the distance and motorbikes coming towards the camera',
   price: 0,
   capacity: 30,
-  status: 'filling',
+  status: 'past',
   verified: false,
 };
 
@@ -129,6 +129,201 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'open',
+    verified: false,
+  },
+
+/* ----------------------------------------------------------------------------
+ * WALKS THAT HAVE BEEN
+ * ----------------------------------------------------------------------------
+ * The season so far. They sit in the same array as the upcoming ones because
+ * they are the same thing — walksInReadingOrder puts them below what is still
+ * open, most recent first, and registrationClosed already refuses RSVPs.
+ *
+ * On the photographs: there are six walk banners and eleven walks, so several
+ * are shared. Where the place matches — Mandai for the market walks, Camp for
+ * Camp, Kasba Peth for the old quarters — it is the right photograph and not a
+ * compromise. Three are stand-ins and should be replaced with a frame from the
+ * walk itself: the two FC Road mornings and Independence Day, marked below.
+ *
+ * `capacity` is carried for shape only. A closed walk shows "Registration
+ * closed" where the count would go, so these numbers are never rendered.
+ * -------------------------------------------------------------------------- */
+  {
+    id: 'walk-2026-06-20',
+    slug: 'mandai-20-june',
+    title: 'Mandai / Market Morning',
+    date: '2026-06-20',
+    time: 'Morning',
+    location: 'Mahatma Phule Mandai',
+    area: 'Mandai',
+    description: 'The market before the crowds, when the produce is still being laid out.',
+    theme: 'Markets · morning light',
+    image: '/images/walks/mandai.jpg',
+    imageAlt: 'Shoppers moving through a covered flower market under orange canopies, bags full',
+    price: 0,
+    capacity: 25,
+    status: 'past',
+    verified: false,
+  },
+  {
+    id: 'walk-2026-06-27',
+    slug: 'camp-27-june',
+    title: 'Camp / Morning Arcades',
+    date: '2026-06-27',
+    time: 'Morning',
+    location: 'Camp · MG Road',
+    area: 'Camp',
+    description: 'Arcades and old shopfronts along MG Road, photographed early.',
+    theme: 'Heritage · morning light',
+    image: '/images/walks/camp.jpg',
+    imageAlt:
+      'A wide tree-lined street in black and white, a church spire in the distance and motorbikes coming towards the camera',
+    price: 0,
+    capacity: 25,
+    status: 'past',
+    verified: false,
+  },
+  {
+    id: 'walk-2026-07-11',
+    slug: 'fc-road-11-july',
+    title: 'FC Road / Saturday Morning',
+    date: '2026-07-11',
+    time: 'Morning',
+    location: 'FC Road',
+    area: 'FC Road',
+    description: 'Shutters going up along FC Road, and the street filling as they do.',
+    theme: 'Street',
+    /* Stand-in: a street at dusk, where this was a morning walk. Replace with
+       a frame from the day. */
+    image: '/images/walks/balewadi.jpg',
+    imageAlt: 'A busy street at dusk, scooters and people moving between lit shopfronts',
+    price: 0,
+    capacity: 25,
+    status: 'past',
+    verified: false,
+  },
+  {
+    id: 'walk-2026-07-12',
+    slug: 'fc-road-12-july',
+    title: 'FC Road / Sunday Morning',
+    date: '2026-07-12',
+    time: 'Morning',
+    location: 'FC Road',
+    area: 'FC Road',
+    description: 'The same street on a Sunday, slower and emptier than the day before.',
+    theme: 'Street',
+    /* Stand-in, as above. */
+    image: '/images/walks/balewadi.jpg',
+    imageAlt: 'A busy street at dusk, scooters and people moving between lit shopfronts',
+    price: 0,
+    capacity: 25,
+    status: 'past',
+    verified: false,
+  },
+  {
+    id: 'walk-2026-07-15',
+    slug: 'kasba-peth-15-july',
+    title: 'Kasba Peth / Old Quarters',
+    date: '2026-07-15',
+    time: 'Morning',
+    location: 'Kasba Peth',
+    area: 'Kasba Peth',
+    description: 'Wada doorways and shuttered corners in the oldest part of the city.',
+    theme: 'Old city',
+    image: '/images/walks/old-pune.jpg',
+    imageAlt:
+      'A weathered corner building in Kasba Peth, its shopfronts shuttered, a man in a white shirt walking past the railings',
+    price: 0,
+    capacity: 25,
+    status: 'past',
+    verified: false,
+  },
+  {
+    id: 'walk-2026-07-19',
+    slug: 'fc-road-shape-hunt-19-july',
+    title: 'FC Road / Shape Hunt',
+    date: '2026-07-19',
+    time: 'Evening',
+    location: 'FC Road',
+    area: 'FC Road',
+    description: 'One brief: find shapes. Lines, arches and shadows as the light went.',
+    theme: 'Form · evening light',
+    image: '/images/walks/balewadi.jpg',
+    imageAlt: 'A busy street at dusk, scooters and people moving between lit shopfronts',
+    price: 0,
+    capacity: 25,
+    status: 'past',
+    verified: false,
+  },
+  {
+    id: 'walk-2026-07-26',
+    slug: 'taljai-26-july',
+    title: 'Taljai / Nature Walk',
+    date: '2026-07-26',
+    time: 'Morning',
+    location: 'Taljai Hill',
+    area: 'Taljai',
+    description: 'Up on the hill after the rain — leaves, light and whatever moved.',
+    theme: 'Nature · monsoon',
+    image: '/images/walks/monsoon.jpg',
+    imageAlt: 'Curry leaves on a branch holding beads of rain after a monsoon shower',
+    price: 0,
+    capacity: 25,
+    status: 'past',
+    verified: false,
+  },
+  {
+    id: 'walk-2026-08-08',
+    slug: 'flower-market-8-august',
+    title: 'Flower Market / Saturday',
+    date: '2026-08-08',
+    time: 'Morning',
+    location: 'Mahatma Phule Mandai',
+    area: 'Mandai',
+    description: 'The flower section at its brightest, early, before the stock thins.',
+    theme: 'Markets · colour',
+    image: '/images/walks/mandai.jpg',
+    imageAlt: 'Shoppers moving through a covered flower market under orange canopies, bags full',
+    price: 0,
+    capacity: 25,
+    status: 'past',
+    verified: false,
+  },
+  {
+    id: 'walk-2026-08-09',
+    slug: 'flower-market-9-august',
+    title: 'Flower Market / Sunday',
+    date: '2026-08-09',
+    time: 'Morning',
+    location: 'Mahatma Phule Mandai',
+    area: 'Mandai',
+    description: 'A second morning at the flowers, for everyone who could not make Saturday.',
+    theme: 'Markets · colour',
+    image: '/images/walks/mandai.jpg',
+    imageAlt: 'Shoppers moving through a covered flower market under orange canopies, bags full',
+    price: 0,
+    capacity: 25,
+    status: 'past',
+    verified: false,
+  },
+  {
+    id: 'walk-2026-08-15',
+    slug: 'abc-independence-day-15-august',
+    title: 'ABC / Independence Day',
+    date: '2026-08-15',
+    time: 'Morning',
+    location: 'ABC',
+    area: 'ABC',
+    description: 'An Independence Day morning walk.',
+    theme: 'Street',
+    /* Stand-in. Replace with a frame from the day, and put the real meeting
+       point in `location` — "ABC" is what it was called, not where it was. */
+    image: '/images/walks/river.jpg',
+    imageAlt:
+      'A woman in a patterned sari sitting on the ghat steps beside the water, arches behind her',
+    price: 0,
+    capacity: 25,
+    status: 'past',
     verified: false,
   },
 ];
