@@ -121,8 +121,9 @@ export async function FeaturedWalk() {
               {closed ? (
                 /* Past six on the day of the walk. No call to action: there is
                    nothing here to act on, and a button that goes somewhere
-                   else reads as a consolation prize. */
-                <p className="meta text-foreground">Registrations closed</p>
+                   else reads as a consolation prize — so it is a panel that
+                   states the fact, sized like the button it replaces. */
+                <p className="state-inert">Registrations closed</p>
               ) : (
                 <RSVPButton event={walk} className="cta-solid">
                   I&rsquo;m in <span aria-hidden="true">→</span>
