@@ -56,6 +56,19 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from '@/lib/sup
 /** How long a fetched batch is cached. Posts are not urgent. */
 export const INSTAGRAM_REVALIDATE_SECONDS = 3600;
 
+/*
+ * Shorter, because Next caches a failed response exactly like a successful
+ * one. At an hour, a single 404 — the function not deployed yet, a cold start
+ * that timed out, Instagram briefly unhappy — left the grid on the local
+ * photographs for an hour after the cause was fixed, with nothing to do but
+ * wait or redeploy. Five minutes bounds that.
+ *
+ * The cost of the shorter window is one Edge Function call every five minutes
+ * at most, and only when somebody is actually looking: the page it serves is
+ * itself ISR and regenerates at most once a minute.
+ */
+const FUNCTION_REVALIDATE_SECONDS = 300;
+
 const ENDPOINT = 'https://graph.instagram.com/me/media';
 const FIELDS = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
 
@@ -115,7 +128,7 @@ async function postsFromFunction(limit: number): Promise<InstagramPost[] | null>
           Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
           apikey: SUPABASE_ANON_KEY,
         },
-        next: { revalidate: INSTAGRAM_REVALIDATE_SECONDS },
+        next: { revalidate: FUNCTION_REVALIDATE_SECONDS },
       },
     );
 
