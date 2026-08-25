@@ -1,7 +1,7 @@
 import Image from 'next/image';
-import { nextOpenWalk } from '@/data/events';
+import { walkToFeature } from '@/data/events';
 import { site } from '@/data/site';
-import { longDate, priceLabel, spotsLabel, isNearlyFull } from '@/lib/utils';
+import { longDate, priceLabel, registrationClosed, spotsLabel, isNearlyFull } from '@/lib/utils';
 import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { Reveal } from '@/components/ui/Reveal';
@@ -9,12 +9,10 @@ import { SectionHeader } from '@/components/ui/Typography';
 
 /** Server component. Everything above this exists to get someone here. */
 export async function FeaturedWalk() {
-  /* Chosen, not fixed: the earliest walk still taking people. */
-  const walk = nextOpenWalk();
+  /* The next walk still taking people, or the most recent one if none is. */
+  const walk = walkToFeature();
 
-  /* Every walk in the file has been. Saying so is better than leading the page
-     with one that is over, and far better than an empty section — somebody who
-     scrolled here wants a date, and the honest answer is where to get one. */
+  /* Only when there are no walks in the file at all. */
   if (!walk) {
     return (
       <section
@@ -52,6 +50,11 @@ export async function FeaturedWalk() {
   const remaining = spotsRemaining(walk, await getSpotsTaken());
   const low = isNearlyFull(remaining, walk.capacity);
 
+  /* True when this is the most recent walk rather than the next one — every
+     walk has been. The section renames itself so nobody reads a walk that is
+     over as one they can still join. */
+  const closed = registrationClosed(walk.date);
+
   const facts: [string, string][] = [
     /* The full date, not just the weekday. "Saturday · Afternoon" is fine on a
        page you are already reading this week and useless in a screenshot, a
@@ -60,13 +63,13 @@ export async function FeaturedWalk() {
     ['Date', `${longDate(walk.date)} · ${walk.time}`],
     ['Meeting', walk.location],
     ['Cost', `${priceLabel(walk.price)} · All cameras welcome`],
-    ['Spots', spotsLabel(remaining, walk.capacity)],
+    ['Spots', closed ? 'Registration closed' : spotsLabel(remaining, walk.capacity)],
   ];
 
   return (
     <section id="next-walk" className="border-t border-border py-section" aria-labelledby="next-walk-title">
       <div className="shell">
-        <SectionHeader index="02" label="Next walk" />
+        <SectionHeader index="02" label={closed ? 'Latest walk' : 'Next walk'} />
 
         <Reveal className="grid gap-[clamp(1.75rem,4vw,3.5rem)] lg:grid-cols-[7fr_5fr] lg:items-start">
           <article className="bg-subtle">
@@ -97,7 +100,7 @@ export async function FeaturedWalk() {
                   <dt className="meta">{label}</dt>
                   <dd
                     className={`meta ${
-                      label === 'Spots' && low ? 'text-accent' : 'text-foreground'
+                      label === 'Spots' && low && !closed ? 'text-accent' : 'text-foreground'
                     }`}
                   >
                     {value}
@@ -111,12 +114,26 @@ export async function FeaturedWalk() {
             </p>
 
             <div className="mt-[clamp(1.5rem,3vw,2.25rem)]">
-              <RSVPButton event={walk} className="cta-solid">
-                I&rsquo;m in <span aria-hidden="true">→</span>
-              </RSVPButton>
+              {closed ? (
+                <a
+                  className="cta-solid"
+                  href={site.links.whatsapp}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  Hear about the next one <span aria-hidden="true">→</span>
+                </a>
+              ) : (
+                <RSVPButton event={walk} className="cta-solid">
+                  I&rsquo;m in <span aria-hidden="true">→</span>
+                </RSVPButton>
+              )}
             </div>
 
-            <p className="meta mt-4">{longDate(walk.date)} · No experience needed</p>
+            <p className="meta mt-4">
+              {longDate(walk.date)} ·{' '}
+              {closed ? 'This one has been' : 'No experience needed'}
+            </p>
           </div>
         </Reveal>
       </div>

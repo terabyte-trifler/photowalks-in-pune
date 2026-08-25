@@ -370,3 +370,26 @@ export function walksInReadingOrder(now: Date = new Date()): Event[] {
 
   return [...open, ...concluded];
 }
+
+/**
+ * The walk section 02 leads with: the next one still taking people, or — when
+ * every walk has been — the most recent one instead.
+ *
+ * Showing the last walk rather than an empty state is the friendlier answer.
+ * Somebody arriving between seasons gets a photograph, a place and a date, and
+ * can see what these actually are; "nothing scheduled" tells them only that
+ * they are too late. The section says "Latest walk" when it is doing this, so
+ * nobody reads a walk that has been as one they can still join.
+ *
+ * Null only if there are no walks at all, which the empty state still covers.
+ */
+export function walkToFeature(now: Date = new Date()): Event | null {
+  const next = nextOpenWalk(now);
+  if (next) return next;
+
+  let latest: Event | null = null;
+  for (const walk of upcomingWalks) {
+    if (latest === null || walk.date > latest.date) latest = walk;
+  }
+  return latest;
+}
