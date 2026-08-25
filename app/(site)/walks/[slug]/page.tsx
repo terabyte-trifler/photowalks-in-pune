@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { Avatar } from '@/components/navigation/Avatar';
+import { WalkPhotos } from '@/components/events/WalkPhotos';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
@@ -138,46 +138,19 @@ export default async function WalkPage({
                 </h2>
               </Reveal>
 
-              <Reveal className="mt-[clamp(1.75rem,3vw,2.5rem)] grid grid-cols-2 gap-[clamp(0.75rem,1.6vw,1.25rem)] md:grid-cols-3 lg:grid-cols-4">
-                {shot.map(({ photo, photographer }) => (
-                  <figure key={photo.id} className="group">
-                    <div className="overflow-hidden bg-subtle">
-                      <Image
-                        src={photoUrl(photo)}
-                        alt={photo.caption ?? `A photograph from ${walk.title}`}
-                        width={photo.width ?? 1200}
-                        height={photo.height ?? 800}
-                        quality={72}
-                        loading="lazy"
-                        sizes="(min-width: 1024px) 24vw, (min-width: 768px) 32vw, 50vw"
-                        className="aspect-square w-full object-cover transition-transform duration-700 ease-editorial group-hover:scale-105"
-                      />
-                    </div>
-
-                    <figcaption className="mt-2.5">
-                      {photo.caption && (
-                        <p className="text-[0.875rem] leading-snug text-foreground-soft">
-                          {photo.caption}
-                        </p>
-                      )}
-                      {/* The credit is the point of showing the work at all. */}
-                      {photographer?.username && (
-                        <Link
-                          href={`/photographers/${photographer.username}`}
-                          className="mt-1 inline-flex items-center gap-2 text-[0.8125rem] text-muted transition-colors hover:text-accent"
-                        >
-                          <Avatar
-                            src={photographer.avatar_url}
-                            name={photographer.full_name ?? photographer.username}
-                            size={20}
-                          />
-                          {photographer.full_name ?? photographer.username}
-                        </Link>
-                      )}
-                    </figcaption>
-                  </figure>
-                ))}
-              </Reveal>
+              <WalkPhotos
+                walkTitle={walk.title}
+                photos={shot.map(({ photo, photographer }) => ({
+                  id: photo.id,
+                  src: photoUrl(photo),
+                  caption: photo.caption,
+                  width: photo.width,
+                  height: photo.height,
+                  photographerName: photographer?.full_name ?? null,
+                  photographerUsername: photographer?.username ?? null,
+                  photographerAvatar: photographer?.avatar_url ?? null,
+                }))}
+              />
             </>
           )}
 
