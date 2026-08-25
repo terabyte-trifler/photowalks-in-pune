@@ -22,11 +22,6 @@
   --border-strong: #b9b0a0;
   --accent: #c56a1b;            /* Pune orange — four places only */
   --subtle: #eae5dc;
-  /* The one white on this page. Everything else is warm paper, so a true white
-     reads as a surface laid on top rather than part of the page — which is
-     what an inert panel wants to be. Dark mode cannot use it: white there is a
-     hole, so the token flips to the raised surface instead. */
-  --surface-inert: #ffffff;
 
   --rail: 0px;
 }
@@ -69,7 +64,6 @@
     --border-strong: #4a443c;
     --accent: #d4772a;
     --subtle: #1c1815;
-    --surface-inert: #1c1815;
   }
 }
 
@@ -83,7 +77,6 @@
   --border-strong: #4a443c;
   --accent: #d4772a;
   --subtle: #1c1815;
-  --surface-inert: #1c1815;
 }
 
 /* The statement section inverts the palette by redeclaring the same tokens,
@@ -219,14 +212,16 @@
      surface, muted text, and none of the hover a button has, because there is
      nothing here to press.
 
-     The fill is --surface-inert: white in light mode, where the page is warm
-     paper and a true white reads as a panel set on top of it; the raised
-     surface in dark, where white would be a hole. */
+     White with near-black type, and deliberately NOT theme tokens: the panel
+     stays the same in dark mode rather than inverting. Tokens would flip the
+     type to paper on white and lose it. Read as a printed label — the exact
+     inverse of .cta-solid, which is near-black with paper type in light. */
   .state-inert {
-    @apply inline-flex items-center border border-border-strong
-           px-[1.6em] py-[1.05em] font-mono text-xs uppercase tracking-[0.18em]
-           text-muted;
-    background: var(--surface-inert);
+    @apply inline-flex items-center border
+           px-[1.6em] py-[1.05em] font-mono text-xs uppercase tracking-[0.18em];
+    background: #ffffff;
+    color: #16130f;
+    border-color: #16130f;
   }
 
   .cta-ghost {
