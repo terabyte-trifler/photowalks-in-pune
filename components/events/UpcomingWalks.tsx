@@ -15,6 +15,14 @@ import { SectionHeader } from '@/components/ui/Typography';
  * where hovering a row brings its photograph in from the right. Below 1024px
  * the row stacks and the photograph is dropped rather than shrunk.
  */
+/* One row's worth of layout, shared by the link and the button so a closed
+   walk and an open one are the same object with different behaviour. */
+const ROW_CLASS =
+  'grid w-full grid-cols-1 gap-x-6 gap-y-2 py-[clamp(1.5rem,3vw,2.25rem)] text-left' +
+  ' transition-[background-color,padding] duration-500' +
+  ' lg:grid-cols-[5rem_minmax(0,1.6fr)_minmax(0,1fr)_8rem_auto] lg:items-center' +
+  ' lg:group-hover:bg-subtle lg:group-hover:px-5';
+
 export async function UpcomingWalks() {
   const taken = await getSpotsTaken();
 
@@ -39,22 +47,12 @@ export async function UpcomingWalks() {
               const closed = registrationClosed(walk.date);
               const full = remaining <= 0;
               const low = isNearlyFull(remaining, walk.capacity);
-              /* "Closed" first: a walk that has been and gone is not "Full",
-                 whatever the count says. */
-              const label = closed ? 'Closed' : full ? 'Full' : 'RSVP';
+              /* A closed walk leads to its photographs, so the action column
+                 says so. "Full" only applies to a walk still ahead. */
+              const label = closed ? 'Photographs' : full ? 'Full' : 'RSVP';
 
-              return (
-                <li key={walk.id} className="group relative border-b border-border">
-                  <RSVPButton
-                    event={walk}
-                    disabled={full || closed}
-                    ariaLabel={
-                      closed
-                        ? `${walk.title}, ${longDate(walk.date)} — registrations closed`
-                        : `RSVP for ${walk.title}, ${longDate(walk.date)}`
-                    }
-                    className="grid w-full grid-cols-1 gap-x-6 gap-y-2 py-[clamp(1.5rem,3vw,2.25rem)] text-left transition-[background-color,padding] duration-500 lg:grid-cols-[5rem_minmax(0,1.6fr)_minmax(0,1fr)_8rem_auto] lg:items-center lg:group-hover:bg-subtle lg:group-hover:px-5"
-                  >
+              const row = (
+                <>
                     <span className="flex items-baseline gap-3">
                       <span className="font-display text-[1.75rem] leading-none">
                         {dayNumber(walk.date)}
@@ -86,21 +84,35 @@ export async function UpcomingWalks() {
                     </span>
 
                     <span className="meta inline-flex items-center gap-2.5 text-foreground">
-                      {label} {!closed && <span aria-hidden="true">→</span>}
+                      {label} {!full && <span aria-hidden="true">→</span>}
                     </span>
-                  </RSVPButton>
+                </>
+              );
 
-                  {/* Sits outside the RSVP button rather than inside it —
-                      nesting a link in a button is invalid, and the two do
-                      different things: one opens the dialog, this one goes to
-                      the walk and the photographs made on it. */}
-                  <Link
-                    href={`/walks/${walk.slug}`}
-                    className="meta relative z-[3] -mt-2 mb-4 inline-flex items-center gap-2
-                               text-muted transition-colors hover:text-accent lg:mb-5"
-                  >
-                    The walk and its photographs <span aria-hidden="true">→</span>
-                  </Link>
+              return (
+                <li key={walk.id} className="group relative border-b border-border">
+                  {closed ? (
+                    /* A walk that has been is not a dead row — it is the way
+                       into what was made on it. Same shape, same hover, but a
+                       link rather than a disabled button, because there is
+                       somewhere to go. */
+                    <Link
+                      href={`/walks/${walk.slug}`}
+                      aria-label={`${walk.title}, ${longDate(walk.date)} — registrations closed, see the photographs`}
+                      className={ROW_CLASS}
+                    >
+                      {row}
+                    </Link>
+                  ) : (
+                    <RSVPButton
+                      event={walk}
+                      disabled={full}
+                      ariaLabel={`RSVP for ${walk.title}, ${longDate(walk.date)}`}
+                      className={ROW_CLASS}
+                    >
+                      {row}
+                    </RSVPButton>
+                  )}
 
                   <Image
                     src={walk.image}
