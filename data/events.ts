@@ -308,16 +308,15 @@ export const upcomingWalks: Event[] = [
   },
   {
     id: 'walk-2026-08-15',
-    slug: 'abc-independence-day-15-august',
-    title: 'ABC / Independence Day',
+    slug: 'appa-balwant-chowk-15-august',
+    title: 'Appa Balwant Chowk / Independence Day',
     date: '2026-08-15',
     time: 'Morning',
-    location: 'ABC',
-    area: 'ABC',
-    description: 'An Independence Day morning walk.',
+    location: 'Appa Balwant Chowk',
+    area: 'Appa Balwant Chowk',
+    description: 'An Independence Day morning in the bookshop lanes.',
     theme: 'Street',
-    /* Stand-in. Replace with a frame from the day, and put the real meeting
-       point in `location` — "ABC" is what it was called, not where it was. */
+    /* Stand-in photograph. Replace with a frame from the day. */
     image: '/images/walks/river.jpg',
     imageAlt:
       'A woman in a patterned sari sitting on the ghat steps beside the water, arches behind her',
