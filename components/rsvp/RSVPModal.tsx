@@ -11,6 +11,7 @@ import {
   findExistingRsvp,
   isBackendConfigured,
   lastRsvpDetails,
+  REGISTRATION_CLOSED_MESSAGE,
   submitRsvp,
   validateRsvp,
   type RsvpErrors,
@@ -151,12 +152,12 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
       <Dialog
         open
         onClose={onClose}
-        label={`Registration closed for ${event.title}`}
+        label={`Registrations closed for ${event.title}`}
         className="max-w-[560px]"
       >
         <div className="mb-7 flex items-start justify-between gap-4 border-b border-border pb-4">
           <div>
-            <p className="meta">Registration closed</p>
+            <p className="meta">Registrations closed</p>
             <h2 className="display mt-2 text-display-md">{event.title}</h2>
             <p className="meta mt-2">
               {longDate(event.date)} · {event.time} · {priceLabel(event.price)}
@@ -277,7 +278,7 @@ export function RSVPModal({ event, onClose }: { event: Event | null; onClose: ()
        database refuses it too; this is only so the answer is a sentence rather
        than a constraint violation. */
     if (registrationClosed(event.date)) {
-      setFailure('Registration for this walk closed at 6pm on the day of the walk.');
+      setFailure(REGISTRATION_CLOSED_MESSAGE);
       setStatus('failed');
       return;
     }

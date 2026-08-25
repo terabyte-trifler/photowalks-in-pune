@@ -95,7 +95,7 @@ export const upcomingWalks: Event[] = [
  * compromise. Three are stand-ins and should be replaced with a frame from the
  * walk itself: the two FC Road mornings and Independence Day, marked below.
  *
- * `capacity` is carried for shape only. A closed walk shows "Registration
+ * `capacity` is carried for shape only. A closed walk shows "Registrations
  * closed" where the count would go, so these numbers are never rendered.
  * -------------------------------------------------------------------------- */
   {

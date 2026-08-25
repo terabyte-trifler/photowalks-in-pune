@@ -49,7 +49,7 @@ export async function UpcomingWalks() {
                     disabled={full || closed}
                     ariaLabel={
                       closed
-                        ? `${walk.title}, ${longDate(walk.date)} — registration closed`
+                        ? `${walk.title}, ${longDate(walk.date)} — registrations closed`
                         : `RSVP for ${walk.title}, ${longDate(walk.date)}`
                     }
                     className="grid w-full grid-cols-1 gap-x-6 gap-y-2 py-[clamp(1.5rem,3vw,2.25rem)] text-left transition-[background-color,padding] duration-500 lg:grid-cols-[5rem_minmax(0,1.6fr)_minmax(0,1fr)_8rem_auto] lg:items-center lg:group-hover:bg-subtle lg:group-hover:px-5"
@@ -80,7 +80,7 @@ export async function UpcomingWalks() {
                       {priceLabel(walk.price)}
                       <br />
                       <span className={!closed && low ? 'text-accent' : 'text-muted'}>
-                        {closed ? 'Registration closed' : spotsLabel(remaining, walk.capacity)}
+                        {closed ? 'Registrations closed' : spotsLabel(remaining, walk.capacity)}
                       </span>
                     </span>
 
