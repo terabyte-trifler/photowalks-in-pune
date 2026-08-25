@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { upcomingWalks, walksInReadingOrder } from '@/data/events';
 import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import {
-  dayNumber, isNearlyFull, longDate, monthShort, priceLabel, registrationClosed,
-  spotsLabel, weekday,
+  cn, dayNumber, isNearlyFull, longDate, monthShort, priceLabel,
+  registrationClosed, spotsLabel, weekday,
 } from '@/lib/utils';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { Reveal } from '@/components/ui/Reveal';
@@ -19,7 +19,7 @@ import { SectionHeader } from '@/components/ui/Typography';
    walk and an open one are the same object with different behaviour. */
 const ROW_CLASS =
   'grid w-full grid-cols-1 gap-x-6 gap-y-2 py-[clamp(1.5rem,3vw,2.25rem)] text-left' +
-  ' transition-[background-color,padding] duration-500' +
+  ' transition-[background-color,padding,opacity] duration-500' +
   ' lg:grid-cols-[5rem_minmax(0,1.6fr)_minmax(0,1fr)_8rem_auto] lg:items-center' +
   ' lg:group-hover:bg-subtle lg:group-hover:px-5';
 
@@ -99,7 +99,11 @@ export async function UpcomingWalks() {
                     <Link
                       href={`/walks/${walk.slug}`}
                       aria-label={`${walk.title}, ${longDate(walk.date)} — registrations closed, see the photographs`}
-                      className={ROW_CLASS}
+                      /* Held back at the same opacity the disabled button had,
+                         so a walk that has been still reads as past at a
+                         glance — and comes up to full under the cursor, which
+                         a disabled row never needed to do and this one does. */
+                      className={cn(ROW_CLASS, 'opacity-50 lg:group-hover:opacity-100')}
                     >
                       {row}
                     </Link>
