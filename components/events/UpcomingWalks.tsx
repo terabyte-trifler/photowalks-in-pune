@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { upcomingWalks } from '@/data/events';
+import { upcomingWalks, walksInReadingOrder } from '@/data/events';
 import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import {
   dayNumber, isNearlyFull, longDate, monthShort, priceLabel, registrationClosed,
@@ -33,7 +33,7 @@ export async function UpcomingWalks() {
 
         <Reveal className="border-t border-foreground">
           <ul>
-            {upcomingWalks.map((walk) => {
+            {walksInReadingOrder().map((walk) => {
               const remaining = spotsRemaining(walk, taken);
               const closed = registrationClosed(walk.date);
               const full = remaining <= 0;

@@ -192,3 +192,37 @@ export function nextOpenWalk(now: Date = new Date()): Event | null {
 
   return next;
 }
+
+/* ----------------------------------------------------------------------------
+ * THE ORDER THE LIST IS READ IN
+ * ----------------------------------------------------------------------------
+ * The file is written in date order, which put the walks that had already
+ * happened at the top — the first two things anybody saw were two walks they
+ * could not join. So the list is arranged rather than printed as written:
+ * what is still open first, soonest first, because the next walk is the thing
+ * somebody came to find; then what has concluded, most recent first, which is
+ * the order an archive reads in.
+ *
+ * Sorted rather than partitioned-and-reversed, even though the source happens
+ * to be in date order today. Nothing in this file enforces that, and the same
+ * argument applies here as to nextOpenWalk: a structure that quietly depends
+ * on an invariant nobody maintains is a bug waiting for the day somebody adds
+ * a walk in the wrong place. O(n log n) on four rows costs nothing, and it is
+ * correct however the array is written.
+ * -------------------------------------------------------------------------- */
+
+/** Open walks soonest-first, then concluded walks most-recent-first. */
+export function walksInReadingOrder(now: Date = new Date()): Event[] {
+  const open: Event[] = [];
+  const concluded: Event[] = [];
+
+  for (const walk of upcomingWalks) {
+    (registrationClosed(walk.date, now) ? concluded : open).push(walk);
+  }
+
+  /* ISO dates compare as strings, so this is a comparison of the dates. */
+  open.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  concluded.sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : 0));
+
+  return [...open, ...concluded];
+}
