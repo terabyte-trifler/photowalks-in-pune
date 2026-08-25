@@ -24,8 +24,15 @@ import { longDate } from '@/lib/utils';
  * being a caption and becomes a label, which is what `location` already is.
  *
  * Two fields sit above the button: which walk it came from, and the caption.
- * Both optional. The walk stays selected between uploads, so filing a
+ * The walk is required — the archive is organised around walks, and a
+ * photograph filed under none of them is one nobody can find again. The
+ * caption stays optional. The walk stays selected between uploads, so filing a
  * morning's work is pick-file, caption, repeat.
+ *
+ * Required here and not in the database: `event_id` is nullable because every
+ * photograph filed before the column existed has no walk and never will. This
+ * is a rule about what gets added from now on, which is a rule the form can
+ * hold — nothing is at stake if somebody bypasses it but a tidier archive.
  *
  * The walk is what puts a photograph on /walks/[slug]. It is a plain select
  * rather than free text: the walks are known, and a typed name would not match
@@ -73,6 +80,16 @@ export function PhotoManager({
       return;
     }
 
+    /* Resolved before anything is uploaded, so a walk that cannot be found is
+       a message rather than a file in the bucket waiting to be rolled back.
+       The button is disabled without a selection; this is the belt to that
+       brace, and what somebody sees if they arrive here another way. */
+    const walk = walks.find((w) => w.id === eventId);
+    if (!walk) {
+      setError('Choose which walk this came from first.');
+      return;
+    }
+
     /* The trigger would refuse this anyway; saying so first saves the upload. */
     if (remaining === 0) {
       setError(
@@ -97,20 +114,16 @@ export function PhotoManager({
       return;
     }
 
-    /* The walk carries the date, so taken_at is filled from it rather than
-       asked for twice — and left null when no walk was chosen, because a date
-       nobody supplied is not a date worth storing. */
-    const walk = walks.find((w) => w.id === eventId);
-
+    /* The walk carries the date and the area, so neither is asked for twice. */
     const { error: insertError } = await supabase.from('photos').insert({
       profile_id: user.id,
       storage_path: uploaded.path,
       width: uploaded.width ?? null,
       height: uploaded.height ?? null,
       caption: caption.trim() || null,
-      location: walk?.area ?? null,
-      taken_at: walk?.date ?? null,
-      event_id: walk?.id ?? null,
+      location: walk.area,
+      taken_at: walk.date,
+      event_id: walk.id,
     });
 
     if (insertError) {
@@ -142,15 +155,19 @@ export function PhotoManager({
       {!full && (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="field-label">Which walk</span>
+            <span className="field-label">Which walk *</span>
             <select
               value={eventId}
               onChange={(event) => setEventId(event.target.value)}
               disabled={busy}
+              required
+              aria-required="true"
               className="mt-1.5 w-full border-b border-border bg-transparent py-2
                          text-[0.9375rem] focus:border-accent focus:outline-none"
             >
-              <option value="">Not from a walk</option>
+              <option value="" disabled>
+                Choose a walk
+              </option>
               {walks.map((walk) => (
                 <option key={walk.id} value={walk.id}>
                   {walk.title} · {longDate(walk.date)}
@@ -175,8 +192,9 @@ export function PhotoManager({
           </label>
 
           <p className="meta normal-case tracking-[0.08em] sm:col-span-2">
-            Both are optional, and both belong to the one photograph you add
-            next. The walk is what puts it on that walk&rsquo;s page.
+            The walk is needed — it is what puts the photograph on that
+            walk&rsquo;s page, and how anyone finds it again. The caption is
+            yours to skip. Both belong to the one photograph you add next.
           </p>
         </div>
       )}
@@ -185,11 +203,17 @@ export function PhotoManager({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          disabled={busy || full}
+          disabled={busy || full || !eventId}
           aria-busy={busy}
           className="cta-solid disabled:opacity-60"
         >
-          {busy ? 'Uploading' : full ? 'No room left' : 'Add a photograph'}{' '}
+          {busy
+            ? 'Uploading'
+            : full
+              ? 'No room left'
+              : !eventId
+                ? 'Choose a walk first'
+                : 'Add a photograph'}{' '}
           <span aria-hidden="true">→</span>
         </button>
 
