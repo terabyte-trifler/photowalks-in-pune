@@ -13,12 +13,20 @@ import {
   uploadImage,
 } from '@/lib/uploads';
 import type { PhotoRecord } from '@/lib/supabase/types';
+import { allWalksNewestFirst } from '@/data/events';
+import { longDate } from '@/lib/utils';
 
 /**
- * Adding and removing your own photographs. Deliberately small: this is the
- * least amount of management that makes the profile able to hold real work.
- * Captions, locations and dates are edited on the row after upload rather
- * than in a form beforehand, so getting pictures up takes one action.
+ * Adding and removing your own photographs.
+ *
+ * Two fields sit above the button: which walk these came from, and a caption.
+ * Both are optional and both apply to the whole upload, because a batch is
+ * almost always one walk's worth — asking per file would turn one action into
+ * five. Anything more particular is edited on the row afterwards.
+ *
+ * The walk is what puts a photograph on /walks/[slug]. It is a plain select
+ * rather than free text: the walks are known, and a typed name would not match
+ * anything.
  *
  * Every write is the member's own session against RLS — a row can only be
  * written with profile_id = auth.uid(), and a file can only land in the
@@ -42,6 +50,10 @@ export function PhotoManager({
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [error, setError] = useState('');
+  const [eventId, setEventId] = useState('');
+  const [caption, setCaption] = useState('');
+
+  const walks = allWalksNewestFirst();
 
   const isOwner = user?.id === profileId;
   if (!isOwner) return null;
@@ -86,14 +98,20 @@ export function PhotoManager({
         break;
       }
 
+      /* The walk carries the date, so taken_at is filled from it rather than
+         asked for twice — and left null when no walk was chosen, because a
+         date nobody supplied is not a date worth storing. */
+      const walk = walks.find((w) => w.id === eventId);
+
       const { error: insertError } = await supabase.from('photos').insert({
         profile_id: user.id,
         storage_path: uploaded.path,
         width: uploaded.width ?? null,
         height: uploaded.height ?? null,
-        caption: null,
-        location: null,
-        taken_at: null,
+        caption: caption.trim() || null,
+        location: walk?.area ?? null,
+        taken_at: walk?.date ?? null,
+        event_id: walk?.id ?? null,
       });
 
       if (insertError) {
@@ -109,6 +127,9 @@ export function PhotoManager({
 
     setBusy(false);
     setProgress({ done: 0, total: 0 });
+    /* The walk stays selected — somebody filing a morning's work uploads more
+       than once. The caption does not: it described those photographs. */
+    setCaption('');
     router.refresh();
   }
 
@@ -120,6 +141,48 @@ export function PhotoManager({
           {total} of {MAX_PHOTOS_PER_MEMBER} · compressed to under 200KB before upload
         </span>
       </div>
+
+      {!full && (
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="field-label">Which walk</span>
+            <select
+              value={eventId}
+              onChange={(event) => setEventId(event.target.value)}
+              disabled={busy}
+              className="mt-1.5 w-full border-b border-border bg-transparent py-2
+                         text-[0.9375rem] focus:border-accent focus:outline-none"
+            >
+              <option value="">Not from a walk</option>
+              {walks.map((walk) => (
+                <option key={walk.id} value={walk.id}>
+                  {walk.title} · {longDate(walk.date)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="field-label">Caption</span>
+            <input
+              type="text"
+              value={caption}
+              onChange={(event) => setCaption(event.target.value)}
+              disabled={busy}
+              maxLength={280}
+              placeholder="Kasba, 7:04 AM"
+              className="mt-1.5 w-full border-b border-border bg-transparent py-2
+                         text-[0.9375rem] placeholder:text-muted focus:border-accent
+                         focus:outline-none"
+            />
+          </label>
+
+          <p className="meta normal-case tracking-[0.08em] sm:col-span-2">
+            Both are optional, and both apply to everything in this upload. The
+            walk is what puts a photograph on that walk&rsquo;s page.
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3">
         <button

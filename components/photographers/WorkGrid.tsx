@@ -1,6 +1,9 @@
 import Image from 'next/image';
 import { PhotoDeleteButton } from '@/components/photographers/PhotoDeleteButton';
+import Link from 'next/link';
+
 import { photoUrl } from '@/lib/directory';
+import { walkById } from '@/data/events';
 import { cn } from '@/lib/utils';
 import type { PhotoRecord } from '@/lib/supabase/types';
 import { shortDate } from '@/lib/utils';
@@ -67,12 +70,31 @@ export function WorkGrid({
             />
           </div>
 
-          {/* The rebate strip: caption, then where and when, only if known. */}
-          {(photo.caption || photo.location || photo.taken_at) && (
+          {/* The rebate strip: caption, then the walk it came from, then where
+              and when — each only if known. The walk is a link, because it is
+              the one line here that goes somewhere: every other frame from
+              that morning. */}
+          {(photo.caption || photo.location || photo.taken_at || photo.event_id) && (
             <figcaption className="mt-2.5">
               {photo.caption && (
                 <p className="text-[0.875rem] leading-snug text-foreground-soft">{photo.caption}</p>
               )}
+              {(() => {
+                /* Undefined when the walk has been removed from the file since.
+                   The photograph keeps its caption and date and simply stops
+                   linking anywhere, rather than pointing at a 404. */
+                const walk = walkById(photo.event_id);
+                return walk ? (
+                  <p className="meta mt-1">
+                    <Link
+                      href={`/walks/${walk.slug}`}
+                      className="text-foreground-soft transition-colors hover:text-accent"
+                    >
+                      {walk.title}
+                    </Link>
+                  </p>
+                ) : null;
+              })()}
               {(photo.location || photo.taken_at) && (
                 <p className="meta mt-1">
                   {[photo.location, photo.taken_at ? frameDate(photo.taken_at) : null]

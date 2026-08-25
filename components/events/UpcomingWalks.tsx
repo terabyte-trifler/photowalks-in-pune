@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { upcomingWalks, walksInReadingOrder } from '@/data/events';
 import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import {
@@ -88,6 +89,18 @@ export async function UpcomingWalks() {
                       {label} {!closed && <span aria-hidden="true">→</span>}
                     </span>
                   </RSVPButton>
+
+                  {/* Sits outside the RSVP button rather than inside it —
+                      nesting a link in a button is invalid, and the two do
+                      different things: one opens the dialog, this one goes to
+                      the walk and the photographs made on it. */}
+                  <Link
+                    href={`/walks/${walk.slug}`}
+                    className="meta relative z-[3] -mt-2 mb-4 inline-flex items-center gap-2
+                               text-muted transition-colors hover:text-accent lg:mb-5"
+                  >
+                    The walk and its photographs <span aria-hidden="true">→</span>
+                  </Link>
 
                   <Image
                     src={walk.image}

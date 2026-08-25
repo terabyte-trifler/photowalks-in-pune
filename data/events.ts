@@ -419,3 +419,31 @@ export function walkToFeature(now: Date = new Date()): Event | null {
   }
   return latest;
 }
+
+/* ----------------------------------------------------------------------------
+ * FINDING A WALK
+ * ----------------------------------------------------------------------------
+ * photos.event_id and walk_rsvps.event_id are text keys into this file rather
+ * than foreign keys, so resolving one is a lookup here. Both return undefined
+ * rather than throwing: a row can outlive the walk it points at — that is the
+ * documented trade of keeping walks in code — and a photograph whose walk has
+ * been deleted should still render, just without the link.
+ * -------------------------------------------------------------------------- */
+
+/** The walk with this id, or undefined if the file no longer has one. */
+export function walkById(id: string | null | undefined): Event | undefined {
+  if (!id) return undefined;
+  return upcomingWalks.find((walk) => walk.id === id);
+}
+
+/** The walk with this slug, for /walks/[slug]. */
+export function walkBySlug(slug: string): Event | undefined {
+  return upcomingWalks.find((walk) => walk.slug === slug);
+}
+
+/** Every walk, newest first — the order the walks index reads in. */
+export function allWalksNewestFirst(): Event[] {
+  return [...upcomingWalks].sort((a, b) =>
+    a.date > b.date ? -1 : a.date < b.date ? 1 : 0,
+  );
+}

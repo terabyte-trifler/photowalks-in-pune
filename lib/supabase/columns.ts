@@ -23,9 +23,13 @@
 export const PROFILE_COLUMNS =
   'id, full_name, username, avatar_url, bio, city, instagram_username, website_url, photography_interests, created_at, updated_at';
 
-/** A photograph. `storage_path` is a path, not a URL — the public URL is built at render time. */
+/**
+ * A photograph. `storage_path` is a path, not a URL — the public URL is built
+ * at render time. `event_id` is the walk it was shot on, a key into
+ * data/events.ts rather than a foreign key, because walks live in that file.
+ */
 export const PHOTO_COLUMNS =
-  'id, profile_id, storage_path, caption, location, taken_at, width, height, created_at';
+  'id, profile_id, storage_path, caption, location, taken_at, event_id, width, height, created_at';
 
 /**
  * A member's own RSVP. Includes `whatsapp`, which is the point: this is the

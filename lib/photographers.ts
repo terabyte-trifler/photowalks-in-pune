@@ -21,8 +21,13 @@ import {
   type DirectorySort,
 } from '@/lib/directory';
 import { getSupabasePublicClient } from '@/lib/supabase/public';
-import type { PhotoRecord, PhotographerCard, WalkAttendance } from '@/lib/supabase/types';
-import { PHOTO_COLUMNS, PHOTOGRAPHER_CARD_COLUMNS, WALK_ATTENDANCE_COLUMNS } from '@/lib/supabase/columns';
+import type { PhotoRecord, PhotographerCard, Profile, WalkAttendance } from '@/lib/supabase/types';
+import {
+  PHOTO_COLUMNS,
+  PHOTOGRAPHER_CARD_COLUMNS,
+  PROFILE_COLUMNS,
+  WALK_ATTENDANCE_COLUMNS,
+} from '@/lib/supabase/columns';
 
 export {
   CARD_PHOTO_COUNT,
@@ -253,6 +258,56 @@ export async function listPhotos(
     page,
     pageCount: Math.max(1, Math.ceil(total / pageSize)),
   };
+}
+
+/**
+ * Every photograph filed under one walk, newest first, with the profile of
+ * whoever made each — a walk page credits its photographers or it should not
+ * show their work.
+ *
+ * The join is on the foreign key photos.profile_id already has, so this is one
+ * round trip rather than a query per photograph. Reads the same rows the
+ * archive and the profiles read: a photograph shown on a walk page is not a
+ * copy of anything, it is the same row pointing at the same file in storage.
+ */
+export async function listPhotosForWalk(
+  eventId: string,
+  { limit = 60 }: { limit?: number } = {},
+): Promise<{ photo: PhotoRecord; photographer: Profile | null }[]> {
+  const supabase = getSupabasePublicClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('photos')
+    .select(`${PHOTO_COLUMNS}, profiles!inner(${PROFILE_COLUMNS})`)
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return (data as unknown as (PhotoRecord & { profiles: Profile | null })[]).map(
+    ({ profiles, ...photo }) => ({ photo, photographer: profiles ?? null }),
+  );
+}
+
+/** How many photographs each of these walks holds, for the index. */
+export async function countPhotosByWalk(): Promise<Record<string, number>> {
+  const supabase = getSupabasePublicClient();
+  if (!supabase) return {};
+
+  const { data, error } = await supabase
+    .from('photos')
+    .select('event_id')
+    .not('event_id', 'is', null);
+
+  if (error || !data) return {};
+
+  const counts: Record<string, number> = {};
+  for (const row of data as { event_id: string }[]) {
+    counts[row.event_id] = (counts[row.event_id] ?? 0) + 1;
+  }
+  return counts;
 }
 
 /** Which walks this photographer has been on, newest first. */

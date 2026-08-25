@@ -41,6 +41,8 @@ export type PhotoRecord = {
   caption: string | null;
   location: string | null;
   taken_at: string | null;
+  /** The walk this was shot on — an Event id from data/events.ts. */
+  event_id: string | null;
   width: number | null;
   height: number | null;
   created_at: string;
