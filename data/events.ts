@@ -62,10 +62,13 @@ export const featuredWalk: Event = {
      weekday without any special handling. The exact hour goes out on WhatsApp,
      where it can be changed on the morning without a deploy. */
   time: 'Evening',
-  location: 'Camp · MG Road',
+  location: 'Camp · Pul Gate',
   area: 'Camp',
+  /* The description named MG Road, which was the meeting point before it moved
+     to Pul Gate — and it said afternoon light for an evening walk. Both fixed
+     together, because a place named in prose is a claim like any other. */
   description:
-    'Arcades, bakeries and old shopfronts, photographed as the afternoon light comes down MG Road.',
+    'Arcades, bakeries and old shopfronts around Pul Gate, photographed as the evening light goes.',
   theme: 'Heritage · afternoon light',
   image: '/images/gallery/photo-06.jpg',
   imageAlt:
