@@ -1,12 +1,12 @@
 import Image from 'next/image';
 import { site } from '@/data/site';
-import { getInstagramPosts, isInstagramConfigured } from '@/lib/instagram';
+import { getInstagramFeed } from '@/lib/instagram';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
 
 /** Async server component — swaps to the Graph API without touching the markup. */
 export async function InstagramSection() {
-  const posts = await getInstagramPosts();
+  const { posts, live } = await getInstagramFeed();
 
   return (
     <section id="instagram" className="border-t border-border py-section" aria-labelledby="instagram-title">
@@ -59,9 +59,9 @@ export async function InstagramSection() {
           </a>
         </div>
 
-        {!isInstagramConfigured() && (
+        {!live && (
           <p className="meta mt-5 normal-case tracking-[0.08em]">
-            Placeholders — set INSTAGRAM_ACCESS_TOKEN and these become the six most
+            Placeholders — connect the account and these become the six most
             recent posts from {site.links.instagramHandle}.
           </p>
         )}

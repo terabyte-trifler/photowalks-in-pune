@@ -12,6 +12,22 @@
  * the next morning. The tokened endpoint below returns URLs that keep working
  * and is the access Meta actually grants for an account you own.
  *
+ * ---- WHERE THE TOKEN LIVES -------------------------------------------------
+ * Two ways, checked in this order:
+ *
+ *   1. INSTAGRAM_ACCESS_TOKEN in the environment. Simple, and what the steps
+ *      below produce — but it expires after 60 days and a refresh returns a
+ *      *new* string that nothing here can write back, so it must be replaced
+ *      by hand twice a year.
+ *
+ *   2. The instagram-posts Edge Function, used whenever that variable is
+ *      absent and Supabase is configured. The token sits in the vault and the
+ *      function rotates it in passing, so it never lapses. See migration 0013
+ *      and supabase/README.md.
+ *
+ * Prefer (2). Leave INSTAGRAM_ACCESS_TOKEN unset in production and the app
+ * stops holding the secret at all.
+ *
  * ---- GETTING A TOKEN -------------------------------------------------------
  * The account must be a Business or Creator account (Instagram app →
  * Settings → Account type). Then, at developers.facebook.com:
@@ -35,6 +51,7 @@
  * ========================================================================== */
 
 import { instagramPosts, type InstagramPost } from '@/data/community';
+import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from '@/lib/supabase/config';
 
 /** How long a fetched batch is cached. Posts are not urgent. */
 export const INSTAGRAM_REVALIDATE_SECONDS = 3600;
@@ -42,8 +59,15 @@ export const INSTAGRAM_REVALIDATE_SECONDS = 3600;
 const ENDPOINT = 'https://graph.instagram.com/me/media';
 const FIELDS = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
 
+/**
+ * Whether a source is set up at all. Deliberately NOT what the section's
+ * "these are placeholders" note is keyed on: Supabase can be configured while
+ * the vault holds no token, and then this says yes while the grid is still
+ * showing the local six. Use `live` from getInstagramFeed for that — it
+ * reports what was actually rendered rather than what was intended.
+ */
 export const isInstagramConfigured = (): boolean =>
-  Boolean(process.env.INSTAGRAM_ACCESS_TOKEN);
+  Boolean(process.env.INSTAGRAM_ACCESS_TOKEN) || isSupabaseConfigured();
 
 interface GraphMedia {
   id: string;
@@ -70,13 +94,85 @@ function shortCaption(caption: string | undefined): string {
 }
 
 /**
+ * Ask the instagram-posts Edge Function instead of Instagram directly.
+ *
+ * Returns null — rather than the local photographs — when this route is not
+ * available at all, so the caller can tell "no Instagram configured" apart
+ * from "the function answered with nothing" and log accordingly.
+ *
+ * The anon key is the credential because that is the only one this app is
+ * allowed to hold. It is public by design; the token stays behind the
+ * function, which is the whole point of the arrangement.
+ */
+async function postsFromFunction(limit: number): Promise<InstagramPost[] | null> {
+  if (!isSupabaseConfigured()) return null;
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/instagram-posts?limit=${limit}`,
+      {
+        headers: {
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          apikey: SUPABASE_ANON_KEY,
+        },
+        next: { revalidate: INSTAGRAM_REVALIDATE_SECONDS },
+      },
+    );
+
+    if (!response.ok) {
+      console.warn(`[instagram] the posts function answered ${response.status}`);
+      return null;
+    }
+
+    const payload = (await response.json()) as {
+      configured?: boolean;
+      posts?: InstagramPost[];
+    };
+
+    /* Deployed, but no token in the vault yet. Nothing is wrong; the site is
+       simply not connected to Instagram, so let the placeholders stand. */
+    if (payload.configured === false) return null;
+
+    const posts = payload.posts ?? [];
+    return posts.length > 0 ? posts.slice(0, limit) : null;
+  } catch (cause) {
+    console.warn('[instagram] could not reach the posts function', cause);
+    return null;
+  }
+}
+
+/**
  * The six most recent posts. Videos and carousels are included: a carousel
  * reports its first image in `media_url`, and a video has a `thumbnail_url`,
  * so both still give the grid a square to show.
  */
+export interface InstagramFeed {
+  posts: InstagramPost[];
+  /** False when these are the local photographs rather than the account's. */
+  live: boolean;
+}
+
+/** The posts, and whether they came from Instagram. */
+export async function getInstagramFeed(limit = 6): Promise<InstagramFeed> {
+  const posts = await fetchPosts(limit);
+  return posts ?? { posts: instagramPosts.slice(0, limit), live: false };
+}
+
+/** The posts alone, for callers that do not care where they came from. */
 export async function getInstagramPosts(limit = 6): Promise<InstagramPost[]> {
+  return (await getInstagramFeed(limit)).posts;
+}
+
+/** Null when nothing could be fetched, so the caller supplies the fallback. */
+async function fetchPosts(limit: number): Promise<InstagramFeed | null> {
   const token = process.env.INSTAGRAM_ACCESS_TOKEN;
-  if (!token) return instagramPosts.slice(0, limit);
+
+  /* No token here means the vault has it and the Edge Function is in charge of
+     keeping it alive. That is the arrangement to prefer; see the header. */
+  if (!token) {
+    const viaFunction = await postsFromFunction(limit);
+    return viaFunction ? { posts: viaFunction, live: true } : null;
+  }
 
   try {
     const url = `${ENDPOINT}?fields=${FIELDS}&limit=${limit}&access_token=${token}`;
@@ -87,7 +183,7 @@ export async function getInstagramPosts(limit = 6): Promise<InstagramPost[]> {
     if (!response.ok) {
       /* An expired or revoked token is the usual cause. Falling back keeps the
          page whole rather than leaving a hole where the grid was. */
-      return instagramPosts.slice(0, limit);
+      return null;
     }
 
     const payload = (await response.json()) as { data?: GraphMedia[] };
@@ -106,9 +202,9 @@ export async function getInstagramPosts(limit = 6): Promise<InstagramPost[]> {
       })
       .filter((post): post is InstagramPost => post !== null);
 
-    return posts.length > 0 ? posts : instagramPosts.slice(0, limit);
+    return posts.length > 0 ? { posts, live: true } : null;
   } catch {
-    return instagramPosts.slice(0, limit);
+    return null;
   }
 }
 

@@ -257,6 +257,58 @@ or from a secret store; never put it in `.env.local` beside the
 `NEXT_PUBLIC_` variables, and never in a variable that starts with that
 prefix.
 
+## Instagram, without the 60-day cliff
+
+Long-lived Instagram tokens expire after 60 days, and refreshing one returns a
+*new* string. An environment variable cannot be written to, so a token in
+`INSTAGRAM_ACCESS_TOKEN` has to be replaced by hand twice a year — and the grid
+quietly shows placeholders from the day it lapses until somebody notices.
+
+Instead the token lives in the vault, and the `instagram-posts` function
+rotates it whenever it is more than 30 days old. The app asks that function for
+posts and never holds the token at all.
+
+### Setting it up
+
+Migration 0013 adds the two functions this needs. Then, once, in the SQL editor:
+
+```sql
+select vault.create_secret(
+  '<the long-lived token from Meta>',
+  'instagram_token', 'Instagram long-lived token; rotated automatically');
+```
+
+Paste it raw. The first rotation rewrites it as JSON carrying the date it was
+last refreshed.
+
+```bash
+supabase functions deploy instagram-posts
+```
+
+Then **remove `INSTAGRAM_ACCESS_TOKEN` from Vercel**. While it is set the app
+takes the old direct path and none of this applies — that is the switch.
+
+Getting the token itself is documented at the top of `lib/instagram.ts`; the
+account must be Business or Creator.
+
+### How it stays alive
+
+The homepage revalidates hourly, so the function is called at least that often
+and checks the token's age every time. Rotating at 30 days leaves a month of
+slack before the 60-day deadline, which no site with visitors will miss.
+
+The one gap is a site nobody loads for a month. If that worries you, a weekly
+`cron.schedule` calling the function through `pg_net` closes it — the same
+mechanism migration 0006 uses, on a schedule instead of a trigger.
+
+### Why not a table and the service-role key
+
+Because a table read with the anon key is readable by everyone, and putting the
+service-role key in the Next app would turn any future policy mistake into a
+full-database compromise. Edge Functions are handed that key by the platform,
+inside Supabase, where it never reaches a bundle or a Vercel environment — so
+the rule below still holds exactly as written.
+
 ## What is deliberately not here
 
 **No `service_role` key, and no admin client.** Everything this app does is
