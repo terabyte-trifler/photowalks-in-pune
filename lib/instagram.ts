@@ -50,24 +50,37 @@
  * this section goes stale.
  * ========================================================================== */
 
+import { unstable_cache } from 'next/cache';
+
 import { instagramPosts, type InstagramPost } from '@/data/community';
 import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from '@/lib/supabase/config';
 
 /** How long a fetched batch is cached. Posts are not urgent. */
 export const INSTAGRAM_REVALIDATE_SECONDS = 3600;
 
-/*
- * Shorter, because Next caches a failed response exactly like a successful
- * one. At an hour, a single 404 — the function not deployed yet, a cold start
- * that timed out, Instagram briefly unhappy — left the grid on the local
- * photographs for an hour after the cause was fixed, with nothing to do but
- * wait or redeploy. Five minutes bounds that.
+/* ----------------------------------------------------------------------------
+ * WHY THIS IS CACHED THE AWKWARD WAY
+ * ----------------------------------------------------------------------------
+ * Instagram signs its CDN URLs, and the signature is different on every call
+ * to the Graph API — same photograph, same path, new query string. next/image
+ * keys its cache on the whole URL, so each new set is six cache misses and six
+ * fresh optimisations of images it has already optimised. Measured: 1.48MB
+ * from Instagram against 20.7KB optimised at the size the grid actually shows.
+ * The optimisation is very much worth having; doing it again every few minutes
+ * is not.
  *
- * The cost of the shorter window is one Edge Function call every five minutes
- * at most, and only when somebody is actually looking: the page it serves is
- * itself ISR and regenerates at most once a minute.
- */
-const FUNCTION_REVALIDATE_SECONDS = 300;
+ * The rate of that waste is set here, because the URLs only change when this
+ * refetches. An hour is the right number.
+ *
+ * But a plain `next: { revalidate: 3600 }` caches a FAILED response for an
+ * hour too, and that is not hypothetical — the first deploy went out before
+ * the Edge Function existed, cached the 404, and sat on the placeholders for
+ * an hour after the function was live. So the caching is done around the
+ * result instead: unstable_cache stores what the function returns, and a throw
+ * is not a return, so failures are simply not cached and the next render tries
+ * again.
+ * -------------------------------------------------------------------------- */
+const FUNCTION_REVALIDATE_SECONDS = 3600;
 
 const ENDPOINT = 'https://graph.instagram.com/me/media';
 const FIELDS = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
@@ -107,49 +120,67 @@ function shortCaption(caption: string | undefined): string {
 }
 
 /**
+ * One request to the Edge Function. Throws rather than returning null on every
+ * unhappy path, because a throw is what keeps unstable_cache from storing it.
+ *
+ * The fetch itself is uncached: the caching happens a layer up, and two layers
+ * of it would mean a failure stuck in the lower one regardless of the upper.
+ */
+async function requestPosts(limit: number): Promise<InstagramPost[]> {
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/instagram-posts?limit=${limit}`,
+    {
+      headers: {
+        /* The anon key is the credential because it is the only one this app
+           is allowed to hold. It is public by design; the Instagram token
+           stays behind the function, which is the point of the arrangement. */
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        apikey: SUPABASE_ANON_KEY,
+      },
+      cache: 'no-store',
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`the posts function answered ${response.status}`);
+  }
+
+  const payload = (await response.json()) as {
+    configured?: boolean;
+    posts?: InstagramPost[];
+  };
+
+  /* Deployed, but no token in the vault. Nothing is wrong — the site is simply
+     not connected to Instagram yet — but it is still not an answer worth
+     holding for an hour, because the day somebody sets it up should not have
+     an hour of placeholders after it. */
+  if (payload.configured === false) throw new Error('no token in the vault');
+
+  const posts = payload.posts ?? [];
+  if (posts.length === 0) throw new Error('the posts function returned nothing');
+
+  return posts.slice(0, limit);
+}
+
+const cachedPosts = unstable_cache(requestPosts, ['instagram-posts'], {
+  revalidate: FUNCTION_REVALIDATE_SECONDS,
+  tags: ['instagram-posts'],
+});
+
+/**
  * Ask the instagram-posts Edge Function instead of Instagram directly.
  *
  * Returns null — rather than the local photographs — when this route is not
  * available at all, so the caller can tell "no Instagram configured" apart
  * from "the function answered with nothing" and log accordingly.
- *
- * The anon key is the credential because that is the only one this app is
- * allowed to hold. It is public by design; the token stays behind the
- * function, which is the whole point of the arrangement.
  */
 async function postsFromFunction(limit: number): Promise<InstagramPost[] | null> {
   if (!isSupabaseConfigured()) return null;
 
   try {
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/instagram-posts?limit=${limit}`,
-      {
-        headers: {
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          apikey: SUPABASE_ANON_KEY,
-        },
-        next: { revalidate: FUNCTION_REVALIDATE_SECONDS },
-      },
-    );
-
-    if (!response.ok) {
-      console.warn(`[instagram] the posts function answered ${response.status}`);
-      return null;
-    }
-
-    const payload = (await response.json()) as {
-      configured?: boolean;
-      posts?: InstagramPost[];
-    };
-
-    /* Deployed, but no token in the vault yet. Nothing is wrong; the site is
-       simply not connected to Instagram, so let the placeholders stand. */
-    if (payload.configured === false) return null;
-
-    const posts = payload.posts ?? [];
-    return posts.length > 0 ? posts.slice(0, limit) : null;
+    return await cachedPosts(limit);
   } catch (cause) {
-    console.warn('[instagram] could not reach the posts function', cause);
+    console.warn('[instagram] posts unavailable', cause);
     return null;
   }
 }
