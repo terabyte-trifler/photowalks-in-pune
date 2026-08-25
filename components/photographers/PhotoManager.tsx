@@ -19,10 +19,13 @@ import { longDate } from '@/lib/utils';
 /**
  * Adding and removing your own photographs.
  *
- * Two fields sit above the button: which walk these came from, and a caption.
- * Both are optional and both apply to the whole upload, because a batch is
- * almost always one walk's worth — asking per file would turn one action into
- * five. Anything more particular is edited on the row afterwards.
+ * One photograph at a time, with its own caption. Batch upload would be fewer
+ * actions, but a caption is about one frame — shared across five it stops
+ * being a caption and becomes a label, which is what `location` already is.
+ *
+ * Two fields sit above the button: which walk it came from, and the caption.
+ * Both optional. The walk stays selected between uploads, so filing a
+ * morning's work is pick-file, caption, repeat.
  *
  * The walk is what puts a photograph on /walks/[slug]. It is a plain select
  * rather than free text: the walks are known, and a typed name would not match
@@ -48,7 +51,6 @@ export function PhotoManager({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [error, setError] = useState('');
   const [eventId, setEventId] = useState('');
   const [caption, setCaption] = useState('');
@@ -61,22 +63,20 @@ export function PhotoManager({
   const remaining = Math.max(0, MAX_PHOTOS_PER_MEMBER - total);
   const full = remaining === 0;
 
-  async function handleFiles(files: FileList | null) {
-    if (!files || files.length === 0 || !user) return;
+  async function handleFile(files: FileList | null) {
+    const file = files?.[0];
+    if (!file || !user) return;
 
-    const chosen = Array.from(files);
-    const rejected = chosen.find((file) => checkFile(file, 'photo'));
+    const rejected = checkFile(file, 'photo');
     if (rejected) {
-      setError(checkFile(rejected, 'photo') ?? 'That file cannot be used.');
+      setError(rejected);
       return;
     }
 
-    /* The trigger would refuse these anyway; saying so first saves the upload. */
-    if (chosen.length > remaining) {
+    /* The trigger would refuse this anyway; saying so first saves the upload. */
+    if (remaining === 0) {
       setError(
-        remaining === 0
-          ? `That is ${MAX_PHOTOS_PER_MEMBER} photographs — the most a profile holds. Remove one to add another.`
-          : `Room for ${remaining} more, and you chose ${chosen.length}.`,
+        `That is ${MAX_PHOTOS_PER_MEMBER} photographs — the most a profile holds. Remove one to add another.`,
       );
       return;
     }
@@ -86,49 +86,46 @@ export function PhotoManager({
 
     setError('');
     setBusy(true);
-    setProgress({ done: 0, total: chosen.length });
 
-    for (const [index, file] of chosen.entries()) {
-      /* uploadImage downscales to 2000px WebP first, and reports the
-         dimensions of what it actually stored. */
-      const uploaded = await uploadImage(file, 'photo', user.id);
+    /* uploadImage downscales to 2000px WebP first, and reports the dimensions
+       of what it actually stored. */
+    const uploaded = await uploadImage(file, 'photo', user.id);
 
-      if (!uploaded.ok || !uploaded.path) {
-        setError(uploaded.error ?? 'One of those did not upload.');
-        break;
-      }
+    if (!uploaded.ok || !uploaded.path) {
+      setError(uploaded.error ?? 'That did not upload.');
+      setBusy(false);
+      return;
+    }
 
-      /* The walk carries the date, so taken_at is filled from it rather than
-         asked for twice — and left null when no walk was chosen, because a
-         date nobody supplied is not a date worth storing. */
-      const walk = walks.find((w) => w.id === eventId);
+    /* The walk carries the date, so taken_at is filled from it rather than
+       asked for twice — and left null when no walk was chosen, because a date
+       nobody supplied is not a date worth storing. */
+    const walk = walks.find((w) => w.id === eventId);
 
-      const { error: insertError } = await supabase.from('photos').insert({
-        profile_id: user.id,
-        storage_path: uploaded.path,
-        width: uploaded.width ?? null,
-        height: uploaded.height ?? null,
-        caption: caption.trim() || null,
-        location: walk?.area ?? null,
-        taken_at: walk?.date ?? null,
-        event_id: walk?.id ?? null,
-      });
+    const { error: insertError } = await supabase.from('photos').insert({
+      profile_id: user.id,
+      storage_path: uploaded.path,
+      width: uploaded.width ?? null,
+      height: uploaded.height ?? null,
+      caption: caption.trim() || null,
+      location: walk?.area ?? null,
+      taken_at: walk?.date ?? null,
+      event_id: walk?.id ?? null,
+    });
 
-      if (insertError) {
-        /* Do not leave an orphan file in the bucket. Awaited, so the rollback
-           is as certain as the upload was. */
-        await removeImageSurely('photo', uploaded.path);
-        setError(photoInsertError(insertError.message));
-        break;
-      }
-
-      setProgress({ done: index + 1, total: chosen.length });
+    if (insertError) {
+      /* Do not leave an orphan file in the bucket. Awaited, so the rollback is
+         as certain as the upload was. */
+      await removeImageSurely('photo', uploaded.path);
+      setError(photoInsertError(insertError.message));
+      setBusy(false);
+      return;
     }
 
     setBusy(false);
-    setProgress({ done: 0, total: 0 });
-    /* The walk stays selected — somebody filing a morning's work uploads more
-       than once. The caption does not: it described those photographs. */
+    /* The walk stays selected — somebody filing a morning's work adds several,
+       one after another. The caption does not: it described that photograph
+       and the next one is a different frame. */
     setCaption('');
     router.refresh();
   }
@@ -178,8 +175,8 @@ export function PhotoManager({
           </label>
 
           <p className="meta normal-case tracking-[0.08em] sm:col-span-2">
-            Both are optional, and both apply to everything in this upload. The
-            walk is what puts a photograph on that walk&rsquo;s page.
+            Both are optional, and both belong to the one photograph you add
+            next. The walk is what puts it on that walk&rsquo;s page.
           </p>
         </div>
       )}
@@ -192,13 +189,7 @@ export function PhotoManager({
           aria-busy={busy}
           className="cta-solid disabled:opacity-60"
         >
-          {busy
-            ? progress.total > 1
-              ? `Uploading ${progress.done + 1} of ${progress.total}`
-              : 'Uploading'
-            : full
-              ? 'No room left'
-              : 'Add photographs'}{' '}
+          {busy ? 'Uploading' : full ? 'No room left' : 'Add a photograph'}{' '}
           <span aria-hidden="true">→</span>
         </button>
 
@@ -219,10 +210,9 @@ export function PhotoManager({
         ref={inputRef}
         type="file"
         accept={ACCEPT_ATTRIBUTE}
-        multiple
         className="sr-only"
         onChange={(event) => {
-          void handleFiles(event.target.files);
+          void handleFile(event.target.files);
           event.target.value = '';
         }}
       />
