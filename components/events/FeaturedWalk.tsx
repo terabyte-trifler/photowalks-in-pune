@@ -131,9 +131,12 @@ export async function FeaturedWalk() {
               )}
             </div>
 
-            {!closed && (
-              <p className="meta mt-4">{longDate(walk.date)} · No experience needed</p>
-            )}
+            {/* The date sits under the button either way. "No experience needed"
+                does not follow it once the walk has been — nobody is coming. */}
+            <p className="meta mt-4">
+              {longDate(walk.date)}
+              {!closed && ' · No experience needed'}
+            </p>
           </div>
         </Reveal>
       </div>
