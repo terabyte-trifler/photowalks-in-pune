@@ -63,7 +63,11 @@ export async function FeaturedWalk() {
     ['Date', `${longDate(walk.date)} · ${walk.time}`],
     ['Meeting', walk.location],
     ['Cost', `${priceLabel(walk.price)} · All cameras welcome`],
-    ['Spots', closed ? 'Registration closed' : spotsLabel(remaining, walk.capacity)],
+    /* A spot count is meaningless once the walk has been, and the line below
+       already says registrations are closed — two of them is one too many. */
+    ...(closed
+      ? []
+      : ([['Spots', spotsLabel(remaining, walk.capacity)]] as [string, string][])),
   ];
 
   return (
@@ -115,14 +119,10 @@ export async function FeaturedWalk() {
 
             <div className="mt-[clamp(1.5rem,3vw,2.25rem)]">
               {closed ? (
-                <a
-                  className="cta-solid"
-                  href={site.links.whatsapp}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  Hear about the next one <span aria-hidden="true">→</span>
-                </a>
+                /* Past six on the day of the walk. No call to action: there is
+                   nothing here to act on, and a button that goes somewhere
+                   else reads as a consolation prize. */
+                <p className="meta text-foreground">Registrations closed</p>
               ) : (
                 <RSVPButton event={walk} className="cta-solid">
                   I&rsquo;m in <span aria-hidden="true">→</span>
@@ -130,10 +130,9 @@ export async function FeaturedWalk() {
               )}
             </div>
 
-            <p className="meta mt-4">
-              {longDate(walk.date)} ·{' '}
-              {closed ? 'This one has been' : 'No experience needed'}
-            </p>
+            {!closed && (
+              <p className="meta mt-4">{longDate(walk.date)} · No experience needed</p>
+            )}
           </div>
         </Reveal>
       </div>
