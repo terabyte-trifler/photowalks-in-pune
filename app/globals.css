@@ -207,21 +207,18 @@
     color: #fff;
   }
 
-  /* Where the RSVP button sits once the walk has been. Same shape and weight
-     as .cta-solid so the block keeps its footing, but inert — a filled
-     surface, muted text, and none of the hover a button has, because there is
-     nothing here to press.
+  /* Where the RSVP button sits once the walk has been: the same button,
+     without the press. Identical declarations to .cta-solid rather than a
+     white of its own — .cta-solid is near-black with paper type in light and
+     paper with near-black type in dark, and the closed state has to be that
+     same object in both, not a fixed colour that happens to match one of them.
 
-     White with near-black type, and deliberately NOT theme tokens: the panel
-     stays the same in dark mode rather than inverting. Tokens would flip the
-     type to paper on white and lose it. Read as a printed label — the exact
-     inverse of .cta-solid, which is near-black with paper type in light. */
+     No hover and no arrow: the arrow says this goes somewhere, and it does
+     not. Everything else is the button. */
   .state-inert {
-    @apply inline-flex items-center border
-           px-[1.6em] py-[1.05em] font-mono text-xs uppercase tracking-[0.18em];
-    background: #ffffff;
-    color: #16130f;
-    border-color: #16130f;
+    @apply inline-flex cursor-default items-center border border-foreground
+           bg-foreground px-[1.6em] py-[1.05em] font-mono text-xs uppercase
+           tracking-[0.18em] text-background;
   }
 
   .cta-ghost {
