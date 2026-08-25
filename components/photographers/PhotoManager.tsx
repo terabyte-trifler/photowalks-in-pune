@@ -16,6 +16,9 @@ import type { PhotoRecord } from '@/lib/supabase/types';
 import { allWalksNewestFirst } from '@/data/events';
 import { longDate } from '@/lib/utils';
 
+/** Chosen deliberately, and not the same thing as having chosen nothing. */
+const NO_WALK = 'none';
+
 /**
  * Adding and removing your own photographs.
  *
@@ -24,15 +27,15 @@ import { longDate } from '@/lib/utils';
  * being a caption and becomes a label, which is what `location` already is.
  *
  * Two fields sit above the button: which walk it came from, and the caption.
- * The walk is required — the archive is organised around walks, and a
- * photograph filed under none of them is one nobody can find again. The
- * caption stays optional. The walk stays selected between uploads, so filing a
- * morning's work is pick-file, caption, repeat.
  *
- * Required here and not in the database: `event_id` is nullable because every
- * photograph filed before the column existed has no walk and never will. This
- * is a rule about what gets added from now on, which is a rule the form can
- * hold — nothing is at stake if somebody bypasses it but a tidier archive.
+ * Answering the walk is required; the answer may be "not from a walk". The
+ * distinction is the point — the field opens on nothing selected, so filing a
+ * photograph outside a walk is a decision somebody made rather than the
+ * default they walked past. Most photographs here come from a walk, and the
+ * ones that do should say so, because that is how anybody finds them again.
+ *
+ * The caption stays optional. The walk stays selected between uploads, so
+ * filing a morning's work is pick-file, caption, repeat.
  *
  * The walk is what puts a photograph on /walks/[slug]. It is a plain select
  * rather than free text: the walks are known, and a typed name would not match
@@ -59,6 +62,7 @@ export function PhotoManager({
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  /* Distinct from '' (nothing chosen yet), which is what the button waits on. */
   const [eventId, setEventId] = useState('');
   const [caption, setCaption] = useState('');
 
@@ -82,11 +86,16 @@ export function PhotoManager({
 
     /* Resolved before anything is uploaded, so a walk that cannot be found is
        a message rather than a file in the bucket waiting to be rolled back.
-       The button is disabled without a selection; this is the belt to that
-       brace, and what somebody sees if they arrive here another way. */
-    const walk = walks.find((w) => w.id === eventId);
-    if (!walk) {
-      setError('Choose which walk this came from first.');
+       The button is disabled until something is chosen; this is the belt to
+       that brace, and what somebody sees if they arrive here another way. */
+    if (!eventId) {
+      setError('Choose which walk this came from, or say it is not from one.');
+      return;
+    }
+
+    const walk = eventId === NO_WALK ? null : walks.find((w) => w.id === eventId);
+    if (eventId !== NO_WALK && !walk) {
+      setError('That walk is no longer listed. Choose another.');
       return;
     }
 
@@ -114,16 +123,18 @@ export function PhotoManager({
       return;
     }
 
-    /* The walk carries the date and the area, so neither is asked for twice. */
+    /* A walk carries the date and the area, so neither is asked for twice.
+       Without one all three stay null — a date nobody supplied is not a date
+       worth storing. */
     const { error: insertError } = await supabase.from('photos').insert({
       profile_id: user.id,
       storage_path: uploaded.path,
       width: uploaded.width ?? null,
       height: uploaded.height ?? null,
       caption: caption.trim() || null,
-      location: walk.area,
-      taken_at: walk.date,
-      event_id: walk.id,
+      location: walk?.area ?? null,
+      taken_at: walk?.date ?? null,
+      event_id: walk?.id ?? null,
     });
 
     if (insertError) {
@@ -168,6 +179,7 @@ export function PhotoManager({
               <option value="" disabled>
                 Choose a walk
               </option>
+              <option value={NO_WALK}>Not from a walk</option>
               {walks.map((walk) => (
                 <option key={walk.id} value={walk.id}>
                   {walk.title} · {longDate(walk.date)}
@@ -192,9 +204,10 @@ export function PhotoManager({
           </label>
 
           <p className="meta normal-case tracking-[0.08em] sm:col-span-2">
-            The walk is needed — it is what puts the photograph on that
-            walk&rsquo;s page, and how anyone finds it again. The caption is
-            yours to skip. Both belong to the one photograph you add next.
+            Naming the walk is what puts the photograph on that walk&rsquo;s
+            page, and how anyone finds it again — but &ldquo;not from a
+            walk&rdquo; is a fair answer. The caption is yours to skip. Both
+            belong to the one photograph you add next.
           </p>
         </div>
       )}
