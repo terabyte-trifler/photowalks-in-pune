@@ -216,9 +216,22 @@
      No hover and no arrow: the arrow says this goes somewhere, and it does
      not. Everything else is the button. */
   .state-inert {
-    @apply inline-flex cursor-default items-center border border-foreground
-           bg-foreground px-[1.6em] py-[1.05em] font-mono text-xs uppercase
-           tracking-[0.18em] text-background;
+    @apply inline-flex cursor-default items-center gap-[0.7em] border
+           border-foreground bg-foreground px-[1.6em] py-[1.05em] font-mono
+           text-xs uppercase tracking-[0.18em] text-background
+           transition-[gap,color] duration-300 ease-editorial;
+  }
+  /* The same hover the buttons have, asked for deliberately. Identical to
+     .cta-solid:hover — accent ground, accent border, white type — and the
+     same transition, which covers gap and colour only, so the ground snaps
+     exactly as the real button's does. */
+  .state-inert:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    /* Nothing to space with one text node, so this shows only if an arrow is
+       ever added — but it makes the rule a true mirror of .cta:hover. */
+    gap: 1.2em;
   }
 
   .cta-ghost {
