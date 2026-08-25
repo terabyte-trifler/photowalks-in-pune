@@ -82,6 +82,29 @@ export const featuredWalk: Event = {
 export const upcomingWalks: Event[] = [
   featuredWalk,
 
+  {
+    id: 'walk-2026-08-30',
+    slug: 'arai-30-august',
+    title: 'ARAI / Hill Morning',
+    date: '2026-08-30',
+    /* Morning by the pattern of every other hill walk here, not by anything
+       anybody has confirmed. Change it if it is an evening one — and the exact
+       hour goes out on WhatsApp either way. */
+    time: 'Morning',
+    location: 'ARAI Hill',
+    area: 'ARAI',
+    description: 'A climb up the hill early, with the city spread out below.',
+    theme: 'Nature · morning light',
+    image: '/images/gallery/photo-33.jpg',
+    imageAlt: 'Two monkeys grooming each other in low light',
+    price: 0,
+    capacity: 25,
+    status: 'open',
+    /* Stays false until the time and the meeting point are confirmed — that
+       is the switch that publishes this as a schema.org Event. */
+    verified: false,
+  },
+
 /* ----------------------------------------------------------------------------
  * WALKS THAT HAVE BEEN
  * ----------------------------------------------------------------------------
