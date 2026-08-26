@@ -86,18 +86,27 @@ const nextConfig: NextConfig = {
     /* ------------------------------------------------------------------
      * HOW LONG AN OPTIMISED IMAGE IS KEPT
      * ------------------------------------------------------------------
-     * Unset, this defaulted low and every optimised image came back telling
-     * the browser to revalidate — the homepage carries 38 of them, so a
-     * repeat visit spent 38 round trips confirming nothing had changed.
+     * A floor on how long the optimiser may keep a generated variant before
+     * making it again. Every re-generation is a billed transformation, so a
+     * longer floor can only reduce them.
      *
-     * A day rather than a month, deliberately. The photographs in /public are
-     * still being replaced, and the URL does not change when the file behind
-     * it does: /_next/image?url=/images/walks/camp.jpg is the same key for the
-     * old frame and the new one. Whatever a browser is holding, it holds for
-     * this long after a swap. A day is short enough to live with and long
-     * enough that the second visit of a day is free.
+     * What it does NOT do, on Vercel: change what browsers are told. This was
+     * added on the belief that it would, and then measured — three fresh
+     * variants (x-vercel-cache: MISS, age: 0) on the deployment that first
+     * carried this setting all came back
      *
-     * Lengthen it once the image set has settled.
+     *     cache-control: public, max-age=0, must-revalidate
+     *
+     * exactly as they did before it. Vercel's Image Optimization writes that
+     * header itself and this value does not reach it. Browsers revalidate
+     * every optimised image on every load either way; the edge answers those
+     * revalidations, so they are cheap, but they are still round trips.
+     *
+     * A day is therefore not the compromise it was written as. The reason to
+     * keep it short — that a replaced file in /public would sit stale in
+     * browsers — does not apply when browsers never hold the image at all.
+     * Raise it freely if transformation volume ever matters; the only thing
+     * it delays is the edge noticing a swapped file.
      * ------------------------------------------------------------------ */
     minimumCacheTTL: 86_400,
 
