@@ -83,6 +83,24 @@ const nextConfig: NextConfig = {
        80 is kept because next/image also uses it as its own default. */
     qualities: [70, 72, 74, 76, 80, 82],
 
+    /* ------------------------------------------------------------------
+     * HOW LONG AN OPTIMISED IMAGE IS KEPT
+     * ------------------------------------------------------------------
+     * Unset, this defaulted low and every optimised image came back telling
+     * the browser to revalidate — the homepage carries 38 of them, so a
+     * repeat visit spent 38 round trips confirming nothing had changed.
+     *
+     * A day rather than a month, deliberately. The photographs in /public are
+     * still being replaced, and the URL does not change when the file behind
+     * it does: /_next/image?url=/images/walks/camp.jpg is the same key for the
+     * old frame and the new one. Whatever a browser is holding, it holds for
+     * this long after a swap. A day is short enough to live with and long
+     * enough that the second visit of a day is free.
+     *
+     * Lengthen it once the image set has settled.
+     * ------------------------------------------------------------------ */
+    minimumCacheTTL: 86_400,
+
     /* Next's default top widths are 2048 and 3840. Members upload through the
        browser-side downscaler, which caps the long edge at 2000px — so a
        request for 3840 returns exactly what 2048 returns, byte for byte:

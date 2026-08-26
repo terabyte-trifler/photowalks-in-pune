@@ -50,9 +50,18 @@ supabase db push
 ### Storage
 
 Migration 0003 creates both buckets and their policies, so there is nothing to
-click in **Storage**. Check it worked: **Storage** should list `avatars`
-(2MB limit) and `photos` (10MB), both public, both accepting JPEG, PNG, WebP
-and AVIF only. Public means *readable* — writing is limited to the owner by
+click in **Storage**. Check it worked: **Storage** should list `avatars` and
+`photos`, both public, both accepting JPEG, PNG, WebP and AVIF only, and both
+with a **200 KiB** size limit.
+
+That limit is the one number this whole design turns on, so it is worth
+knowing where it comes from: migration 0003 creates the buckets at the sizes a
+file picker would suggest, and migration 0005 brings both down to 204800 bytes.
+The browser compresses every upload to fit before sending (`prepareImage` in
+`lib/uploads.ts`), but that half runs on a client and a client can be replaced
+with curl — the bucket limit is the half that holds. At 500 members × 20
+photographs it is the difference between about 2GB and about 67GB, and the same
+again in egress. Public means *readable* — writing is limited to the owner by
 policy, keyed on the uid folder each file sits in.
 
 If you ever recreate a bucket by hand, recreate the policies with it; a public
