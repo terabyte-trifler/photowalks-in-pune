@@ -32,18 +32,13 @@ export function isSupabaseConfigured(): boolean {
 
 /**
  * Where Supabase should send people back to after an email link or the Google
- * consent screen.
- *
- * This used to fall back to VERCEL_URL, which the platform set per preview
- * deployment so a preview redirected to itself. The site is self-hosted on a
- * VPS now: nothing sets VERCEL_URL any more, and a fallback that can never
- * fire only misleads whoever reads this next. NEXT_PUBLIC_SITE_URL is the one
- * source of the origin in production, and it must match a redirect URL on the
- * Supabase Auth allow-list or the callback is rejected.
+ * consent screen. Vercel sets VERCEL_URL on previews, so preview deployments
+ * redirect to themselves rather than to production.
  */
 export function siteOrigin(): string {
   if (typeof window !== 'undefined') return window.location.origin;
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;
   if (explicit) return explicit.replace(/\/$/, '');
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return 'http://localhost:3000';
 }

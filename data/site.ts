@@ -15,11 +15,11 @@ const DEFAULT_SITE_URL = 'https://pwip.in';
  * the build.
  */
 function resolveSiteUrl(): string {
-  /* NEXT_PUBLIC_VERCEL_URL sat in the middle of this list while the site was
-     on Vercel, to give each preview deployment its own canonical origin. Off
-     that platform nothing sets it, so it is gone; the constant below is what
-     answers when the environment is silent. */
-  const candidates = [process.env.NEXT_PUBLIC_SITE_URL, DEFAULT_SITE_URL];
+  const candidates = [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.NEXT_PUBLIC_VERCEL_URL,
+    DEFAULT_SITE_URL,
+  ];
 
   for (const candidate of candidates) {
     const trimmed = candidate?.trim();

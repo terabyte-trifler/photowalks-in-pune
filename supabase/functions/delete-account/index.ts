@@ -47,6 +47,10 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3100',
 ];
 
+/* The production origin is pwip.in. The vercel.app hostname is not listed
+   separately because the preview pattern below already matches it — it is
+   `photowalks-in-pune-gold`, which is the same shape a preview takes. */
+
 function corsFor(request: Request): Record<string, string> {
   const origin = request.headers.get('Origin') ?? '';
   const headers: Record<string, string> = {
@@ -54,11 +58,11 @@ function corsFor(request: Request): Record<string, string> {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     Vary: 'Origin',
   };
-  /* The pattern that used to sit here matched Vercel preview hostnames, which
-     were minted one per build and so could not be listed. Self-hosted there is
-     exactly one deployed origin and it is in the list above, so the list is
-     the whole rule again. */
-  const allowed = ALLOWED_ORIGINS.includes(origin);
+  /* Preview deployments get their own hostname per build, so match the shape
+     rather than listing them. */
+  const allowed =
+    ALLOWED_ORIGINS.includes(origin) ||
+    /^https:\/\/photowalks-in-pune[a-z0-9-]*\.vercel\.app$/.test(origin);
   if (allowed) headers['Access-Control-Allow-Origin'] = origin;
   return headers;
 }
