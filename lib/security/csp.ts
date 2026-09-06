@@ -52,10 +52,38 @@ import { THEME_SCRIPT_HASH } from './theme-script';
  * exactly the point it was designed for. If a sanitisation bug ever reaches a
  * display name, the strict policy is what makes the injected tag inert.
  *
- * It costs the homepage nothing to leave: it already awaits getGalleryCredits()
- * and carries `revalidate = 300`, so it was never truly prerendered anyway.
+ * AND IT WAS PUT BACK, BECAUSE THE REASONING ABOVE WAS WRONG
+ * "It was never truly prerendered anyway" is false. Awaiting an unstable_cache
+ * function does not opt a page out of static rendering — that is the whole
+ * point of lib/supabase/public.ts, which exists so the homepage can read the
+ * database and STAY prerendered. `next build` says so plainly:
+ *
+ *   ○ /    9.74 kB   244 kB   Revalidate 1m
+ *   ○  (Static)  prerendered as static content
+ *
+ * A nonce is minted per request in middleware. A prerendered page's HTML was
+ * written at build time and is served from the edge cache, so the header
+ * arrived carrying a fresh nonce while not one of the 64 script tags in that
+ * cached HTML could possibly match it:
+ *
+ *   /               nonce in header, 0 of 64 scripts stamped   every script blocked
+ *   /photographers  nonce in header, 50 of 52 scripts stamped  fine
+ *
+ * With every script blocked, framer-motion never hydrates, and the 28 elements
+ * that Reveal renders at `opacity: 0` stay there. The photographs were in the
+ * HTML the whole time and invisible on screen — which is exactly the failure
+ * the note at the top of lib/supabase/middleware.ts describes: "the header
+ * arrives strict while the scripts are unmarked — a blank page, in production,
+ * on the pages that matter most."
+ *
+ * So the homepage is back on this list and back on the relaxed policy. The
+ * concern that put it on the strict one is real and unaddressed: it renders
+ * member-controlled names under `unsafe-inline`. But a defence-in-depth
+ * improvement that blanks the front page is not a trade worth making, and the
+ * fix is not this list — it is to stop prerendering the homepage, deliberately
+ * and with the cost understood, in a change of its own.
  */
-export const STATIC_PAGES = ['/privacy', '/terms'];
+export const STATIC_PAGES = ['/', '/privacy', '/terms'];
 
 export function isStaticPage(pathname: string): boolean {
   return STATIC_PAGES.includes(pathname);
