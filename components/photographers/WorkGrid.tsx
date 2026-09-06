@@ -2,7 +2,7 @@ import { Picture } from '@/components/media/Picture';
 import { PhotoDeleteButton } from '@/components/photographers/PhotoDeleteButton';
 import Link from 'next/link';
 
-import { photoUrl } from '@/lib/directory';
+import { photoAlt, photoUrl } from '@/lib/directory';
 import { walkById } from '@/data/events';
 import { cn } from '@/lib/utils';
 import type { PhotoRecord } from '@/lib/supabase/types';
@@ -61,7 +61,7 @@ export function WorkGrid({
             {editable && <PhotoDeleteButton photo={photo} />}
             <Picture
               src={photoUrl(photo)}
-              alt={photo.caption ?? photo.location ?? 'Photograph'}
+              alt={photoAlt(photo)}
               fill
               sizes="(min-width: 768px) 45vw, 50vw"
               priority={index < priorityCount}

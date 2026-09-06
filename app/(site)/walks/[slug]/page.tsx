@@ -12,6 +12,7 @@ import { placeForWalk } from '@/data/places';
 import { site } from '@/data/site';
 import { photoUrl } from '@/lib/directory';
 import { listPhotosForWalk } from '@/lib/photographers';
+import { breadcrumbSchema, gallerySchema, jsonLd } from '@/lib/seo';
 import { longDate, priceLabel, registrationClosed } from '@/lib/utils';
 
 /* The photographs come from the database and appear the moment somebody files
@@ -57,7 +58,30 @@ export default async function WalkPage({
 
   const closed = registrationClosed(walk.date);
   const place = placeForWalk(walk);
+
+  /* The trail a visitor can actually follow: a walk sits under its place, and
+     the walk page links up to it. */
+  const crumbs = breadcrumbSchema([
+    { name: 'Home', path: '/' },
+    { name: 'Where we walk', path: '/places' },
+    ...(place ? [{ name: place.shortName, path: `/places/${place.slug}` }] : []),
+    { name: walk.title, path: `/walks/${walk.slug}` },
+  ]);
+
   const shot = await listPhotosForWalk(walk.id);
+  const gallery =
+    shot.length > 0
+      ? gallerySchema(
+          `Photographs from ${walk.title}`,
+          `Photographs made on ${walk.title} at ${walk.location}, Pune.`,
+          shot.map(({ photo, photographer }) => ({
+            url: photoUrl(photo),
+            caption: photo.caption,
+            photographerName: photographer?.full_name ?? null,
+            photographerUsername: photographer?.username ?? null,
+          })),
+        )
+      : null;
 
   return (
     <main id="main">
@@ -179,6 +203,11 @@ export default async function WalkPage({
           </div>
         </div>
       </section>
+    
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(crumbs) }} />
+      {gallery && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(gallery) }} />
+      )}
     </main>
   );
 }

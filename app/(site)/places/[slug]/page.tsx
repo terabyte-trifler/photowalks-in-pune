@@ -9,6 +9,7 @@ import { places, placeBySlug, walksAtPlace } from '@/data/places';
 import { site } from '@/data/site';
 import { photoUrl } from '@/lib/directory';
 import { listPhotosForWalks } from '@/lib/photographers';
+import { breadcrumbSchema, gallerySchema, jsonLd } from '@/lib/seo';
 import { dayNumber, longDate, monthShort, registrationClosed } from '@/lib/utils';
 
 /* ============================================================================
@@ -53,6 +54,10 @@ export async function generateMetadata({
       type: 'article',
       title,
       description: place.lead,
+      /* The most recent walk held here already carries an image, so a place
+         shares that rather than needing an asset of its own. Falls back to the
+         site card when a place has no walk yet. */
+      images: [{ url: walksAtPlace(place)[0]?.image ?? site.seo.ogImage }],
     },
   };
 }
@@ -70,6 +75,28 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
      is generated from the walks, because structured data describing something
      the page does not actually say is the kind of thing that earns a manual
      penalty rather than a rich result. */
+  const crumbs = breadcrumbSchema([
+    { name: 'Home', path: '/' },
+    { name: 'Where we walk', path: '/places' },
+    { name: place.shortName, path: `/places/${place.slug}` },
+  ]);
+
+  /* Only published when there are photographs — an empty ImageGallery
+     describes nothing and is worse than no block at all. */
+  const gallery =
+    shot.length > 0
+      ? gallerySchema(
+          `Photographs from ${place.name}`,
+          `Photographs made at ${place.name} in Pune on photowalks run by ${site.displayName}.`,
+          shot.map(({ photo, photographer }) => ({
+            url: photoUrl(photo),
+            caption: photo.caption,
+            photographerName: photographer?.full_name ?? null,
+            photographerUsername: photographer?.username ?? null,
+          })),
+        )
+      : null;
+
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -248,10 +275,11 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
         </section>
       )}
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, '\\u003c') }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(crumbs) }} />
+      {gallery && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(gallery) }} />
+      )}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqSchema) }} />
     </main>
   );
 }

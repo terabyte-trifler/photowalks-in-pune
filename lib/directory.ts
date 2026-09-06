@@ -11,6 +11,7 @@
  * browser bundle and fails the build. Anything both sides use belongs here.
  * ========================================================================== */
 
+import { walkById } from '@/data/events';
 import { SUPABASE_URL } from '@/lib/supabase/config';
 import type { PhotoRecord } from '@/lib/supabase/types';
 
@@ -60,3 +61,29 @@ export function imageUrl(bucket: 'avatars' | 'photos', storagePath: string): str
 
 export const photoUrl = (photo: Pick<PhotoRecord, 'storage_path'>): string =>
   imageUrl('photos', photo.storage_path);
+
+/* ---------------------------------------------------------------------------
+ * ALT TEXT
+ * ---------------------------------------------------------------------------
+ * The fallback used to be the word "Photograph", which is what a screen reader
+ * announced and what Google Images had to work with — on a site whose entire
+ * distinguishing asset is photographs of named places in Pune.
+ *
+ * So the best available description is assembled instead, in order of how much
+ * it actually says. A caption written by the photographer wins; failing that
+ * the place, and failing that the walk the frame was made on, which the row
+ * already knows through event_id.
+ *
+ * Nothing here invents detail. The last fallback describes the photograph's
+ * provenance rather than its content, because a guess about what is in a frame
+ * we have not looked at would be worse than the generic sentence it replaced.
+ * ------------------------------------------------------------------------- */
+export function photoAlt(photo: Pick<PhotoRecord, 'caption' | 'location' | 'event_id'>): string {
+  if (photo.caption?.trim()) return photo.caption.trim();
+  if (photo.location?.trim()) return `${photo.location.trim()}, Pune`;
+
+  const walk = photo.event_id ? walkById(photo.event_id) : undefined;
+  if (walk) return `Photographed on ${walk.title} at ${walk.location}, Pune`;
+
+  return 'A photograph made on a photowalk in Pune';
+}
