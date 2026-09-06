@@ -107,6 +107,19 @@ export async function saveProfile(
         message: 'Check the fields above.',
       };
     }
+    /* 23514 is profiles_guard_username in migration 0019 refusing the rename:
+       the 30-day cooldown, a reserved name, or a handle retired to somebody
+       else. Its messages are written for the person reading them and name the
+       actual reason — "next change available 07 Oct 2026" is worth far more
+       than a generic failure, and there is nothing internal in them to leak.
+       Pinned to the username field because that is the field at fault. */
+    if (error.code === '23514' && error.message) {
+      return {
+        status: 'error',
+        errors: { username: error.message },
+        message: 'Check the fields above.',
+      };
+    }
     return { status: 'error', message: authErrorMessage(error, 'profile') };
   }
 

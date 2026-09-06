@@ -291,6 +291,41 @@ export async function listPhotosForWalk(
   );
 }
 
+/**
+ * The same, across several walks at once — what a place page needs.
+ *
+ * A place holds every walk ever held there, and three of them already do:
+ * Mandai and FC Road have had three walks each. Calling listPhotosForWalk in a
+ * loop would be one round trip per walk to assemble one grid, so this asks for
+ * the set in a single `in` and lets the caller sort out the rest.
+ *
+ * Ordered newest first across the whole set rather than grouped by walk: a
+ * place page reads as a body of work made somewhere, not as an archive of
+ * separate outings.
+ */
+export async function listPhotosForWalks(
+  eventIds: string[],
+  { limit = 60 }: { limit?: number } = {},
+): Promise<{ photo: PhotoRecord; photographer: Profile | null }[]> {
+  if (eventIds.length === 0) return [];
+
+  const supabase = getSupabasePublicClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('photos')
+    .select(`${PHOTO_COLUMNS}, profiles!inner(${PROFILE_COLUMNS})`)
+    .in('event_id', eventIds)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return (data as unknown as (PhotoRecord & { profiles: Profile | null })[]).map(
+    ({ profiles, ...photo }) => ({ photo, photographer: profiles ?? null }),
+  );
+}
+
 /** How many photographs each of these walks holds, for the index. */
 export async function countPhotosByWalk(): Promise<Record<string, number>> {
   const supabase = getSupabasePublicClient();

@@ -16,6 +16,7 @@ import { site } from '@/data/site';
 
 export const metadata: Metadata = {
   title: `Terms · ${site.displayName}`,
+  alternates: { canonical: '/terms' },
   description:
     'The short version: walk safely, photograph considerately, keep the rights to your own work.',
 };

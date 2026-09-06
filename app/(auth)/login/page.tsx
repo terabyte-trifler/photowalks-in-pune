@@ -7,6 +7,7 @@ import { LoginForm } from './LoginForm';
 
 export const metadata: Metadata = {
   title: `Log in · ${site.displayName}`,
+  robots: { index: false, follow: false },
   description: 'Log in to your Photowalks in Pune account.',
 };
 

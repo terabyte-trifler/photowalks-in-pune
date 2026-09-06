@@ -8,6 +8,7 @@ import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
 import { allWalksNewestFirst, walkBySlug } from '@/data/events';
+import { placeForWalk } from '@/data/places';
 import { site } from '@/data/site';
 import { photoUrl } from '@/lib/directory';
 import { listPhotosForWalk } from '@/lib/photographers';
@@ -36,6 +37,7 @@ export async function generateMetadata({
   return {
     title: `${walk.title} · ${site.displayName}`,
     description: walk.description,
+    alternates: { canonical: `/walks/${walk.slug}` },
     openGraph: {
       title: `${walk.title} — ${longDate(walk.date)}`,
       description: walk.description,
@@ -54,6 +56,7 @@ export default async function WalkPage({
   if (!walk) notFound();
 
   const closed = registrationClosed(walk.date);
+  const place = placeForWalk(walk);
   const shot = await listPhotosForWalk(walk.id);
 
   return (
@@ -96,6 +99,22 @@ export default async function WalkPage({
               <p className="max-w-[34ch] font-display text-lead text-foreground-soft">
                 {walk.description}
               </p>
+
+              {/* Up to the place. A walk is one morning; the place page holds
+                  every walk held there and every frame made on them, and is
+                  where somebody who arrived looking for the location rather
+                  than the date actually wants to be. */}
+              {place && (
+                <p className="mt-5 text-[0.9375rem]">
+                  <Link
+                    href={`/places/${place.slug}`}
+                    className="border-b border-border pb-0.5 text-foreground transition-colors duration-300 hover:border-accent hover:text-accent"
+                  >
+                    More about photographing {place.shortName}{' '}
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                </p>
+              )}
 
               <div className="mt-[clamp(1.5rem,3vw,2.25rem)]">
                 {closed ? (

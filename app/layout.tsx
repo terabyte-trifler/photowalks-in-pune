@@ -41,7 +41,16 @@ export const metadata: Metadata = {
   description: site.seo.description,
   keywords: site.seo.keywords,
   applicationName: site.displayName,
-  alternates: { canonical: '/' },
+  /* NO canonical here. Metadata in a root layout is inherited, not scoped, so
+     `canonical: '/'` was emitted by every page that did not set its own —
+     /privacy, /terms and every walk page were all telling Google they were
+     duplicates of the homepage and should not be indexed in their own right.
+     The walk pages are the ones that hurt: they are the only pages carrying a
+     date, a place and a name somebody might actually search for.
+
+     Each page states its own canonical instead. A page that omits one now
+     emits none, and Google self-canonicalises, which is the right default —
+     the wrong answer is worse than no answer here. */
   openGraph: {
     type: 'website',
     locale: 'en_IN',

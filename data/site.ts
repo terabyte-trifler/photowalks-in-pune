@@ -103,8 +103,15 @@ export const site: SiteConfig = {
       'Photowalks in Pune is a community for photographers and curious people exploring Pune one walk and one photograph at a time.',
     url: resolveSiteUrl(),
     /* The first hero frame — what somebody sees on arrival, so it is also
-       what the link should show when the site is shared. */
-    ogImage: '/images/hero/pune-hero-01.jpg',
+       what the link should show when the site is shared.
+
+       Cropped to 1200×630 rather than pointed at the hero file directly. The
+       hero is 1500×1000, a 3:2 frame, while the metadata declared 1200×630 and
+       every social card is 1.91:1 — so the numbers were a lie and each
+       platform cropped the difference out wherever it liked, usually through
+       the middle of the frame. This is the same photograph, cropped once, on
+       purpose, to the shape it is actually displayed at. */
+    ogImage: '/images/og-cover.jpg',
     keywords: [
       'photowalk Pune',
       'photowalks in Pune',

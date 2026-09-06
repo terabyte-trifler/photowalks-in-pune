@@ -19,6 +19,7 @@ import { site } from '@/data/site';
 
 export const metadata: Metadata = {
   title: `Privacy · ${site.displayName}`,
+  alternates: { canonical: '/privacy' },
   description:
     'What Photowalks in Pune collects, why, who can see it, and how to have all of it deleted.',
 };
@@ -119,6 +120,18 @@ export default function PrivacyPage() {
               particular walk, because attendance is part of what the directory is
               for — but the record it reads from carries only the walk and the date,
               never a way to contact anybody.
+            </p>
+            <p>
+              <strong className="text-foreground">
+                Attendance is public in bulk, not only on a profile.
+              </strong>{' '}
+              The list of who joined which walk, and on what date, can be read by
+              anybody — including people who are not signed in — in the same way the
+              rest of the directory can. Put together, it shows who has walked with
+              whom. We are saying so plainly because it is easy to assume that
+              something shown one profile at a time is only available one profile at
+              a time, and here it is not. Your phone number and email are never part
+              of it.
             </p>
           </Clause>
 
