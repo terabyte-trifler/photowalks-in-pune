@@ -53,12 +53,41 @@ const splitPath = (path) => {
   return match ? { base: match[1], extension: match[2] } : null;
 };
 
+const CEILING = 204800; // the buckets' file_size_limit, from migration 0005
+const QUALITY_STEPS = [80, 68, 55];
+
 /** Encode to whatever the original already was; this is not a re-format pass. */
-function encodeAs(pipeline, extension) {
+function encodeAs(pipeline, extension, quality) {
   if (extension === 'png') return pipeline.png();
-  if (extension === 'webp') return pipeline.webp({ quality: 80 });
-  if (extension === 'avif') return pipeline.avif({ quality: 50, effort: 4 });
-  return pipeline.jpeg({ quality: 80, progressive: true });
+  if (extension === 'webp') return pipeline.webp({ quality });
+  if (extension === 'avif') return pipeline.avif({ quality: Math.round(quality * 0.62), effort: 4 });
+  return pipeline.jpeg({ quality, progressive: true });
+}
+
+/**
+ * A rung small enough for the bucket to accept, or null.
+ *
+ * Storage enforces 204800 bytes on both buckets and rejects anything over it.
+ * Downscaling an already-compressed frame almost always lands well under, but
+ * "almost always" is the wrong standard for a script that repoints rows: a
+ * rejected rung after the row has moved would be a 404 inside a srcset. So it
+ * walks the same quality steps lib/uploads.ts uses, and an image with a rung
+ * that will not fit at any of them is left alone entirely — still correct,
+ * still served through the optimiser, and still there to retry.
+ *
+ * PNG has no quality lever in this sense, so it gets one attempt.
+ */
+async function encodeUnderCeiling(original, width, extension) {
+  for (const quality of QUALITY_STEPS) {
+    const body = await encodeAs(
+      sharp(original).rotate().resize({ width, withoutEnlargement: true }),
+      extension,
+      quality,
+    ).toBuffer();
+    if (body.length <= CEILING) return body;
+    if (extension === 'png') return null;
+  }
+  return null;
 }
 
 async function backfill(bucket, rows, repoint) {
@@ -104,15 +133,17 @@ async function backfill(bucket, rows, repoint) {
 
     /* 1. every rung, primary included, under its ladder name */
     let wrote = true;
+    const written = [];
     for (const width of widths) {
       const at = `${parts.base}-v${LADDER}-${width}.${parts.extension}`;
       const body =
-        width === meta.width
-          ? original
-          : await encodeAs(
-              sharp(original).rotate().resize({ width, withoutEnlargement: true }),
-              parts.extension,
-            ).toBuffer();
+        width === meta.width ? original : await encodeUnderCeiling(original, width, parts.extension);
+
+      if (!body) {
+        console.log(`    ! ${width}px will not fit under 200 KiB — leaving this one alone`);
+        wrote = false;
+        break;
+      }
 
       const { error: putError } = await admin.storage.from(bucket).upload(at, body, {
         cacheControl: '31536000',
@@ -124,9 +155,16 @@ async function backfill(bucket, rows, repoint) {
         wrote = false;
         break;
       }
+      written.push(at);
       bytes += body.length;
     }
-    if (!wrote) continue;
+    if (!wrote) {
+      /* The row still names the original, so anything written above is
+         unreferenced. prune-storage would eventually sweep it, but leaving
+         litter for another tool to find is not a plan. */
+      if (written.length > 0) await admin.storage.from(bucket).remove(written);
+      continue;
+    }
 
     /* 2. the row, before anything is removed */
     const repointed = await repoint(id, path, primary);
