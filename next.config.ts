@@ -96,15 +96,28 @@ const nextConfig: NextConfig = {
        * optimiser pins the scheme and rejects unlisted hosts outright. This was
        * an open image proxy, which is a narrower problem than it first reads as.
        * ------------------------------------------------------------------ */
-      /* Any lh<n>, not just lh3: migration 0007 permits
-         lh[0-9]+.googleusercontent.com and Google really does serve from lh4
-         and up, so listing only lh3 would refuse an avatar the database had
-         accepted. But one label, not any depth — `**` also matched
-         anything.googleusercontent.com, which is user-content Google will host
-         for anybody. Three files answered this question three different ways
-         (this, the CSP's img-src, migration 0007's CHECK); this is now the
-         narrowest of the three, which is where they should agree. */
-      { protocol: 'https', hostname: '*.googleusercontent.com', pathname: '/**' },
+      /* Enumerated, because neither wildcard is narrow enough and the first
+         attempt at this proved it. `**.googleusercontent.com` obviously
+         matched anything; `*.googleusercontent.com` was tried as the fix and
+         measured against the deployment:
+
+           lh3.googleusercontent.com       -> 200
+           attacker.googleusercontent.com  -> 404   still accepted
+
+         404 rather than 400 means the host passed and the fetch happened —
+         `attacker` is one label exactly like `lh3`, so a single-label wildcard
+         cannot tell them apart, and Next has no mid-label pattern to express
+         "lh followed by digits". So the hosts are listed.
+
+         lh1 through lh9 covers what migration 0007's CHECK permits
+         (lh[0-9]+.googleusercontent.com); Google serves from lh3 upward in
+         practice, and an avatar the database accepted must not be one the
+         optimiser refuses. */
+      ...Array.from({ length: 9 }, (_, i) => ({
+        protocol: 'https' as const,
+        hostname: `lh${i + 1}.googleusercontent.com`,
+        pathname: '/**' as const,
+      })),
       /* This project's storage bucket and no other. The ref is read from the
          same variable the client uses, so preview and local point at whatever
          project they are configured against rather than at all of them; the
