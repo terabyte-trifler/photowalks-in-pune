@@ -33,8 +33,29 @@
 
 import { THEME_SCRIPT_HASH } from './theme-script';
 
-/** The three prerendered pages. Nothing user-controlled renders on any of them. */
-export const STATIC_PAGES = ['/', '/privacy', '/terms'];
+/**
+ * Pages that get the relaxed policy, because nothing user-controlled renders
+ * on them and so there is nothing for a nonce to protect.
+ *
+ * '/' WAS ON THIS LIST AND SHOULD NOT HAVE BEEN. The homepage grew a
+ * PhotographersStrip, which renders member avatars, display names and
+ * usernames, and the list was never revisited — so the highest-traffic page
+ * showing member-controlled content was the one page serving
+ * `script-src 'self' 'unsafe-inline'`, while every other such page got a nonce
+ * and 'strict-dynamic'. Measured before the change:
+ *
+ *   /       script-src 'self' 'unsafe-inline'
+ *   /login  script-src 'self' 'sha256-…' 'nonce-…' 'strict-dynamic'
+ *
+ * That is not an exploit on its own — React escapes these fields and no
+ * injection was found — it is the removal of the second line of defence at
+ * exactly the point it was designed for. If a sanitisation bug ever reaches a
+ * display name, the strict policy is what makes the injected tag inert.
+ *
+ * It costs the homepage nothing to leave: it already awaits getGalleryCredits()
+ * and carries `revalidate = 300`, so it was never truly prerendered anyway.
+ */
+export const STATIC_PAGES = ['/privacy', '/terms'];
 
 export function isStaticPage(pathname: string): boolean {
   return STATIC_PAGES.includes(pathname);

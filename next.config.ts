@@ -1,5 +1,24 @@
 import type { NextConfig } from 'next';
 
+/**
+ * The storage host the image optimiser is allowed to fetch from. Derived from
+ * the configured project so that a preview or a local stack points at its own
+ * bucket, with the production ref as the fallback when the variable is not set
+ * at build time.
+ */
+const SUPABASE_HOSTNAME = (() => {
+  const configured = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (configured) {
+    try {
+      return new URL(configured).hostname;
+    } catch {
+      /* Malformed value: fall through rather than fail the build here, where
+         the error would name the image config and not the real culprit. */
+    }
+  }
+  return 'gcyweszlvjkguvbzfwlj.supabase.co';
+})();
+
 
 /* ============================================================================
  * SECURITY HEADERS
@@ -55,22 +74,45 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
-      /* Avatars from Google sign-in. Add your Supabase project's storage host
-         here too when photographs and uploaded avatars move there:
-         { protocol: 'https', hostname: '<project-ref>.supabase.co',
-           pathname: '/storage/v1/object/public/**' }                        */
-      /* Any lh<n>, not just lh3. The avatar_url constraint in migration 0007
-         permits lh[0-9]+.googleusercontent.com, and Google really does serve
-         from lh4, lh5 and up — listing only lh3 here meant the optimiser would
-         refuse an avatar the database had accepted, and that member's picture
-         would simply fail to load. Breadth is safe: the database is the gate,
-         and it pins the host far more tightly than this does. */
-      { protocol: 'https', hostname: '**.googleusercontent.com', pathname: '/**' },
-      /* Avatars and photographs in Supabase Storage. The wildcard covers the
-         project ref, which differs between local, preview and production. */
+      /* ------------------------------------------------------------------
+       * WHO THE OPTIMISER MAY FETCH FROM
+       * ------------------------------------------------------------------
+       * Every entry here is a host whose content /_next/image will fetch and
+       * re-serve from this origin, billed to this project. A wildcard is
+       * therefore not a convenience, it is an open image proxy: `**.supabase.co`
+       * meant anybody with a free Supabase project could have their images
+       * served under this domain, consuming transformations and laundering
+       * third-party content under the site's brand.
+       *
+       * Verified against the deployment before this change — the hostnames
+       * were accepted and upstream requests were made:
+       *
+       *   evil-other-project.supabase.co/storage/…   -> 502 (host accepted)
+       *   attacker.googleusercontent.com/x.jpg       -> 404 (host accepted)
+       *   example.com/a.jpg                          -> 400 (refused)
+       *   169.254.169.254/latest/meta-data/          -> 400 (refused)
+       *
+       * The 400s are worth recording too: there is no SSRF here, because the
+       * optimiser pins the scheme and rejects unlisted hosts outright. This was
+       * an open image proxy, which is a narrower problem than it first reads as.
+       * ------------------------------------------------------------------ */
+      /* Any lh<n>, not just lh3: migration 0007 permits
+         lh[0-9]+.googleusercontent.com and Google really does serve from lh4
+         and up, so listing only lh3 would refuse an avatar the database had
+         accepted. But one label, not any depth — `**` also matched
+         anything.googleusercontent.com, which is user-content Google will host
+         for anybody. Three files answered this question three different ways
+         (this, the CSP's img-src, migration 0007's CHECK); this is now the
+         narrowest of the three, which is where they should agree. */
+      { protocol: 'https', hostname: '*.googleusercontent.com', pathname: '/**' },
+      /* This project's storage bucket and no other. The ref is read from the
+         same variable the client uses, so preview and local point at whatever
+         project they are configured against rather than at all of them; the
+         literal is the production ref, used when the variable is absent at
+         build time. It is not a secret — it is in every page of the bundle. */
       {
         protocol: 'https',
-        hostname: '**.supabase.co',
+        hostname: SUPABASE_HOSTNAME,
         pathname: '/storage/v1/object/public/**',
       },
       /* Instagram serves media from these two, and which one varies by region
