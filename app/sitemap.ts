@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { upcomingWalks } from '@/data/events';
+import { places } from '@/data/places';
 import { site } from '@/data/site';
 import { getSupabasePublicClient } from '@/lib/supabase/public';
 
@@ -35,18 +36,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/`, changeFrequency: 'daily', priority: 1 },
     { url: `${base}/photographers`, changeFrequency: 'daily', priority: 0.8 },
+    { url: `${base}/places`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${base}/terms`, changeFrequency: 'yearly', priority: 0.2 },
   ];
 
+  /* Places rank above walks on purpose. A walk page is dated and stops being
+     the right answer the day after; a place page is the durable one, and it is
+     what somebody searching "mandai photowalk" should land on. */
+  const placeRoutes: MetadataRoute.Sitemap = places.map((place) => ({
+    url: `${base}/places/${place.slug}`,
+    changeFrequency: 'weekly',
+    priority: 0.9,
+  }));
+
   /* Every walk in the file, past ones included: a walk that has happened still
      has photographs under it and is still the thing somebody searches for by
-     name months later. */
+     name months later. Lower priority than its place — three of these share a
+     location, and the place page is the one that should win that query. */
   const walkRoutes: MetadataRoute.Sitemap = upcomingWalks.map((walk) => ({
     url: `${base}/walks/${walk.slug}`,
     lastModified: new Date(walk.date),
     changeFrequency: 'weekly',
-    priority: 0.7,
+    priority: 0.6,
   }));
 
   /* Profiles are public by design (see the RLS note in migration 0001), so
@@ -71,5 +83,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     );
   }
 
-  return [...staticRoutes, ...walkRoutes, ...profileRoutes];
+  return [...staticRoutes, ...placeRoutes, ...walkRoutes, ...profileRoutes];
 }
