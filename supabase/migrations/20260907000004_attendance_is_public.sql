@@ -1,0 +1,32 @@
+-- ============================================================================
+-- PHOTOWALKS IN PUNE — 0020 · SAYING WHAT walk_attendance ACTUALLY IS
+-- ----------------------------------------------------------------------------
+-- No behaviour changes here. This migration exists because the schema
+-- contradicted itself and a security review reasonably read the contradiction
+-- as a bug.
+--
+-- Migration 0002 says, of walk_rsvps: "who is attending a walk is nobody
+-- else's business". That is true of the table — anon gets 42501 — and it is
+-- the reason the table is locked down. But 0003 then added walk_attendance, a
+-- security_invoker = false view over the same rows, granted select to anon, so
+-- that a profile can show the walks somebody joined and the homepage can count
+-- spots without a session. The projection is careful: four columns, no phone
+-- number, no email.
+--
+-- What was never written down is that the view answers in bulk and without a
+-- filter. Anybody, signed in or not, can read the whole attendance list and
+-- join it against photographer_cards to get who walked with whom, where, and
+-- when. That is a deliberate product decision, confirmed by the owner — the
+-- directory exists to show people who they might walk with — but it was a
+-- decision nobody had recorded, sitting next to a comment asserting the
+-- opposite.
+--
+-- So: it is recorded, here and in the privacy policy, which now says attendance
+-- is public in bulk rather than leaving the reader to infer it from a profile
+-- page. If that decision is ever revisited, the change is to restrict this view
+-- to authenticated and give getSpotsTaken() a security definer function
+-- returning counts, because the homepage needs the number and not the rows.
+-- ============================================================================
+
+comment on view public.walk_attendance is
+  'PUBLIC IN BULK, deliberately. Readable unfiltered by anon so profiles can list walks and the homepage can count spots without a session. Four columns, never contact details. Joinable with photographer_cards into a full attendance graph — that is understood and accepted; see migration 0020 and the privacy policy. The underlying walk_rsvps table stays private, and 0002''s comment about attendance being nobody else''s business describes that table, not this view.';
