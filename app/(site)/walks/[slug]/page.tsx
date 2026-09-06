@@ -12,7 +12,7 @@ import { placeForWalk } from '@/data/places';
 import { site } from '@/data/site';
 import { photoUrl } from '@/lib/directory';
 import { listPhotosForWalk } from '@/lib/photographers';
-import { breadcrumbSchema, gallerySchema, jsonLd } from '@/lib/seo';
+import { breadcrumbSchema, eventSchema, gallerySchema, jsonLd } from '@/lib/seo';
 import { longDate, priceLabel, registrationClosed } from '@/lib/utils';
 
 /* The photographs come from the database and appear the moment somebody files
@@ -58,6 +58,9 @@ export default async function WalkPage({
 
   const closed = registrationClosed(walk.date);
   const place = placeForWalk(walk);
+
+  /* Null unless the walk is marked verified — see the note in lib/seo.ts. */
+  const event = eventSchema(walk, { registrationOpen: !closed });
 
   /* The trail a visitor can actually follow: a walk sits under its place, and
      the walk page links up to it. */
@@ -204,6 +207,9 @@ export default async function WalkPage({
         </div>
       </section>
     
+      {event && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(event) }} />
+      )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(crumbs) }} />
       {gallery && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(gallery) }} />

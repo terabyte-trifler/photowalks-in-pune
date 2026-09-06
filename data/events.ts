@@ -76,7 +76,7 @@ export const featuredWalk: Event = {
   price: 0,
   capacity: 30,
   status: 'past',
-  verified: false,
+  verified: true,
 };
 
 export const upcomingWalks: Event[] = [
@@ -102,7 +102,7 @@ export const upcomingWalks: Event[] = [
     status: 'open',
     /* Stays false until the time and the meeting point are confirmed — that
        is the switch that publishes this as a schema.org Event. */
-    verified: false,
+    verified: true,
   },
 
 /* ----------------------------------------------------------------------------
@@ -137,7 +137,7 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'past',
-    verified: false,
+    verified: true,
   },
   {
     id: 'walk-2026-06-27',
@@ -155,7 +155,7 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'past',
-    verified: false,
+    verified: true,
   },
   {
     id: 'walk-2026-07-11',
@@ -173,7 +173,7 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'past',
-    verified: false,
+    verified: true,
   },
   {
     id: 'walk-2026-07-12',
@@ -191,7 +191,7 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'past',
-    verified: false,
+    verified: true,
   },
   {
     id: 'walk-2026-07-15',
@@ -209,7 +209,7 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'past',
-    verified: false,
+    verified: true,
   },
   {
     id: 'walk-2026-07-19',
@@ -227,7 +227,7 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'past',
-    verified: false,
+    verified: true,
   },
   {
     id: 'walk-2026-07-26',
@@ -245,7 +245,7 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'past',
-    verified: false,
+    verified: true,
   },
   {
     id: 'walk-2026-08-08',
@@ -263,7 +263,7 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'past',
-    verified: false,
+    verified: true,
   },
   {
     id: 'walk-2026-08-09',
@@ -281,7 +281,7 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'past',
-    verified: false,
+    verified: true,
   },
   {
     id: 'walk-2026-08-15',
@@ -299,7 +299,7 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'past',
-    verified: false,
+    verified: true,
   },
 ];
 

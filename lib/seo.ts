@@ -108,3 +108,71 @@ export function gallerySchema(name: string, description: string, images: Gallery
     })),
   };
 }
+
+/**
+ * Event, for a single walk.
+ *
+ * Only ever called for a walk marked `verified` in data/events.ts. That flag
+ * is the promise that the date, the meeting point and the cost are real rather
+ * than sample data, and publishing an Event that is not is how a site earns a
+ * manual action instead of a rich result.
+ *
+ * WHAT IS DELIBERATELY OMITTED
+ * A time. The walks carry "Morning" and "Evening", which is what the organiser
+ * actually commits to, and schema.org wants an instant. A date alone is valid
+ * ISO 8601 and true; inventing 07:00 to fill the field would not be.
+ *
+ * `offers` appears only while registration is genuinely open. A free walk that
+ * has already happened still has a price of zero, and saying `InStock` about
+ * it would advertise a place nobody can take.
+ */
+export function eventSchema(walk: {
+  title: string;
+  slug: string;
+  date: string;
+  location: string;
+  description: string;
+  image: string;
+  price: number;
+  verified: boolean;
+}, { registrationOpen }: { registrationOpen: boolean }) {
+  if (!walk.verified) return null;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: walk.title,
+    startDate: walk.date,
+    description: walk.description,
+    image: absolute(walk.image),
+    url: absolute(`/walks/${walk.slug}`),
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: {
+      '@type': 'Place',
+      name: walk.location,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Pune',
+        addressRegion: 'Maharashtra',
+        addressCountry: 'IN',
+      },
+    },
+    organizer: {
+      '@type': 'Organization',
+      name: site.displayName,
+      url: origin(),
+    },
+    ...(registrationOpen
+      ? {
+          offers: {
+            '@type': 'Offer',
+            price: walk.price,
+            priceCurrency: 'INR',
+            availability: 'https://schema.org/InStock',
+            url: absolute(`/walks/${walk.slug}`),
+          },
+        }
+      : {}),
+  };
+}
