@@ -1,11 +1,10 @@
 'use client';
 
-import Image from 'next/image';
+import { Picture } from '@/components/media/Picture';
 import { useState } from 'react';
 import { Dialog, DialogClose } from '@/components/ui/Dialog';
 import { featuredStory } from '@/data/photos';
 import { useGallery } from '@/components/gallery/GalleryProvider';
-import { IMAGE_QUALITY } from '@/lib/images';
 
 /**
  * The story opens over the page rather than on a route, because /stories does
@@ -39,12 +38,11 @@ export function StoryDialog() {
           {featuredStory.standfirst}
         </p>
 
-        <Image
+        <Picture
           src={featuredStory.image}
           alt={featuredStory.imageAlt}
           width={1800}
           height={1012}
-          quality={IMAGE_QUALITY}
           className="w-full"
         />
 

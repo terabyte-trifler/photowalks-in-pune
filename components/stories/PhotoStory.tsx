@@ -1,9 +1,8 @@
-import Image from 'next/image';
+import { Picture } from '@/components/media/Picture';
 import { featuredStory } from '@/data/photos';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
 import { StoryDialog } from './StoryDialog';
-import { IMAGE_QUALITY } from '@/lib/images';
 
 export function PhotoStory() {
   return (
@@ -17,12 +16,11 @@ export function PhotoStory() {
           </h2>
 
           <figure className="my-[clamp(2rem,4vw,3rem)]">
-            <Image
+            <Picture
               src={featuredStory.image}
               alt={featuredStory.imageAlt}
               width={1800}
               height={1012}
-              quality={IMAGE_QUALITY}
               loading="lazy"
               sizes="100vw"
               className="w-full"

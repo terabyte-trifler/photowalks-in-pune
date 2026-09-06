@@ -1,13 +1,12 @@
 'use client';
 
-import Image from 'next/image';
+import { Picture } from '@/components/media/Picture';
 import Link from 'next/link';
 import { useCallback, useState } from 'react';
 
 import { Avatar } from '@/components/navigation/Avatar';
 import { LightboxFrame } from '@/components/gallery/LightboxFrame';
 import { Reveal } from '@/components/ui/Reveal';
-import { IMAGE_QUALITY } from '@/lib/images';
 
 export interface WalkPhoto {
   id: string;
@@ -58,12 +57,11 @@ export function WalkPhotos({ photos, walkTitle }: { photos: WalkPhoto[]; walkTit
               aria-label={`View ${photo.caption ?? `a photograph from ${walkTitle}`} full screen`}
               className="block w-full overflow-hidden bg-subtle"
             >
-              <Image
+              <Picture
                 src={photo.src}
                 alt={photo.caption ?? `A photograph from ${walkTitle}`}
                 width={photo.width ?? 1200}
                 height={photo.height ?? 800}
-                quality={IMAGE_QUALITY}
                 loading="lazy"
                 sizes="(min-width: 1024px) 24vw, (min-width: 768px) 32vw, 50vw"
                 className="aspect-square w-full object-cover transition-transform duration-700 ease-editorial group-hover:scale-105"

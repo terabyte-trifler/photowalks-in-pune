@@ -1,0 +1,606 @@
+{
+  "/images/gallery/photo-01.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-02.jpg": {
+    "w": 1616,
+    "h": 1080,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-03.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-04.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-05.jpg": {
+    "w": 1125,
+    "h": 1500,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-06.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-07.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-08.jpg": {
+    "w": 734,
+    "h": 1100,
+    "widths": [
+      640
+    ]
+  },
+  "/images/gallery/photo-09.jpg": {
+    "w": 1080,
+    "h": 1620,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-10.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-11.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-12.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-13.jpg": {
+    "w": 1100,
+    "h": 733,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-14.jpg": {
+    "w": 1100,
+    "h": 733,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-15.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-16.jpg": {
+    "w": 1100,
+    "h": 733,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-17.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-18.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-19.jpg": {
+    "w": 944,
+    "h": 1500,
+    "widths": [
+      640
+    ]
+  },
+  "/images/gallery/photo-20.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-21.jpg": {
+    "w": 1600,
+    "h": 2000,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-22.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-23.jpg": {
+    "w": 922,
+    "h": 2000,
+    "widths": [
+      640
+    ]
+  },
+  "/images/gallery/photo-24.jpg": {
+    "w": 733,
+    "h": 1100,
+    "widths": [
+      640
+    ]
+  },
+  "/images/gallery/photo-25.jpg": {
+    "w": 1031,
+    "h": 1620,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-26.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-27.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-28.jpg": {
+    "w": 1000,
+    "h": 1500,
+    "widths": [
+      640
+    ]
+  },
+  "/images/gallery/photo-29.jpg": {
+    "w": 1112,
+    "h": 1667,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-30.jpg": {
+    "w": 1616,
+    "h": 1080,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-31.jpg": {
+    "w": 1000,
+    "h": 1500,
+    "widths": [
+      640
+    ]
+  },
+  "/images/gallery/photo-32.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-33.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-34.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-35.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-36.jpg": {
+    "w": 1100,
+    "h": 733,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-37.jpg": {
+    "w": 1000,
+    "h": 1500,
+    "widths": [
+      640
+    ]
+  },
+  "/images/gallery/photo-38.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-39.jpg": {
+    "w": 1080,
+    "h": 1620,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-40.jpg": {
+    "w": 1616,
+    "h": 1080,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-41.jpg": {
+    "w": 1100,
+    "h": 733,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-42.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-43.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-44.jpg": {
+    "w": 2000,
+    "h": 1500,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-45.jpg": {
+    "w": 1616,
+    "h": 1080,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/gallery/photo-46.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-47.jpg": {
+    "w": 825,
+    "h": 550,
+    "widths": [
+      640
+    ]
+  },
+  "/images/gallery/photo-48.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-49.jpg": {
+    "w": 825,
+    "h": 550,
+    "widths": [
+      640
+    ]
+  },
+  "/images/gallery/photo-50.jpg": {
+    "w": 1290,
+    "h": 862,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-51.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-52.jpg": {
+    "w": 1100,
+    "h": 733,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-53.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-54.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-55.jpg": {
+    "w": 1100,
+    "h": 733,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/gallery/photo-56.jpg": {
+    "w": 619,
+    "h": 825,
+    "widths": [
+      619
+    ]
+  },
+  "/images/gallery/photo-57.jpg": {
+    "w": 825,
+    "h": 1100,
+    "widths": [
+      640
+    ]
+  },
+  "/images/gallery/photo-58.jpg": {
+    "w": 464,
+    "h": 825,
+    "widths": [
+      464
+    ]
+  },
+  "/images/hero/pune-hero-01.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/hero/pune-hero-02.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/hero/pune-hero-03.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/hero/pune-hero-04.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/hero/pune-hero-05.jpg": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      640,
+      1024,
+      1600
+    ]
+  },
+  "/images/instagram/post-01.jpg": {
+    "w": 900,
+    "h": 900,
+    "widths": [
+      640
+    ]
+  },
+  "/images/instagram/post-02.jpg": {
+    "w": 900,
+    "h": 900,
+    "widths": [
+      640
+    ]
+  },
+  "/images/instagram/post-03.jpg": {
+    "w": 900,
+    "h": 900,
+    "widths": [
+      640
+    ]
+  },
+  "/images/instagram/post-04.jpg": {
+    "w": 900,
+    "h": 900,
+    "widths": [
+      640
+    ]
+  },
+  "/images/instagram/post-05.jpg": {
+    "w": 900,
+    "h": 900,
+    "widths": [
+      640
+    ]
+  },
+  "/images/instagram/post-06.jpg": {
+    "w": 900,
+    "h": 900,
+    "widths": [
+      640
+    ]
+  },
+  "/images/stories/before-the-city-wakes.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/walks/balewadi.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/walks/camp.jpg": {
+    "w": 825,
+    "h": 550,
+    "widths": [
+      640
+    ]
+  },
+  "/images/walks/mandai.jpg": {
+    "w": 1100,
+    "h": 733,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/walks/monsoon.jpg": {
+    "w": 922,
+    "h": 2000,
+    "widths": [
+      640
+    ]
+  },
+  "/images/walks/old-pune.jpg": {
+    "w": 1500,
+    "h": 1000,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "/images/walks/river.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ]
+  }
+}

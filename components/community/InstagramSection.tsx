@@ -1,9 +1,8 @@
-import Image from 'next/image';
+import { Picture } from '@/components/media/Picture';
 import { site } from '@/data/site';
 import { getInstagramFeed } from '@/lib/instagram';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
-import { IMAGE_QUALITY } from '@/lib/images';
 
 /** Async server component — swaps to the Graph API without touching the markup. */
 export async function InstagramSection() {
@@ -37,12 +36,11 @@ export async function InstagramSection() {
               rel="noreferrer noopener"
               className="group relative block overflow-hidden bg-subtle"
             >
-              <Image
+              <Picture
                 src={post.image}
                 alt={post.caption}
                 width={900}
                 height={900}
-                quality={IMAGE_QUALITY}
                 loading="lazy"
                 sizes="(min-width: 768px) 17vw, 50vw"
                 className="aspect-square w-full object-cover transition-[transform,opacity] duration-700 ease-editorial group-hover:scale-105 group-hover:opacity-75"

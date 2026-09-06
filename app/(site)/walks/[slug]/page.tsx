@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import { Picture } from '@/components/media/Picture';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -12,7 +12,6 @@ import { site } from '@/data/site';
 import { photoUrl } from '@/lib/directory';
 import { listPhotosForWalk } from '@/lib/photographers';
 import { longDate, priceLabel, registrationClosed } from '@/lib/utils';
-import { IMAGE_QUALITY } from '@/lib/images';
 
 /* The photographs come from the database and appear the moment somebody files
    one, so this is rendered per request rather than baked. Nothing on it is
@@ -65,12 +64,11 @@ export default async function WalkPage({
 
           <Reveal className="grid gap-[clamp(1.75rem,4vw,3.5rem)] lg:grid-cols-[7fr_5fr] lg:items-start">
             <article className="bg-subtle">
-              <Image
+              <Picture
                 src={walk.image}
                 alt={walk.imageAlt}
                 width={1800}
                 height={1200}
-                quality={IMAGE_QUALITY}
                 priority
                 sizes="(min-width: 1024px) 58vw, 100vw"
                 className="aspect-[3/2] w-full object-cover"

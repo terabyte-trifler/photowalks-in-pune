@@ -1,8 +1,7 @@
-import Image from 'next/image';
+import { Picture } from '@/components/media/Picture';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { site } from '@/data/site';
-import { IMAGE_QUALITY } from '@/lib/images';
 
 /* ============================================================================
  * THE ACCOUNT SCREENS
@@ -45,12 +44,11 @@ export function AuthShell({
         {/* `fill` needs a parent with position absolute/fixed/relative, and the
             aside becomes `sticky` at lg — hence this wrapper. */}
         <div className="absolute inset-0">
-          <Image
+          <Picture
             src={image}
             alt={imageAlt}
             fill
             priority
-            quality={IMAGE_QUALITY}
             sizes="(min-width: 1024px) 45vw, 100vw"
             className="object-cover"
           />

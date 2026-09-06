@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
+import { Picture } from '@/components/media/Picture';
 import { motion, useReducedMotion } from 'framer-motion';
 import { heroFrames } from '@/data/hero';
-import { IMAGE_QUALITY } from '@/lib/images';
 
 /* ============================================================================
  * THE HERO PHOTOGRAPH, AND THE FOUR BEHIND IT
@@ -95,14 +94,13 @@ export function HeroImage() {
              above the one going out rather than relying on source order. */
           style={{ zIndex: i === index ? 1 : 0 }}
         >
-          <Image
+          <Picture
             src={frame.src}
             alt={frame.alt}
             fill
             /* Only the frame on screen at arrival is the LCP element. The rest
                load in their own time, long before their turn comes. */
             priority={i === 0}
-            quality={IMAGE_QUALITY}
             sizes="100vw"
             className="object-cover"
           />

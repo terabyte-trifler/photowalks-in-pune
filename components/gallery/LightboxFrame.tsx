@@ -1,11 +1,10 @@
 'use client';
 
-import Image from 'next/image';
+import { Picture } from '@/components/media/Picture';
 import { useEffect, type ReactNode } from 'react';
 
 import { Dialog, DialogClose } from '@/components/ui/Dialog';
 import { padIndex } from '@/lib/utils';
-import { IMAGE_QUALITY } from '@/lib/images';
 
 /* ============================================================================
  * THE VIEWER ITSELF
@@ -61,12 +60,11 @@ export function LightboxFrame({
           </div>
 
           <div className="grid min-h-0 flex-1 place-items-center p-[clamp(1rem,3vw,2.5rem)]">
-            <Image
+            <Picture
               src={src}
               alt={alt}
               width={1600}
               height={1600}
-              quality={IMAGE_QUALITY}
               className="h-auto max-h-full w-auto max-w-full object-contain"
             />
           </div>

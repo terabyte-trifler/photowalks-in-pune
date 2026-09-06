@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { Picture } from '@/components/media/Picture';
 import { walkToFeature } from '@/data/events';
 import { site } from '@/data/site';
 import { longDate, priceLabel, registrationClosed, spotsLabel, isNearlyFull } from '@/lib/utils';
@@ -6,7 +6,6 @@ import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
-import { IMAGE_QUALITY } from '@/lib/images';
 
 /** Server component. Everything above this exists to get someone here. */
 export async function FeaturedWalk() {
@@ -78,12 +77,11 @@ export async function FeaturedWalk() {
 
         <Reveal className="grid gap-[clamp(1.75rem,4vw,3.5rem)] lg:grid-cols-[7fr_5fr] lg:items-start">
           <article className="bg-subtle">
-            <Image
+            <Picture
               src={walk.image}
               alt={walk.imageAlt}
               width={1800}
               height={1200}
-              quality={IMAGE_QUALITY}
               sizes="(min-width: 1024px) 58vw, 100vw"
               className="aspect-[3/2] w-full object-cover"
             />
