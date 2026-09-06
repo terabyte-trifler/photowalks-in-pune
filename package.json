@@ -14,6 +14,7 @@
     "images:variants": "node scripts/build-image-variants.mjs",
     "images:backfill": "node scripts/backfill-upload-variants.mjs",
     "email:blocklist": "node scripts/refresh-disposable-domains.mjs",
+    "walks:sync": "node scripts/sync-walk-capacity.mjs",
     "check:csp": "node scripts/check-csp.mjs"
   },
   "dependencies": {
