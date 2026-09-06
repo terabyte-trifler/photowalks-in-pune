@@ -1,0 +1,43 @@
+-- ============================================================================
+-- PHOTOWALKS IN PUNE — 0018 · ONE FUNCTION 0009 DID NOT REACH
+-- ----------------------------------------------------------------------------
+-- A security review reported that migrations 0011 and 0012 exist in production
+-- but were never committed, on the evidence that the header numbers jump from
+-- 0010 to 0013 and that 0013's comment refers to "migration 0011". Checked
+-- against the live database, that conclusion does not hold:
+--
+--   * supabase_migrations.schema_migrations holds 15 rows, and every one of
+--     them corresponds to a file in this directory. There are no extra rows.
+--   * public contains 10 functions. All 10 are created by a committed
+--     migration. None is unaccounted for.
+--   * 9 of those 10 have a REVOKE in a committed migration, and the tenth
+--     still carries Postgres's default grant — which is what "nothing was ever
+--     done to it" looks like, not what a hidden migration looks like.
+--
+-- So the gap is a numbering slip in the hand-written headers. 0013's "0011" is
+-- 0009, which makes exactly the argument quoted: EXECUTE arrives from PUBLIC by
+-- default, is invisible in a dump, and is not removed by revoking from anon.
+--
+-- WHAT THE CHECK DID FIND
+-- That tenth function. 0014 added walk_rsvps_registration_open and did not
+-- revoke the default, so it is the one function in this schema still holding
+--
+--   {=X/postgres, postgres=X/postgres, service_role=X/postgres}
+--        ^ PUBLIC
+--
+-- against, for comparison, enforce_photo_limit's {postgres=…, service_role=…}.
+--
+-- The practical exposure is nil: it is a trigger function taking no arguments
+-- and returning `trigger`, so PostgREST will not expose it — an RPC call gets
+-- 404, not 42501. It is fixed because the rule 0009 established is worth
+-- keeping true, and because the next function added by habit rather than by
+-- rule may not be a trigger. Revoking from a trigger function does not affect
+-- the trigger, which fires as the table owner; 0009 already did this to
+-- handle_new_user, profiles_touch_updated_at and enforce_photo_limit.
+-- ============================================================================
+
+revoke all on function public.walk_rsvps_registration_open() from public, anon, authenticated;
+
+-- Left explicit rather than implied, matching 0013's pairing of revoke and
+-- grant so the intended reader is stated rather than inferred from absence.
+grant execute on function public.walk_rsvps_registration_open() to service_role;
