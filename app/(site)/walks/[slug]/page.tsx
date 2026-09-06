@@ -36,6 +36,7 @@ export async function generateMetadata({
   return {
     title: `${walk.title} · ${site.displayName}`,
     description: walk.description,
+    alternates: { canonical: `/walks/${walk.slug}` },
     openGraph: {
       title: `${walk.title} — ${longDate(walk.date)}`,
       description: walk.description,

@@ -8,6 +8,7 @@ import { ResetPasswordForm } from './ResetPasswordForm';
 
 export const metadata: Metadata = {
   title: `Set a new password · ${site.displayName}`,
+  robots: { index: false, follow: false },
 };
 
 /**

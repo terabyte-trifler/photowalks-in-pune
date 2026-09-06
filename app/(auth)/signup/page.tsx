@@ -7,6 +7,7 @@ import { SignupForm } from './SignupForm';
 
 export const metadata: Metadata = {
   title: `Join · ${site.displayName}`,
+  robots: { index: false, follow: false },
   description: 'Create your Photowalks in Pune account and walk with us.',
 };
 

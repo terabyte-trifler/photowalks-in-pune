@@ -19,6 +19,7 @@ import { site } from '@/data/site';
 
 export const metadata: Metadata = {
   title: `Privacy · ${site.displayName}`,
+  alternates: { canonical: '/privacy' },
   description:
     'What Photowalks in Pune collects, why, who can see it, and how to have all of it deleted.',
 };
