@@ -6,6 +6,7 @@ import { getSpotsTaken, spotsRemaining } from '@/lib/walks';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
+import { IMAGE_QUALITY } from '@/lib/images';
 
 /** Server component. Everything above this exists to get someone here. */
 export async function FeaturedWalk() {
@@ -82,7 +83,7 @@ export async function FeaturedWalk() {
               alt={walk.imageAlt}
               width={1800}
               height={1200}
-              quality={74}
+              quality={IMAGE_QUALITY}
               sizes="(min-width: 1024px) 58vw, 100vw"
               className="aspect-[3/2] w-full object-cover"
             />

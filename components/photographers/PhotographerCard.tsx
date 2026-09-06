@@ -5,6 +5,7 @@ import { StyleLine } from '@/components/photographers/StyleTags';
 import { photoUrl } from '@/lib/directory';
 import type { PhotoRecord, PhotographerCard as Card } from '@/lib/supabase/types';
 import { FOUNDER_USERNAME } from '@/lib/directory';
+import { IMAGE_QUALITY } from '@/lib/images';
 
 /**
  * A photographer, filed like a contact sheet entry rather than a business
@@ -58,6 +59,7 @@ export function PhotographerCard({
                     alt={photo.caption ?? ''}
                     fill
                     sizes="(min-width: 1024px) 24vw, (min-width: 640px) 30vw, 45vw"
+                    quality={IMAGE_QUALITY}
                     loading={priority ? undefined : 'lazy'}
                     priority={priority}
                     className="object-cover transition-transform duration-700 ease-editorial group-hover:scale-[1.03]"

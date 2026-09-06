@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { site } from '@/data/site';
+import { IMAGE_QUALITY } from '@/lib/images';
 
 /* ============================================================================
  * THE ACCOUNT SCREENS
@@ -49,7 +50,7 @@ export function AuthShell({
             alt={imageAlt}
             fill
             priority
-            quality={70}
+            quality={IMAGE_QUALITY}
             sizes="(min-width: 1024px) 45vw, 100vw"
             className="object-cover"
           />

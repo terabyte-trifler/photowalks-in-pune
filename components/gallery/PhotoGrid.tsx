@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { type Photo } from '@/data/photos';
 import { cn } from '@/lib/utils';
 import { useGallery } from './GalleryProvider';
+import { IMAGE_QUALITY } from '@/lib/images';
 
 /**
  * Asymmetric editorial placement on a six-column grid, repeating every six
@@ -83,7 +84,7 @@ export function PhotoGrid() {
                     alt={photo.alt}
                     width={dims.width}
                     height={dims.height}
-                    quality={72}
+                    quality={IMAGE_QUALITY}
                     loading="lazy"
                     sizes="(min-width: 768px) 40vw, 50vw"
                     className="h-full w-full object-cover transition-transform duration-1000 ease-editorial group-hover:scale-[1.035]"

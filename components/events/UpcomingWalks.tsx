@@ -9,6 +9,7 @@ import {
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
+import { IMAGE_QUALITY } from '@/lib/images';
 
 /**
  * An editorial index, not a row of cards: a dated list with hairline rules,
@@ -124,6 +125,7 @@ export async function UpcomingWalks() {
                     aria-hidden="true"
                     width={380}
                     height={252}
+                    quality={IMAGE_QUALITY}
                     className="pointer-events-none absolute right-24 top-1/2 z-[2] hidden h-[126px] w-[190px] -translate-y-1/2 scale-95 object-cover opacity-0 transition-[opacity,transform] duration-500 ease-editorial group-hover:scale-100 group-hover:opacity-100 xl:block"
                   />
                 </li>

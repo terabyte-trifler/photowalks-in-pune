@@ -3,6 +3,7 @@ import { featuredStory } from '@/data/photos';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
 import { StoryDialog } from './StoryDialog';
+import { IMAGE_QUALITY } from '@/lib/images';
 
 export function PhotoStory() {
   return (
@@ -21,7 +22,7 @@ export function PhotoStory() {
               alt={featuredStory.imageAlt}
               width={1800}
               height={1012}
-              quality={74}
+              quality={IMAGE_QUALITY}
               loading="lazy"
               sizes="100vw"
               className="w-full"

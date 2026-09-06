@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { cn, initials } from '@/lib/utils';
+import { IMAGE_QUALITY } from '@/lib/images';
 
 /**
  * A photograph if there is one, otherwise a monogram in the same circle the
@@ -32,6 +33,7 @@ export function Avatar({
           alt=""
           fill
           sizes={`${size}px`}
+          quality={IMAGE_QUALITY}
           className="object-cover"
           /* Optimised like everything else. This used to be `unoptimized`,
              from when avatars only came from Google and the host was not in

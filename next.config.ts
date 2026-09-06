@@ -65,23 +65,27 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.cdninstagram.com', pathname: '/**' },
       { protocol: 'https', hostname: '**.fbcdn.net', pathname: '/**' },
     ],
-    /* next/image refuses a quality it has not been told about, and the refusal
-       is a thrown error that takes the page down rather than a warning. This
-       list was written by hand and missed two: the lightbox asks for 82 and
-       the story dialog for 76, so opening either crashed the whole gallery.
-       
-       Every value below is one an <Image> in this codebase actually passes.
-       If you add a quality prop, add it here in the same commit — the symptom
-       is not a slightly wrong image, it is a blank page. Keep in step with:
-       
-         70  AuthShell, InstagramSection
-         72  PhotoGrid, HeroImage
-         74  FeaturedWalk, PhotoStory
-         76  StoryDialog
-         82  PhotoLightbox
-       
-       80 is kept because next/image also uses it as its own default. */
-    qualities: [70, 72, 74, 76, 80, 82],
+    /* One value, and it is IMAGE_QUALITY in lib/images.ts. Read the comment
+       there for why six became one; the short version is that the cache treats
+       72 and 74 as different photographs and no viewer does.
+
+       A one-entry list also removes the failure this list was added for. It
+       used to be hand-maintained against whatever each component happened to
+       pass, and it missed 76 and 82 — which is what crashed the gallery. Now
+       there is nothing to keep in step with except lib/images.ts, and every
+       <Image> names it.
+
+       A quality outside this list really is a hard 400 from the optimiser:
+
+         /_next/image?url=…&w=640&q=76  ->  200, image/jpeg
+         /_next/image?url=…&w=640&q=75  ->  400, text/plain, 84 bytes
+
+       But an <Image> that passes no quality never produces one. Next snaps a
+       missing quality to the nearest configured value rather than sending its
+       default of 75 — under the old list that was 74, which is what production
+       served. Worth knowing before trimming this list on the assumption that
+       75 must stay in it. */
+    qualities: [76],
 
     /* ------------------------------------------------------------------
      * HOW LONG AN OPTIMISED IMAGE IS KEPT
@@ -105,10 +109,21 @@ const nextConfig: NextConfig = {
      * A day is therefore not the compromise it was written as. The reason to
      * keep it short — that a replaced file in /public would sit stale in
      * browsers — does not apply when browsers never hold the image at all.
-     * Raise it freely if transformation volume ever matters; the only thing
-     * it delays is the edge noticing a swapped file.
+     *
+     * So it is raised to 31 days, which is the whole point of the setting:
+     * this is the one number that governs how often a variant is *re-made*,
+     * and re-making is what gets billed. Nothing else in this config reduces
+     * recurring cost — the width and quality lists bound how many distinct
+     * variants exist, and this bounds how often each is paid for again.
+     *
+     * The cost of the long floor is what it always was, and is now genuinely
+     * small: overwrite a file in /public under the same name and the edge may
+     * keep serving the old pixels for up to a month. Photographs here are
+     * added, not replaced — and the build-time variants in scripts/ carry a
+     * content hash in the filename, so a changed photograph is a changed URL
+     * and this floor never applies to it.
      * ------------------------------------------------------------------ */
-    minimumCacheTTL: 86_400,
+    minimumCacheTTL: 2_678_400,
 
     /* Next's default top widths are 2048 and 3840. Members upload through the
        browser-side downscaler, which caps the long edge at 2000px — so a
@@ -122,8 +137,27 @@ const nextConfig: NextConfig = {
        on a duplicate.
        
        Capped at 2048, which still exceeds every source on the project. Nothing
-       is served smaller than before — the pixels at 2048 are unchanged. */
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+       is served smaller than before — the pixels at 2048 are unchanged.
+
+       Then thinned from seven widths to five. Every entry is a variant per
+       photograph per quality, and the ladder had rungs too close together to
+       matter: 750 and 828 are 10% apart, 1080 and 1200 are 11%. A browser
+       picking 828 where it would have picked 750 downloads about a fifth more
+       bytes for that one image and saves a whole generated variant across the
+       archive. The retained rungs are roughly a third apart, which is where
+       the tradeoff sits for photographs.
+
+       Measured against the live homepage before this change: the hero alone
+       was requesting all seven widths in one srcset. */
+    deviceSizes: [640, 828, 1200, 1600, 2048],
+
+    /* The small ladder, used when `sizes` resolves below the smallest device
+       width — avatars, effectively, which ask for 20, 30, 46 and 72 CSS pixels
+       and double that on retina. Next's default has eight rungs from 16 to
+       384, which is far more resolution than four avatar sizes need. Four
+       rungs cover them: the largest avatar at 2x is 144, so 256 and 384 exist
+       only for the odd third-party image with a fixed pixel `sizes`. */
+    imageSizes: [64, 128, 256, 384],
   },
 };
 

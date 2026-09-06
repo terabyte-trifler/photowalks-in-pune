@@ -5,6 +5,7 @@ import { useEffect, type ReactNode } from 'react';
 
 import { Dialog, DialogClose } from '@/components/ui/Dialog';
 import { padIndex } from '@/lib/utils';
+import { IMAGE_QUALITY } from '@/lib/images';
 
 /* ============================================================================
  * THE VIEWER ITSELF
@@ -65,7 +66,7 @@ export function LightboxFrame({
               alt={alt}
               width={1600}
               height={1600}
-              quality={82}
+              quality={IMAGE_QUALITY}
               className="h-auto max-h-full w-auto max-w-full object-contain"
             />
           </div>

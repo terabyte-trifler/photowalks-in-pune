@@ -12,6 +12,7 @@ import { site } from '@/data/site';
 import { photoUrl } from '@/lib/directory';
 import { listPhotosForWalk } from '@/lib/photographers';
 import { longDate, priceLabel, registrationClosed } from '@/lib/utils';
+import { IMAGE_QUALITY } from '@/lib/images';
 
 /* The photographs come from the database and appear the moment somebody files
    one, so this is rendered per request rather than baked. Nothing on it is
@@ -69,7 +70,7 @@ export default async function WalkPage({
                 alt={walk.imageAlt}
                 width={1800}
                 height={1200}
-                quality={74}
+                quality={IMAGE_QUALITY}
                 priority
                 sizes="(min-width: 1024px) 58vw, 100vw"
                 className="aspect-[3/2] w-full object-cover"

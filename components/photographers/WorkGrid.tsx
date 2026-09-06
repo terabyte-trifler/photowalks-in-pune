@@ -7,6 +7,7 @@ import { walkById } from '@/data/events';
 import { cn } from '@/lib/utils';
 import type { PhotoRecord } from '@/lib/supabase/types';
 import { shortDate } from '@/lib/utils';
+import { IMAGE_QUALITY } from '@/lib/images';
 
 /**
  * The same asymmetric six-column rhythm the archive uses (see
@@ -64,6 +65,7 @@ export function WorkGrid({
               alt={photo.caption ?? photo.location ?? 'Photograph'}
               fill
               sizes="(min-width: 768px) 45vw, 50vw"
+              quality={IMAGE_QUALITY}
               priority={index < priorityCount}
               loading={index < priorityCount ? undefined : 'lazy'}
               className="object-cover"
