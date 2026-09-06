@@ -156,7 +156,7 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "https://photowalks-in-pune-gold.vercel.app"
+site_url = "https://pwip.in"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
@@ -166,7 +166,19 @@ site_url = "https://photowalks-in-pune-gold.vercel.app"
 # not governed by this list at all — Supabase trusts the whole site_url origin —
 # so the value here is in bounding the *other* origins, which is where the
 # development entries live.
-additional_redirect_urls = ["https://photowalks-in-pune-gold.vercel.app/auth/callback**", "http://localhost:3000/auth/callback**", "http://localhost:3100/auth/callback**"]
+#
+# pwip.in is the canonical origin and is site_url above, so Supabase would
+# trust it with no entry here at all. It is listed anyway: this file is read as
+# a record of what the dashboard holds, and a list that omits production reads
+# like an oversight rather than a consequence of the rule.
+#
+# The wildcard covers Vercel preview deployments, which are minted one hostname
+# per build and so cannot be enumerated. The old `photowalks-in-pune-gold`
+# entry is gone — that was production before the domain existed.
+#
+# This mirrors what is set on the project as of 7 Sep 2026. Verified by reading
+# it back from the Management API, not by pushing this file.
+additional_redirect_urls = ["https://pwip.in/auth/callback**", "https://www.pwip.in/auth/callback**", "https://photowalks-in-pune-*.vercel.app/auth/callback**", "http://localhost:3000/auth/callback**", "http://localhost:3100/auth/callback**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -239,15 +251,56 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# ---------------------------------------------------------------------------
+# THE SENDER
+# ---------------------------------------------------------------------------
+# Supabase's built-in sender is capped at roughly two emails an hour and is
+# documented as not for production. That cap is invisible until it matters:
+# with "Confirm email" switched on, every signup needs a mail, so the third
+# person to join within an hour is simply turned away — and the one thing they
+# needed was the link that lets them in at all.
+#
+# It also cannot be branded. Templates below control the subject and the body;
+# only custom SMTP moves the From line off
+# `Supabase Auth <noreply@mail.app.supabase.io>`, which on a password email is
+# the exact shape of a phishing attempt. See the note under EMAIL TEMPLATES.
+#
+# So the sender is Resend, on pwip.in — the domain the site is served from, so
+# what the reader sees in the From line matches where the link goes.
+#
+# WHAT THIS FILE CAN AND CANNOT DO
+# `supabase config push` is not run on this project: it would rewrite the whole
+# auth config from this file and take Google sign-in down with it. The
+# dashboard is authoritative. This block is therefore a record of what is set
+# there, kept here so the two can be compared — change both, or neither.
+#
+# The key never lives in this file. `env()` reads it at push time, and since we
+# do not push, it is set in the dashboard and mirrored into .env.local for
+# local testing only.
+#
+# NOT IN EFFECT YET, as of 7 Sep 2026. Read back from the Management API, the
+# project still has smtp_host = null and rate_limit_email_sent = 2, so the block
+# below is the intended configuration rather than a record of a live one. Three
+# things have to happen first, and none of them can happen in this repository:
+#
+#   1. a Resend account, and pwip.in verified in it — which means adding the
+#      MX and TXT records Resend generates to the Hostinger DNS zone, alongside
+#      the two A records already pointing the domain at Vercel
+#   2. the API key pasted into the dashboard's SMTP settings, never into a file
+#      here and never into git
+#   3. `enabled` flipped there, at which point this block becomes accurate and
+#      the templates below stop being dormant
+#
+# Until then the built-in sender is what runs: two an hour, from
+# `Supabase Auth <noreply@mail.app.supabase.io>`, with the templates ignored.
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 587
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "hello@pwip.in"
+sender_name = "Photowalks in Pune"
 
 # ---------------------------------------------------------------------------
 # EMAIL TEMPLATES
