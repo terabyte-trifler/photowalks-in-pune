@@ -34,9 +34,9 @@ export default async function ResetPasswordPage() {
         </>
       }
       standfirst="Choose something you have not used here before. You will stay logged in on this device."
-      image="/images/walks/mandai.jpg"
-      imageAlt="Shoppers moving through a covered flower market under orange canopies, bags full"
-      caption="Mandai · Saturday morning"
+      image="/images/walks/balewadi.jpg"
+      imageAlt="A street under low sun, haze through the trees, a girl in blue standing beside stacked crates with parked scooters in the foreground"
+      caption="Balewadi · low sun"
     >
       <ResetPasswordForm />
     </AuthShell>
