@@ -15,6 +15,7 @@
  * ========================================================================== */
 
 import { MAX_PHOTOS_PER_MEMBER } from '@/lib/directory';
+import { CURRENT_LADDER, VARIANT_LADDERS, parseVariantPath, variantPath, variantWidths } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
 export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
@@ -70,6 +71,14 @@ const QUALITY_STEPS = [0.82, 0.68, 0.55] as const;
  */
 const SHRINK_QUALITY = 0.45;
 const SHRINK_FACTOR = 0.75;
+
+/**
+ * What the narrower ladder rungs are encoded at. Higher than anything the
+ * budget search settles on, and it costs nothing: a 640px frame at 0.8 is
+ * tens of kilobytes. These are the files most visitors actually download —
+ * a grid thumbnail, an avatar — so they are the wrong place to save bytes.
+ */
+const RUNG_QUALITY = 0.8;
 
 export type UploadKind = keyof typeof LIMITS;
 
@@ -217,24 +226,20 @@ function drawAt(decoded: Decoded, edge: number): { canvas: HTMLCanvasElement; wi
  * Quality is spent before resolution: a slightly softer 2000px frame looks
  * better on a retina screen than a crisp 1000px one.
  */
-export async function prepareImage(file: File, kind: UploadKind): Promise<PreparedImage> {
+/**
+ * The largest encoding of `file` that fits TARGET_BYTES, or null if the ladder
+ * and the shrink loop both ran out.
+ *
+ * Split out of prepareImage so the variant ladder can reuse a single decode.
+ * Decoding is the expensive half — a 60MP frame costs a few hundred
+ * milliseconds and a lot of memory on a phone — and doing it once per width
+ * would have made a four-width ladder four times the work for no new pixels.
+ */
+async function compressToBudget(
+  decoded: Decoded,
+  kind: UploadKind,
+): Promise<PreparedImage | null> {
   const target = TARGET_BYTES[kind];
-
-  const untouched = async (): Promise<PreparedImage> => {
-    const size = (await readDimensions(file)) ?? { width: 0, height: 0 };
-    return {
-      blob: file,
-      width: size.width,
-      height: size.height,
-      extension: (file.name.split('.').pop() ?? 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg',
-      contentType: file.type,
-    };
-  };
-
-  const decoded = await decode(file);
-  /* Undecodable and already small enough — pass it through rather than lose it. */
-  if (!decoded) return untouched();
-
   const useWebp = canEncodeWebp();
   const type = useWebp ? 'image/webp' : 'image/jpeg';
   const extension = useWebp ? 'webp' : 'jpg';
@@ -244,45 +249,129 @@ export async function prepareImage(file: File, kind: UploadKind): Promise<Prepar
 
   let smallest: PreparedImage | null = null;
 
-  try {
-    for (const edge of EDGE_STEPS[kind]) {
-      const drawn = drawAt(decoded, edge);
-      if (!drawn) break;
+  for (const edge of EDGE_STEPS[kind]) {
+    const drawn = drawAt(decoded, edge);
+    if (!drawn) break;
 
-      for (const quality of QUALITY_STEPS) {
-        const blob = await toBlob(drawn.canvas, type, quality);
-        if (!blob) continue;
-        if (blob.size <= target) return made(blob, drawn.width, drawn.height);
-        if (!smallest || blob.size < smallest.blob.size) {
-          smallest = made(blob, drawn.width, drawn.height);
-        }
-      }
-    }
-
-    /* Still over. Keep shrinking — this is what makes the ceiling hold for
-       images the ladder above cannot squeeze, and it always terminates: each
-       pass is a quarter smaller, so even a 60MP frame is down to thumbnail
-       size within a dozen or so. */
-    let edge = EDGE_STEPS[kind][EDGE_STEPS[kind].length - 1];
-    for (let attempt = 0; attempt < 24 && edge > 16; attempt += 1) {
-      edge = Math.max(16, Math.round(edge * SHRINK_FACTOR));
-      const drawn = drawAt(decoded, edge);
-      if (!drawn) break;
-
-      const blob = await toBlob(drawn.canvas, type, SHRINK_QUALITY);
+    for (const quality of QUALITY_STEPS) {
+      const blob = await toBlob(drawn.canvas, type, quality);
       if (!blob) continue;
       if (blob.size <= target) return made(blob, drawn.width, drawn.height);
       if (!smallest || blob.size < smallest.blob.size) {
         smallest = made(blob, drawn.width, drawn.height);
       }
     }
+  }
+
+  /* Still over. Keep shrinking — this is what makes the ceiling hold for
+     images the ladder above cannot squeeze, and it always terminates: each
+     pass is a quarter smaller, so even a 60MP frame is down to thumbnail
+     size within a dozen or so. */
+  let edge = EDGE_STEPS[kind][EDGE_STEPS[kind].length - 1];
+  for (let attempt = 0; attempt < 24 && edge > 16; attempt += 1) {
+    edge = Math.max(16, Math.round(edge * SHRINK_FACTOR));
+    const drawn = drawAt(decoded, edge);
+    if (!drawn) break;
+
+    const blob = await toBlob(drawn.canvas, type, SHRINK_QUALITY);
+    if (!blob) continue;
+    if (blob.size <= target) return made(blob, drawn.width, drawn.height);
+    if (!smallest || blob.size < smallest.blob.size) {
+      smallest = made(blob, drawn.width, drawn.height);
+    }
+  }
+
+  return smallest;
+}
+
+/** The original, untouched, when nothing better can be produced. */
+async function passThrough(file: File): Promise<PreparedImage> {
+  const size = (await readDimensions(file)) ?? { width: 0, height: 0 };
+  return {
+    blob: file,
+    width: size.width,
+    height: size.height,
+    extension: (file.name.split('.').pop() ?? 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg',
+    contentType: file.type,
+  };
+}
+
+/**
+ * Resize and re-encode until the result is under TARGET_BYTES, in the browser,
+ * before anything is uploaded.
+ *
+ * This never refuses. Whatever comes in — a 60MP camera original, a screenshot,
+ * a frame of pure grain — comes out under the ceiling, because the loop keeps
+ * spending resolution until it does. Every image fits under 200KB at some
+ * size; the job here is to find the largest size that does, not to argue with
+ * the person who chose the photograph.
+ *
+ * Quality is spent before resolution: a slightly softer 2000px frame looks
+ * better on a retina screen than a crisp 1000px one.
+ */
+export async function prepareImage(file: File, kind: UploadKind): Promise<PreparedImage> {
+  const decoded = await decode(file);
+  /* Undecodable — pass it through rather than lose it. */
+  if (!decoded) return passThrough(file);
+  try {
+    return (await compressToBudget(decoded, kind)) ?? (await passThrough(file));
   } finally {
     decoded.release();
   }
+}
 
-  /* Unreachable in practice — a 16px image is a few hundred bytes. Kept so the
-     function always returns something rather than throwing at the person. */
-  return smallest ?? untouched();
+export interface PreparedLadder {
+  /** The largest. `storage_path` points at this one. */
+  primary: PreparedImage;
+  /** Strictly narrower than the primary, ascending. May be empty. */
+  smaller: PreparedImage[];
+}
+
+/**
+ * The primary encoding plus the ladder rungs below it, from one decode.
+ *
+ * These exist so an uploaded photograph can be served the way the archive in
+ * /public is: a plain srcset over files that already exist, with no image
+ * optimiser in the request path. A phone showing a 45vw thumbnail fetches the
+ * 640 rung instead of a 2000px frame, which is a bandwidth win on its own —
+ * the optimiser was doing that resize per request and billing for it.
+ *
+ * Rungs are encoded at a fixed quality rather than searched against a byte
+ * budget. The budget exists to stop a 2000px frame being enormous; a 640px one
+ * cannot be, so a second search would only spend the member's battery.
+ */
+export async function prepareLadder(file: File, kind: UploadKind): Promise<PreparedLadder> {
+  const decoded = await decode(file);
+  if (!decoded) return { primary: await passThrough(file), smaller: [] };
+
+  try {
+    const primary = (await compressToBudget(decoded, kind)) ?? (await passThrough(file));
+    const smaller: PreparedImage[] = [];
+
+    for (const width of VARIANT_LADDERS[CURRENT_LADDER][kind]) {
+      if (width >= primary.width) continue;
+      /* drawAt takes a longest edge, and the ladder is expressed in widths.
+         For a portrait frame those differ, so scale the edge by the aspect
+         ratio to land on the intended width. */
+      const edge = Math.round(width * Math.max(1, primary.height / primary.width));
+      const drawn = drawAt(decoded, edge);
+      if (!drawn) continue;
+
+      const blob = await toBlob(drawn.canvas, primary.contentType, RUNG_QUALITY);
+      if (!blob) continue;
+      smaller.push({
+        blob,
+        width: drawn.width,
+        height: drawn.height,
+        extension: primary.extension,
+        contentType: primary.contentType,
+      });
+    }
+
+    return { primary, smaller };
+  } finally {
+    decoded.release();
+  }
 }
 
 export interface UploadResult {
@@ -312,14 +401,55 @@ export async function uploadImage(
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return { ok: false, error: 'Uploads are not connected on this build.' };
 
-  const prepared = await prepareImage(file, kind);
-  const path = `${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${prepared.extension}`;
+  const { primary, smaller } = await prepareLadder(file, kind);
+  const base = `${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-  const { error } = await supabase.storage.from(BUCKET[kind]).upload(path, prepared.blob, {
-    cacheControl: '31536000',
-    upsert: false,
-    contentType: prepared.contentType,
-  });
+  const put = (at: string, image: PreparedImage) =>
+    supabase.storage.from(BUCKET[kind]).upload(at, image.blob, {
+      cacheControl: '31536000',
+      upsert: false,
+      contentType: image.contentType,
+    });
+
+  /* ---------------------------------------------------------------------
+   * The narrow rungs go up first, and the primary last.
+   *
+   * Order matters because storage_path points at the primary, and the name it
+   * is given is a promise that the siblings exist — Picture builds a srcset
+   * from that name without checking. Uploading it last means the promise is
+   * only made once it is already true.
+   *
+   * If a rung fails, the primary is stored under a plain name instead. That is
+   * a complete, correct upload with no variants, served through the optimiser
+   * like every upload from before this existed. Degrading is the right failure
+   * here: the alternative is refusing a photograph somebody chose because a
+   * thumbnail did not upload.
+   * ------------------------------------------------------------------- */
+  const uploaded: string[] = [];
+  let ladderIntact = smaller.length > 0;
+
+  for (const rung of smaller) {
+    const at = variantPath(base, CURRENT_LADDER, rung.width, rung.extension);
+    const { error: rungError } = await put(at, rung);
+    if (rungError) {
+      ladderIntact = false;
+      break;
+    }
+    uploaded.push(at);
+  }
+
+  if (!ladderIntact && uploaded.length > 0) {
+    await supabase.storage.from(BUCKET[kind]).remove(uploaded);
+  }
+
+  const path = ladderIntact
+    ? variantPath(base, CURRENT_LADDER, primary.width, primary.extension)
+    : `${base}.${primary.extension}`;
+
+  const { error } = await put(path, primary);
+  if (error && uploaded.length > 0) {
+    await supabase.storage.from(BUCKET[kind]).remove(uploaded);
+  }
 
   if (error) {
     const message = error.message.toLowerCase();
@@ -338,17 +468,39 @@ export async function uploadImage(
   return {
     ok: true,
     path,
-    width: prepared.width,
-    height: prepared.height,
-    bytes: prepared.blob.size,
+    width: primary.width,
+    height: primary.height,
+    bytes: primary.blob.size,
   };
 }
 
-/** Remove a file. The policy limits this to the member's own folder. */
+/**
+ * Every file `path` names, including its narrower rungs. A path with no
+ * variant marker names only itself.
+ *
+ * The set is derived from the name rather than listed from the bucket, which
+ * is the whole point of encoding the ladder there — see lib/images.ts.
+ */
+export function variantSiblings(kind: UploadKind, path: string): string[] {
+  const parsed = parseVariantPath(path);
+  if (!parsed) return [path];
+  return variantWidths(kind, parsed.ladder, parsed.width).map((w) =>
+    variantPath(parsed.base, parsed.ladder, w, parsed.extension),
+  );
+}
+
+/**
+ * Remove a file and every rung that belongs to it. The policy limits this to
+ * the member's own folder.
+ *
+ * Deleting only `path` would leave the thumbnails behind: invisible, because
+ * nothing points at them once the row is gone, and permanent, because the
+ * orphan sweep is the only thing that would ever look again.
+ */
 export async function removeImage(kind: UploadKind, path: string): Promise<boolean> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return false;
-  const { error } = await supabase.storage.from(BUCKET[kind]).remove([path]);
+  const { error } = await supabase.storage.from(BUCKET[kind]).remove(variantSiblings(kind, path));
   return !error;
 }
 
@@ -402,9 +554,15 @@ export async function sweepAvatarFolder(ownerId: string, keepPath: string | null
   const { data, error } = await supabase.storage.from(BUCKET.avatar).list(ownerId, { limit: 100 });
   if (error || !data) return 0;
 
-  const keep = keepPath?.split('/').pop();
+  /* Not one filename — the whole set the current avatar consists of. Keeping
+     only the primary here would have deleted its own thumbnails moments after
+     they were uploaded, and the avatar would have fallen back to the optimiser
+     with a srcset of 404s behind it. */
+  const keep = new Set(
+    (keepPath ? variantSiblings('avatar', keepPath) : []).map((p) => p.split('/').pop()),
+  );
   const stale = data
-    .filter((file) => file.name !== keep)
+    .filter((file) => !keep.has(file.name))
     .map((file) => `${ownerId}/${file.name}`);
 
   if (stale.length === 0) return 0;

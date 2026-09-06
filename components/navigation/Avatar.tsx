@@ -1,6 +1,5 @@
-import Image from 'next/image';
+import { Picture } from '@/components/media/Picture';
 import { cn, initials } from '@/lib/utils';
-import { IMAGE_QUALITY } from '@/lib/images';
 
 /**
  * A photograph if there is one, otherwise a monogram in the same circle the
@@ -28,22 +27,33 @@ export function Avatar({
       aria-hidden="true"
     >
       {src ? (
-        <Image
+        <Picture
           src={src}
           alt=""
           fill
           sizes={`${size}px`}
-          quality={IMAGE_QUALITY}
           className="object-cover"
-          /* Optimised like everything else. This used to be `unoptimized`,
-             from when avatars only came from Google and the host was not in
-             next.config. Both sources are configured now, and the flag was
-             costing real bandwidth: Supabase Storage serves avatars with
-             `cache-control: no-cache`, so every unoptimised avatar was
-             re-downloaded from Supabase on every view — one per member, on a
-             directory page that lists all of them. Through the optimiser they
-             are fetched once, cached at the edge for a year, and resized from
-             56 kB to a few kB at the size they are actually drawn. */
+          /* Picture decides how this is served, per src — see that file.
+             A Google avatar still goes through the optimiser; an upload with a
+             variant ladder is served straight from Storage at the rung this
+             size actually needs.
+
+             The note that used to sit here said unoptimised avatars were
+             "re-downloaded from Supabase on every view", because Storage sends
+             `cache-control: no-cache`. That reads the header as stronger than
+             it is: no-cache means revalidate before use, not do not store.
+             Measured against a real avatar in the bucket —
+
+               GET                     -> 200, 56,444 bytes, etag present
+               GET If-None-Match: <it> -> 304, 0 bytes
+
+             — so a repeat view costs one round trip and no image bytes. Which
+             is the same shape as the optimiser, whose own output is served
+             `max-age=0, must-revalidate` (measured in next.config.ts). Both
+             revalidate every view; only one of them bills a transformation to
+             do it. What the ladder adds is the part the optimiser was really
+             providing: a file at the size it is drawn, rather than a 56 kB
+             avatar squeezed into 72 pixels. */
         />
       ) : (
         <span

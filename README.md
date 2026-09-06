@@ -286,6 +286,26 @@ type and anything oversized. The checks in `lib/uploads.ts` exist so a 40MB RAW
 file is refused instantly rather than after a long upload; they are a courtesy,
 not the guard.
 
+### Images, and what they cost
+
+Nothing on this site reaches an image optimiser if it can be helped, because
+the optimiser bills per unique (source, width, quality) and photographs are
+what this site is.
+
+The archive in `/public` is resolved at build time: `npm run images:variants`
+writes an AVIF and WebP ladder into `public/images/_v` and commits it, and
+`components/media/Picture.tsx` serves those as ordinary static files. Uploads
+cannot be resolved at build time, so the browser that resizes an upload emits
+the same ladder and stores it beside the primary — `…-v1-1600.webp` next to
+`…-v1-640.webp`. Picture recognises that naming and builds a srcset from it;
+`lib/images.ts` explains why the ladder lives in the filename rather than in a
+column, and which three files have to agree about it.
+
+Anything else — Google avatars, Instagram media, uploads from before the
+ladder — still goes through `next/image`, at the one quality in `lib/images.ts`.
+`npm run images:backfill` converts the stragglers; it rewrites rows and deletes
+originals, so it reports and does nothing without `--apply`.
+
 ### Two public views
 
 `walk_rsvps` is owner-only because it holds a phone number, which makes "how

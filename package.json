@@ -12,6 +12,7 @@
     "check:images": "node scripts/check-images.mjs",
     "images:prep": "node scripts/prepare-images.mjs",
     "images:variants": "node scripts/build-image-variants.mjs",
+    "images:backfill": "node scripts/backfill-upload-variants.mjs",
     "check:csp": "node scripts/check-csp.mjs"
   },
   "dependencies": {

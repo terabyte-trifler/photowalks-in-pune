@@ -61,6 +61,45 @@ async function listFolder(bucket, uid) {
   return files;
 }
 
+/* ---------------------------------------------------------------------------
+ * WHAT COUNTS AS REFERENCED
+ * ---------------------------------------------------------------------------
+ * A row stores one path, but an upload is now a set: the primary that
+ * storage_path names, plus the narrower rungs beside it.
+ *
+ *   <owner>/<stamp>-<rand>-v1-1600.webp   <- what the row points at
+ *   <owner>/<stamp>-<rand>-v1-1024.webp   <- nothing points at these
+ *   <owner>/<stamp>-<rand>-v1-640.webp
+ *
+ * Without this expansion the sweep would read those two as orphaned, because
+ * literally nothing in the database mentions them, and delete the thumbnails of
+ * every live photograph on the site. Deriving them from the primary's name is
+ * what the ladder marker in the filename is for.
+ *
+ * KEEP IN STEP WITH lib/images.ts — it holds the same ladders and the same
+ * naming, and is the file to read for why they live in the name at all. This
+ * script is ESM run by node and cannot import the TypeScript, so the constants
+ * are restated rather than shared.
+ * ------------------------------------------------------------------------ */
+const VARIANT_LADDERS = {
+  1: { avatars: [128, 256], photos: [640, 1024, 1600] },
+};
+
+/** Every path a stored path implies, itself included. */
+function variantSiblings(bucket, path) {
+  const match = /^(.*)-v(\d+)-(\d+)\.([a-z0-9]+)$/i.exec(path);
+  if (!match) return [path];
+
+  const [, base, ladderId, widthText, extension] = match;
+  const rungs = VARIANT_LADDERS[Number(ladderId)]?.[bucket];
+  if (!rungs) return [path];
+
+  const width = Number(widthText);
+  return [...rungs.filter((w) => w < width), width].map(
+    (w) => `${base}-v${ladderId}-${w}.${extension}`,
+  );
+}
+
 async function main() {
   console.log(APPLY ? 'PRUNING (files will be deleted)\n' : 'DRY RUN — nothing will be deleted\n');
 
@@ -75,7 +114,9 @@ async function main() {
 
   const { data: photoRows, error: photoErr } = await admin.from('photos').select('storage_path');
   if (photoErr) throw new Error(`reading photos: ${photoErr.message}`);
-  const keptPhotos = new Set((photoRows ?? []).map((r) => r.storage_path));
+  const keptPhotos = new Set(
+    (photoRows ?? []).flatMap((r) => variantSiblings('photos', r.storage_path)),
+  );
 
   const { data: profiles, error: profileErr } = await admin.from('profiles').select('avatar_url');
   if (profileErr) throw new Error(`reading profiles: ${profileErr.message}`);
@@ -88,7 +129,8 @@ async function main() {
         const at = url.indexOf(marker);
         return at === -1 ? null : url.slice(at + marker.length);
       })
-      .filter(Boolean),
+      .filter(Boolean)
+      .flatMap((path) => variantSiblings('avatars', path)),
   );
 
   /* Folders are named after the uid that owns them. Collect the ones present

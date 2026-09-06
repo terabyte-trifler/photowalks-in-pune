@@ -2,7 +2,7 @@ import NextImage from 'next/image';
 import type { CSSProperties } from 'react';
 
 import variants from '@/data/image-variants.json';
-import { IMAGE_QUALITY } from '@/lib/images';
+import { IMAGE_QUALITY, uploadSrcSet } from '@/lib/images';
 
 /* ============================================================================
  * PICTURE — one component, two very different ways of being served
@@ -17,7 +17,14 @@ import { IMAGE_QUALITY } from '@/lib/images';
  *                         Plain static assets. The optimiser is never invoked,
  *                         so these cost no transformations at all, ever.
  *
- *   anything else     ->  next/image, exactly as before.
+ *   an upload with a   ->  <img srcset> over the rungs the browser produced
+ *   variant marker         when it uploaded. Also no optimiser. One format,
+ *                          because the uploader encodes one — whichever of
+ *                          WebP or JPEG that browser could write.
+ *
+ *   anything else     ->  next/image, exactly as before. Google avatars,
+ *                         Instagram media, and uploads from before the ladder
+ *                         existed all land here.
  *
  * The <picture> path is not a downgrade. It emits a real srcset with the same
  * widths the optimiser would have produced, and it offers AVIF before WebP —
@@ -76,6 +83,32 @@ export function Picture({
   ...rest
 }: PictureProps) {
   const entry = MANIFEST[src];
+
+  /* An upload that carries its ladder in its name. Nothing to negotiate: the
+     widths are known from the name and the files are already there. */
+  const uploaded = entry ? null : uploadSrcSet(src);
+  if (uploaded) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        srcSet={uploaded}
+        alt={alt}
+        sizes={sizes}
+        className={className}
+        style={{
+          ...(fill ? { position: 'absolute' as const, inset: 0, width: '100%', height: '100%' } : {}),
+          ...style,
+        }}
+        width={width}
+        height={height}
+        decoding="async"
+        loading={loading ?? (priority ? 'eager' : 'lazy')}
+        fetchPriority={priority ? 'high' : undefined}
+        {...rest}
+      />
+    );
+  }
 
   /* Remote, or a local file that has not been through images:variants. */
   if (!entry) {
