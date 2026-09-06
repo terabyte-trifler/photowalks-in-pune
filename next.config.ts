@@ -22,6 +22,26 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  /**
+   * SELF-HOSTED BUILD OUTPUT
+   *
+   * The site runs on a Hostinger VPS behind nginx, not on Vercel, so the build
+   * has to produce something a plain `node` can start. `standalone` writes
+   * .next/standalone/server.js together with only the node_modules that trace
+   * actually reached — a few hundred megabytes of devDependencies stay off the
+   * server.
+   *
+   * Two directories are deliberately NOT copied into it, and the deploy script
+   * moves them by hand every time:
+   *
+   *   .next/static  ->  .next/standalone/.next/static
+   *   public        ->  .next/standalone/public
+   *
+   * Forget either and the server starts cleanly and serves an unstyled page
+   * with no photographs, which is a confusing way to find out.
+   */
+  output: 'standalone',
+
   /* Stops advertising the framework and its version to anybody scanning. */
   poweredByHeader: false,
 
@@ -107,6 +127,15 @@ const nextConfig: NextConfig = {
      * browsers — does not apply when browsers never hold the image at all.
      * Raise it freely if transformation volume ever matters; the only thing
      * it delays is the edge noticing a swapped file.
+     *
+     * OFF VERCEL, THIS BECOMES LOAD-BEARING. Self-hosted, Next's own optimiser
+     * writes the cache-control header from exactly this value, so a day here
+     * really is a day in every visitor's browser — the paragraph above stops
+     * applying the moment the site left Vercel. That is the behaviour we want
+     * on a single VPS, where every unnecessary revalidation is a request the
+     * box has to answer itself. The cost is the one originally feared: replace
+     * a file in /public under the same name and browsers keep the old one for
+     * up to a day. Rename the file instead of overwriting it.
      * ------------------------------------------------------------------ */
     minimumCacheTTL: 86_400,
 

@@ -95,8 +95,8 @@ before granting what they actually want.
 
 | Field | Value |
 |---|---|
-| Site URL | `https://your-domain.com` (in development, `http://localhost:3000`) |
-| Redirect URLs | `http://localhost:3000/**`, `https://your-domain.com/**`, and `https://*-your-team.vercel.app/**` for previews |
+| Site URL | `https://pwip.in` (in development, `http://localhost:3000`) |
+| Redirect URLs | `https://pwip.in/auth/callback**`, `https://www.pwip.in/auth/callback**`, `http://localhost:3000/auth/callback**`, `http://localhost:3100/auth/callback**` |
 
 Supabase refuses any redirect not on that allow-list, and a missing entry is
 the usual reason a Google sign-in or a reset link lands on an error page.

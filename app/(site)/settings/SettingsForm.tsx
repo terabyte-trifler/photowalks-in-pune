@@ -48,7 +48,7 @@ export function SettingsForm({ profile, email }: { profile: Profile; email: stri
             defaultValue={profile.username}
             error={state.errors?.username}
             maxLength={LIMITS.username}
-            hint={`photowalksinpune.com/photographers/${username}`}
+            hint={`pwip.in/photographers/${username}`}
             autoComplete="off"
           />
           <Field

@@ -16,7 +16,9 @@ See **[supabase/README.md](supabase/README.md)**. Without them the site is
 exactly what it was: every public page renders, and the login and join screens
 say plainly that accounts are not connected.
 
-Deploys to Vercel with no configuration.
+Runs at **[pwip.in](https://pwip.in)** on a Hostinger VPS — nginx in front of a
+standalone Next server under PM2. Provisioning, deploys and the cutover steps
+are in **[DEPLOY.md](DEPLOY.md)**.
 
 ---
 
@@ -260,15 +262,20 @@ is their own.
 
 ### Where this runs
 
-`vercel.json` pins functions to **bom1 (Mumbai)**, because the Supabase project
-is in `ap-south-1` and Vercel otherwise defaults to `iad1` (Washington). That
-default meant every query on a dynamic page crossed the Atlantic and came back:
-the directory took ~900ms to first byte against ~70ms for the static homepage,
-and `x-vercel-id: bom1::iad1::…` gave it away — entering the network in Mumbai,
-executing in Washington.
+One VPS in a Hostinger region near the database. The Supabase project is in
+`ap-south-1`, and the reason to care is measured, not theoretical: on Vercel the
+default execution region was `iad1` (Washington) while requests entered the
+network in Mumbai, and the directory page took ~900ms to first byte against
+~70ms for the static homepage. `x-vercel-id: bom1::iad1::…` was what gave it
+away. `vercel.json` pinned functions to `bom1` to fix it.
 
-If the database ever moves, move this with it. Compute belongs next to the
-data it waits on.
+A single box makes that pinning moot — there is only one place code can run —
+but not the principle behind it. **If the database ever moves, move the box
+with it.** Compute belongs next to the data it waits on, and on one server
+there is no edge network left to hide a bad choice.
+
+`vercel.json` is kept: it is four lines, it documents the region finding, and
+it is what a future move back would read first.
 
 ### Photographs and storage
 

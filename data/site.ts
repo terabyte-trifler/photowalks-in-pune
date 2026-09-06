@@ -4,7 +4,7 @@
  * ========================================================================== */
 
 /** The origin used when nothing usable is configured. */
-const DEFAULT_SITE_URL = 'https://photowalksinpune.com';
+const DEFAULT_SITE_URL = 'https://pwip.in';
 
 /**
  * Resolve the canonical origin for metadataBase and Open Graph URLs.
@@ -15,11 +15,11 @@ const DEFAULT_SITE_URL = 'https://photowalksinpune.com';
  * the build.
  */
 function resolveSiteUrl(): string {
-  const candidates = [
-    process.env.NEXT_PUBLIC_SITE_URL,
-    process.env.NEXT_PUBLIC_VERCEL_URL,
-    DEFAULT_SITE_URL,
-  ];
+  /* NEXT_PUBLIC_VERCEL_URL sat in the middle of this list while the site was
+     on Vercel, to give each preview deployment its own canonical origin. Off
+     that platform nothing sets it, so it is gone; the constant below is what
+     answers when the environment is silent. */
+  const candidates = [process.env.NEXT_PUBLIC_SITE_URL, DEFAULT_SITE_URL];
 
   for (const candidate of candidates) {
     const trimmed = candidate?.trim();
@@ -88,8 +88,8 @@ export const site: SiteConfig = {
        carries ?s=sh&p=i&mlu=4&amv=2 — share-source telemetry describing how
        the link was copied, which nobody visiting the site needs to send back. */
     whatsapp: 'https://chat.whatsapp.com/FhKZBvgVqBHFa6odK1gjGF',
-    email: 'mailto:hello@photowalksinpune.com',
-    emailAddress: 'hello@photowalksinpune.com',
+    email: 'mailto:hello@pwip.in',
+    emailAddress: 'hello@pwip.in',
   },
 
   builtBy: {
