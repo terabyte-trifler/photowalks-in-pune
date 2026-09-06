@@ -278,21 +278,20 @@ otp_expiry = 3600
 # do not push, it is set in the dashboard and mirrored into .env.local for
 # local testing only.
 #
-# NOT IN EFFECT YET, as of 7 Sep 2026. Read back from the Management API, the
-# project still has smtp_host = null and rate_limit_email_sent = 2, so the block
-# below is the intended configuration rather than a record of a live one. Three
-# things have to happen first, and none of them can happen in this repository:
+# LIVE as of 7 Sep 2026, and read back from the Management API to say so:
+# smtp_host = smtp.resend.com, sender hello@pwip.in, and rate_limit_email_sent
+# raised from 2 to 30. pwip.in is verified in Resend in ap-northeast-1 (Tokyo),
+# through a DKIM TXT on resend._domainkey and two CNAMEs — `send` and `rsend` —
+# which inherit the MX and SPF from Resend's own zone rather than restating
+# them here. Those live in the Hostinger DNS zone beside the A records that
+# point the apex at Vercel; the two sets do not interact.
 #
-#   1. a Resend account, and pwip.in verified in it — which means adding the
-#      MX and TXT records Resend generates to the Hostinger DNS zone, alongside
-#      the two A records already pointing the domain at Vercel
-#   2. the API key pasted into the dashboard's SMTP settings, never into a file
-#      here and never into git
-#   3. `enabled` flipped there, at which point this block becomes accurate and
-#      the templates below stop being dormant
-#
-# Until then the built-in sender is what runs: two an hour, from
-# `Supabase Auth <noreply@mail.app.supabase.io>`, with the templates ignored.
+# The email templates below stopped being dormant at the same moment, and for
+# the same reason. Supabase refuses template modification on a free project
+# using the built-in provider — `PATCH /config/auth` answered "Email template
+# modification is not available for free tier projects using the default email
+# provider" for three weeks. Adding SMTP lifted that, and the three files are
+# now the project's actual templates, pushed field by field through the API.
 [auth.email.smtp]
 enabled = true
 host = "smtp.resend.com"
