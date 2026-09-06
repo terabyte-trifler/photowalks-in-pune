@@ -6,7 +6,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "41d97682b8bc159a"
   },
   "/images/gallery/photo-02.jpg": {
     "w": 1616,
@@ -15,7 +16,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "caa4c716156d4726"
   },
   "/images/gallery/photo-03.jpg": {
     "w": 1333,
@@ -23,7 +25,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "513d1e7c9fe6c1ad"
   },
   "/images/gallery/photo-04.jpg": {
     "w": 1333,
@@ -31,7 +34,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "d94eb7b8584ee20c"
   },
   "/images/gallery/photo-05.jpg": {
     "w": 1125,
@@ -39,7 +43,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "75ef654ce2cbe51a"
   },
   "/images/gallery/photo-06.jpg": {
     "w": 2000,
@@ -48,7 +53,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "0e457b4fcf26534e"
   },
   "/images/gallery/photo-07.jpg": {
     "w": 1500,
@@ -56,14 +62,16 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "f4fe7e559ddf5ec4"
   },
   "/images/gallery/photo-08.jpg": {
     "w": 734,
     "h": 1100,
     "widths": [
       640
-    ]
+    ],
+    "v": "3c40507a6e4cb1f6"
   },
   "/images/gallery/photo-09.jpg": {
     "w": 1080,
@@ -71,7 +79,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "49f410aae51ca0dd"
   },
   "/images/gallery/photo-10.jpg": {
     "w": 1500,
@@ -79,7 +88,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "b7bdf918686b6fc2"
   },
   "/images/gallery/photo-11.jpg": {
     "w": 1333,
@@ -87,7 +97,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "5ada5f1d0e4365a9"
   },
   "/images/gallery/photo-12.jpg": {
     "w": 2000,
@@ -96,7 +107,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "ffa96abf765be1ab"
   },
   "/images/gallery/photo-13.jpg": {
     "w": 1100,
@@ -104,7 +116,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "aabd18fee7c7ae77"
   },
   "/images/gallery/photo-14.jpg": {
     "w": 1100,
@@ -112,7 +125,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "5e60b9467121a47e"
   },
   "/images/gallery/photo-15.jpg": {
     "w": 2000,
@@ -121,7 +135,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "4594011ca52f5f92"
   },
   "/images/gallery/photo-16.jpg": {
     "w": 1100,
@@ -129,7 +144,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "ce129fd5be672319"
   },
   "/images/gallery/photo-17.jpg": {
     "w": 1333,
@@ -137,7 +153,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "469d2ce0cfb7dde4"
   },
   "/images/gallery/photo-18.jpg": {
     "w": 2000,
@@ -146,14 +163,16 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "93b724d8d94bf663"
   },
   "/images/gallery/photo-19.jpg": {
     "w": 944,
     "h": 1500,
     "widths": [
       640
-    ]
+    ],
+    "v": "6c915223eafd4dd7"
   },
   "/images/gallery/photo-20.jpg": {
     "w": 1333,
@@ -161,7 +180,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "20e46d831e6697b5"
   },
   "/images/gallery/photo-21.jpg": {
     "w": 1600,
@@ -170,7 +190,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "fa5df2bfd37ab027"
   },
   "/images/gallery/photo-22.jpg": {
     "w": 1333,
@@ -178,21 +199,24 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "788df7c396a3be0f"
   },
   "/images/gallery/photo-23.jpg": {
     "w": 922,
     "h": 2000,
     "widths": [
       640
-    ]
+    ],
+    "v": "ec60e720ac6004f9"
   },
   "/images/gallery/photo-24.jpg": {
     "w": 733,
     "h": 1100,
     "widths": [
       640
-    ]
+    ],
+    "v": "5b730eae94018342"
   },
   "/images/gallery/photo-25.jpg": {
     "w": 1031,
@@ -200,7 +224,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "be266b3797254820"
   },
   "/images/gallery/photo-26.jpg": {
     "w": 1500,
@@ -208,7 +233,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "874d71d25e0e9ae3"
   },
   "/images/gallery/photo-27.jpg": {
     "w": 1500,
@@ -216,14 +242,16 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "89aac78df31778ee"
   },
   "/images/gallery/photo-28.jpg": {
     "w": 1000,
     "h": 1500,
     "widths": [
       640
-    ]
+    ],
+    "v": "dcd098ef2527f5f4"
   },
   "/images/gallery/photo-29.jpg": {
     "w": 1112,
@@ -231,7 +259,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "5e3786866f403ed7"
   },
   "/images/gallery/photo-30.jpg": {
     "w": 1616,
@@ -240,14 +269,16 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "5cc33f80e5448de9"
   },
   "/images/gallery/photo-31.jpg": {
     "w": 1000,
     "h": 1500,
     "widths": [
       640
-    ]
+    ],
+    "v": "226eea2ec947ec40"
   },
   "/images/gallery/photo-32.jpg": {
     "w": 2000,
@@ -256,7 +287,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "f41e393931f9378b"
   },
   "/images/gallery/photo-33.jpg": {
     "w": 2000,
@@ -265,7 +297,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "a816a1ecc1d3115f"
   },
   "/images/gallery/photo-34.jpg": {
     "w": 1333,
@@ -273,7 +306,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "8ff68d146ee8bec9"
   },
   "/images/gallery/photo-35.jpg": {
     "w": 1500,
@@ -281,7 +315,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "630018244f83e6d7"
   },
   "/images/gallery/photo-36.jpg": {
     "w": 1100,
@@ -289,14 +324,16 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "8269d667078ad868"
   },
   "/images/gallery/photo-37.jpg": {
     "w": 1000,
     "h": 1500,
     "widths": [
       640
-    ]
+    ],
+    "v": "5148feba569f5623"
   },
   "/images/gallery/photo-38.jpg": {
     "w": 1333,
@@ -304,7 +341,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "379699514289e99a"
   },
   "/images/gallery/photo-39.jpg": {
     "w": 1080,
@@ -312,7 +350,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "d51405fd5f4b747f"
   },
   "/images/gallery/photo-40.jpg": {
     "w": 1616,
@@ -321,7 +360,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "195aac26bbea77a7"
   },
   "/images/gallery/photo-41.jpg": {
     "w": 1100,
@@ -329,7 +369,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "4e7c3ac5acb8f1ae"
   },
   "/images/gallery/photo-42.jpg": {
     "w": 1333,
@@ -337,7 +378,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "c62169cd1d58144a"
   },
   "/images/gallery/photo-43.jpg": {
     "w": 1500,
@@ -345,7 +387,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "6c6c94ad5d35537b"
   },
   "/images/gallery/photo-44.jpg": {
     "w": 2000,
@@ -354,7 +397,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "8108a1872cd424c2"
   },
   "/images/gallery/photo-45.jpg": {
     "w": 1616,
@@ -363,7 +407,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "08f33c5e68335ac0"
   },
   "/images/gallery/photo-46.jpg": {
     "w": 1333,
@@ -371,14 +416,16 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "7293f1ab1382336a"
   },
   "/images/gallery/photo-47.jpg": {
     "w": 825,
     "h": 550,
     "widths": [
       640
-    ]
+    ],
+    "v": "e33d8dbf52436804"
   },
   "/images/gallery/photo-48.jpg": {
     "w": 1500,
@@ -386,14 +433,16 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "ebe6c271239b511d"
   },
   "/images/gallery/photo-49.jpg": {
     "w": 825,
     "h": 550,
     "widths": [
       640
-    ]
+    ],
+    "v": "2fa413f00a8440c6"
   },
   "/images/gallery/photo-50.jpg": {
     "w": 1290,
@@ -401,7 +450,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "d9d383d6f8caa2ee"
   },
   "/images/gallery/photo-51.jpg": {
     "w": 1500,
@@ -409,7 +459,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "d743e6e5b5af25f5"
   },
   "/images/gallery/photo-52.jpg": {
     "w": 1100,
@@ -417,7 +468,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "9fd00712f53b5fe5"
   },
   "/images/gallery/photo-53.jpg": {
     "w": 1333,
@@ -425,7 +477,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "d8414e9398e9598f"
   },
   "/images/gallery/photo-54.jpg": {
     "w": 1333,
@@ -433,7 +486,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "788df7c396a3be0f"
   },
   "/images/gallery/photo-55.jpg": {
     "w": 1100,
@@ -441,28 +495,32 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "2a620eaceeae4720"
   },
   "/images/gallery/photo-56.jpg": {
     "w": 619,
     "h": 825,
     "widths": [
       619
-    ]
+    ],
+    "v": "6130a3d0ba674cc5"
   },
   "/images/gallery/photo-57.jpg": {
     "w": 825,
     "h": 1100,
     "widths": [
       640
-    ]
+    ],
+    "v": "e600040bd38155c8"
   },
   "/images/gallery/photo-58.jpg": {
     "w": 464,
     "h": 825,
     "widths": [
       464
-    ]
+    ],
+    "v": "539f56b4aaf01bfd"
   },
   "/images/hero/pune-hero-01.jpg": {
     "w": 1500,
@@ -470,7 +528,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "5fcc665b3e1ba2ad"
   },
   "/images/hero/pune-hero-02.jpg": {
     "w": 2000,
@@ -479,7 +538,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "0dc2481ad030df54"
   },
   "/images/hero/pune-hero-03.jpg": {
     "w": 2000,
@@ -488,7 +548,8 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "c43635247b3c15ec"
   },
   "/images/hero/pune-hero-04.jpg": {
     "w": 1500,
@@ -496,7 +557,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "e8375e97aeb86e30"
   },
   "/images/hero/pune-hero-05.jpg": {
     "w": 2000,
@@ -505,49 +567,56 @@
       640,
       1024,
       1600
-    ]
+    ],
+    "v": "e156145a501b7db6"
   },
   "/images/instagram/post-01.jpg": {
     "w": 900,
     "h": 900,
     "widths": [
       640
-    ]
+    ],
+    "v": "c656b24d1e0a12aa"
   },
   "/images/instagram/post-02.jpg": {
     "w": 900,
     "h": 900,
     "widths": [
       640
-    ]
+    ],
+    "v": "e5d699d8a3e10a28"
   },
   "/images/instagram/post-03.jpg": {
     "w": 900,
     "h": 900,
     "widths": [
       640
-    ]
+    ],
+    "v": "6f3d627b1ade89e7"
   },
   "/images/instagram/post-04.jpg": {
     "w": 900,
     "h": 900,
     "widths": [
       640
-    ]
+    ],
+    "v": "19ee64a8495fcfa8"
   },
   "/images/instagram/post-05.jpg": {
     "w": 900,
     "h": 900,
     "widths": [
       640
-    ]
+    ],
+    "v": "0dddde6a44ee88c1"
   },
   "/images/instagram/post-06.jpg": {
     "w": 900,
     "h": 900,
     "widths": [
       640
-    ]
+    ],
+    "v": "62fb57c6ed65d9b6"
   },
   "/images/stories/before-the-city-wakes.jpg": {
     "w": 1333,
@@ -555,7 +624,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "7293f1ab1382336a"
   },
   "/images/walks/balewadi.jpg": {
     "w": 1333,
@@ -563,14 +633,16 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "c62169cd1d58144a"
   },
   "/images/walks/camp.jpg": {
     "w": 825,
     "h": 550,
     "widths": [
       640
-    ]
+    ],
+    "v": "e33d8dbf52436804"
   },
   "/images/walks/mandai.jpg": {
     "w": 1100,
@@ -578,14 +650,16 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "9fd00712f53b5fe5"
   },
   "/images/walks/monsoon.jpg": {
     "w": 922,
     "h": 2000,
     "widths": [
       640
-    ]
+    ],
+    "v": "ec60e720ac6004f9"
   },
   "/images/walks/old-pune.jpg": {
     "w": 1500,
@@ -593,7 +667,8 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "ebe6c271239b511d"
   },
   "/images/walks/river.jpg": {
     "w": 1333,
@@ -601,6 +676,7 @@
     "widths": [
       640,
       1024
-    ]
+    ],
+    "v": "8ff68d146ee8bec9"
   }
 }

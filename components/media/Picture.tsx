@@ -35,7 +35,7 @@ import { IMAGE_QUALITY, uploadSrcSet } from '@/lib/images';
  * before it loads without every caller passing width and height.
  * ========================================================================== */
 
-type Manifest = Record<string, { w: number; h: number; widths: number[] }>;
+type Manifest = Record<string, { w: number; h: number; widths: number[]; v: string }>;
 const MANIFEST = variants as Manifest;
 
 export interface PictureProps {
@@ -54,16 +54,20 @@ export interface PictureProps {
 }
 
 /**
- * `/images/gallery/photo-01.jpg` -> `/images/_v/gallery/photo-01`
+ * `/images/gallery/photo-01.jpg` -> `/images/_v/gallery/photo-01-<hash>`
+ *
+ * The hash is the source's, from the manifest, and it is what lets these be
+ * served immutable for a year — replacing a photograph changes every derived
+ * URL. See the headers rule for /images/_v in next.config.ts.
  *
  * Kept in step with the naming in scripts/build-image-variants.mjs by hand.
  * There is no shared constant because the script is ESM run by node and this
  * is bundled by Next; a module they both import would have to be plain JS with
  * no types, and the convention is one line in each place.
  */
-function variantBase(src: string): string {
+function variantBase(src: string, hash: string): string {
   const withoutExtension = src.replace(/\.[^./]+$/, '');
-  return withoutExtension.replace('/images/', '/images/_v/');
+  return `${withoutExtension.replace('/images/', '/images/_v/')}-${hash}`;
 }
 
 const srcSetFor = (base: string, widths: number[], ext: string): string =>
@@ -128,7 +132,7 @@ export function Picture({
     );
   }
 
-  const base = variantBase(src);
+  const base = variantBase(src, entry.v);
 
   /* `fill` is next/image's contract, not the platform's: an absolutely
      positioned box inside a positioned parent. Reproduced here rather than

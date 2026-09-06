@@ -26,7 +26,20 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
 
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      /* The build-time variants carry their source's content hash in the
+         filename, so a given URL's bytes can never change — replacing a
+         photograph produces different URLs. That makes a year safe, and it is
+         worth having: without it the platform serves /public as
+         `max-age=0, must-revalidate`, and the homepage alone is 37 <picture>
+         elements, so every repeat view spent 37 round trips confirming that
+         photographs which cannot change had not changed. */
+      {
+        source: '/images/_v/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+    ];
   },
 
   reactStrictMode: true,

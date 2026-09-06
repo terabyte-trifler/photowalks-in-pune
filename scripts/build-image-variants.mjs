@@ -22,12 +22,19 @@
  * script, commit what it produced.
  *
  * WHAT IT WRITES
- *   public/images/_v/<dir>/<name>-<width>.avif
- *   public/images/_v/<dir>/<name>-<width>.webp
+ *   public/images/_v/<dir>/<name>-<hash>-<width>.avif
+ *   public/images/_v/<dir>/<name>-<hash>-<width>.webp
  *   data/image-variants.json
  *   data/image-variants.hashes.json
  *
- * The manifest holds intrinsic dimensions and which widths exist — not URLs,
+ * The hash in the name is what makes these cacheable forever: replace a
+ * photograph and every derived file gets a new URL, so next.config.ts can serve
+ * this directory `immutable` for a year without any risk of a stale frame. It
+ * is the source's hash, not the variant's, so all of one image's files share it
+ * and the component can build any of them from one manifest field.
+ *
+ * The manifest holds intrinsic dimensions, the hash, and which widths exist —
+ * not URLs,
  * which components derive from the convention above. That keeps it a few
  * kilobytes, because it is imported by client components — PhotoGrid,
  * HeroImage, LightboxFrame — and every byte in it is a byte in the bundle.
@@ -42,7 +49,15 @@
  * ========================================================================== */
 
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
 import { join, dirname, relative, extname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -104,6 +119,19 @@ function findSources(dir) {
 
 const previous = existsSync(hashesPath) ? JSON.parse(readFileSync(hashesPath, 'utf8')) : {};
 
+/* Outputs are named after the source's hash, so a re-encoded photograph leaves
+   its predecessors behind under names nothing will ever ask for again. Clear
+   the directory whenever anything changed rather than accumulating them. */
+const stale = Object.entries(previous).filter(([key, hash]) => {
+  const source = join(imagesDir, key.replace('/images/', ''));
+  if (!existsSync(source)) return true;
+  return sha(readFileSync(source)) !== hash;
+});
+if (stale.length > 0 && !DRY) {
+  for (const [key] of stale) console.log(`  changed: ${key} — its old variants will be replaced`);
+  rmSync(outDir, { recursive: true, force: true });
+}
+
 const manifest = {};
 const hashes = {};
 let written = 0;
@@ -126,7 +154,7 @@ for (const source of findSources(imagesDir).sort()) {
   const widths = WIDTHS.filter((w) => w <= meta.width);
   if (widths.length === 0) widths.push(meta.width);
 
-  manifest[key] = { w: meta.width, h: meta.height, widths };
+  manifest[key] = { w: meta.width, h: meta.height, widths, v: hash };
   hashes[key] = hash;
 
   const unchanged = previous[key] === hash && !FORCE;
@@ -135,7 +163,7 @@ for (const source of findSources(imagesDir).sort()) {
 
   for (const width of widths) {
     for (const { ext, encode } of FORMATS) {
-      const target = join(dir, `${stem}-${width}.${ext}`);
+      const target = join(dir, `${stem}-${hash}-${width}.${ext}`);
       if (unchanged && existsSync(target)) {
         reused += 1;
         continue;
