@@ -436,3 +436,32 @@ export async function listFeaturedPhotographers(limit = 4): Promise<{
   const rows = (data ?? []) as PhotographerCard[];
   return { rows, photos: await photosForProfiles(rows.map((row) => row.id)) };
 }
+
+/**
+ * A member's photographs that have no walk against them.
+ *
+ * Read separately from listPhotos rather than filtered out of it, because that
+ * one is paginated and this question is about the whole archive: somebody on
+ * page two of their own photographs should still be told about an untagged
+ * frame on page one. The ceiling is MAX_PHOTOS_PER_MEMBER, so one query
+ * always covers it.
+ *
+ * Public-client read: which photographs exist and whether they carry a walk is
+ * already public. The panel that uses this is only rendered for the owner, and
+ * the write it performs is scoped by Row Level Security rather than by this.
+ */
+export async function listUntaggedPhotos(profileId: string): Promise<PhotoRecord[]> {
+  const supabase = getSupabasePublicClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('photos')
+    .select(PHOTO_COLUMNS)
+    .eq('profile_id', profileId)
+    .is('event_id', null)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (error || !data) return [];
+  return data as PhotoRecord[];
+}

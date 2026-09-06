@@ -2,11 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PhotoManager } from '@/components/photographers/PhotoManager';
+import { UntaggedPhotos } from '@/components/photographers/UntaggedPhotos';
 import { WorkGrid } from '@/components/photographers/WorkGrid';
 import { SectionHeader } from '@/components/ui/Typography';
 import { site } from '@/data/site';
 import { getCurrentUser } from '@/lib/auth/session';
-import { getPhotographerCard, listPhotos, PHOTOS_PAGE_SIZE } from '@/lib/photographers';
+import {
+  getPhotographerCard,
+  listPhotos,
+  listUntaggedPhotos,
+  PHOTOS_PAGE_SIZE,
+} from '@/lib/photographers';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 export const dynamic = 'force-dynamic';
@@ -47,6 +53,11 @@ export default async function PhotographerPhotosPage({
   ]);
   const isOwner = viewer?.id === photographer.id;
 
+  /* Only the owner is offered this, and only while they have something to
+     file. Fetched after ownership is known so a visitor's request never asks
+     the question at all. */
+  const untagged = isOwner ? await listUntaggedPhotos(photographer.id) : [];
+
   return (
     <section className="py-[clamp(2.5rem,6vw,4.5rem)]" aria-labelledby="photos-title">
       <div className="shell">
@@ -68,6 +79,12 @@ export default async function PhotographerPhotosPage({
         {isOwner && (
           <div className="mt-[clamp(2rem,4vw,3rem)]">
             <PhotoManager profileId={photographer.id} photos={work.rows} total={work.total} />
+          </div>
+        )}
+
+        {isOwner && untagged.length > 0 && (
+          <div className="mt-[clamp(2rem,4vw,3rem)]">
+            <UntaggedPhotos photos={untagged} />
           </div>
         )}
 

@@ -109,7 +109,14 @@ export type Database = {
         Row: PhotoRecord;
         Insert: Omit<PhotoRecord, 'id' | 'created_at'> &
           Partial<Pick<PhotoRecord, 'id' | 'created_at'>>;
-        Update: Partial<Pick<PhotoRecord, 'caption' | 'location' | 'taken_at'>>;
+        /* Exactly the column-level UPDATE grant in migration 0015:
+             grant update (caption, location, taken_at, event_id) ... to authenticated
+           event_id was added to that grant and not to this type, so the
+           database has allowed a member to say which walk a photograph came
+           from since 26 August while TypeScript refused to let anything ask.
+           Keep the two in step — a type narrower than the grant silently
+           removes a capability, and one wider than it fails at runtime. */
+        Update: Partial<Pick<PhotoRecord, 'caption' | 'location' | 'taken_at' | 'event_id'>>;
         Relationships: [
           {
             foreignKeyName: 'photos_profile_id_fkey';
