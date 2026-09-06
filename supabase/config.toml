@@ -296,7 +296,12 @@ otp_expiry = 3600
 [auth.email.smtp]
 enabled = true
 host = "smtp.resend.com"
-port = 587
+# 465, not the 587 this was first written with. Both work — 587 is STARTTLS,
+# 465 is TLS from the first byte — but 465 is what Resend's own Supabase
+# integration guide specifies, and matching the documented pairing is worth
+# more than the preference, because a TLS negotiation failure here surfaces as
+# "email not sent" with nothing else to go on.
+port = 465
 user = "resend"
 pass = "env(RESEND_API_KEY)"
 admin_email = "hello@pwip.in"
