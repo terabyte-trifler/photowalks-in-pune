@@ -357,10 +357,40 @@ export async function prepareLadder(file: File, kind: UploadKind): Promise<Prepa
       const drawn = drawAt(decoded, edge);
       if (!drawn) continue;
 
-      const blob = await toBlob(drawn.canvas, primary.contentType, RUNG_QUALITY);
-      if (!blob) continue;
+      /* ------------------------------------------------------------------
+       * The rung has to fit the bucket, not just look right.
+       *
+       * Both buckets carry a hard 200 KiB file_size_limit (migration 0005),
+       * and Storage rejects anything over it. A rung encoded at a flat quality
+       * sails past that more often than it sounds: the primary reached the
+       * ceiling by spending quality — a dense 2000px frame can end up at 0.55
+       * — and the same picture at 1600px and 0.8 is then comfortably larger
+       * than the primary it is supposed to be a cheaper alternative to.
+       *
+       * The failure was quiet rather than loud, which is worse. uploadImage
+       * degrades a rejected rung to a plain unladdered name, so the photograph
+       * uploads and displays and nobody sees a problem — the ladder simply
+       * never materialises, and the image stays on the optimiser forever.
+       *
+       * So rungs walk the same quality ladder the budget search uses, and a
+       * rung that cannot fit at any of them is dropped. Dropping one is safe:
+       * widths are resolved from the ladder version, so a missing rung would
+       * be a 404 in a srcset — which is why the check below removes the whole
+       * set rather than uploading a partial one.
+       * ------------------------------------------------------------------ */
+      let encoded: Blob | null = null;
+      for (const quality of [RUNG_QUALITY, ...QUALITY_STEPS]) {
+        const blob = await toBlob(drawn.canvas, primary.contentType, quality);
+        if (!blob) continue;
+        if (blob.size <= TARGET_BYTES[kind]) {
+          encoded = blob;
+          break;
+        }
+      }
+      if (!encoded) continue;
+
       smaller.push({
-        blob,
+        blob: encoded,
         width: drawn.width,
         height: drawn.height,
         extension: primary.extension,
@@ -425,8 +455,14 @@ export async function uploadImage(
    * here: the alternative is refusing a photograph somebody chose because a
    * thumbnail did not upload.
    * ------------------------------------------------------------------- */
+  /* Every rung the ladder promises, or none of them. `variantWidths` derives
+     the srcset from the ladder version and the stored width, so it will name a
+     rung whether or not it was uploaded — a set missing one is a 404 inside a
+     srcset, which browsers resolve by falling back to a different width and
+     which nothing in the app would surface. */
+  const expected = VARIANT_LADDERS[CURRENT_LADDER][kind].filter((w) => w < primary.width);
   const uploaded: string[] = [];
-  let ladderIntact = smaller.length > 0;
+  let ladderIntact = smaller.length === expected.length && expected.length > 0;
 
   for (const rung of smaller) {
     const at = variantPath(base, CURRENT_LADDER, rung.width, rung.extension);
