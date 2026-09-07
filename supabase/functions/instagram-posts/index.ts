@@ -90,7 +90,12 @@ Deno.serve(async (request: Request): Promise<Response> => {
     return json({ error: 'token unavailable', posts: [] }, 500);
   }
 
-  const stored = (rows ?? [])[0] as { token: string; refreshed_at: string | null } | undefined;
+  const stored = (rows ?? [])[0] as {
+    token: string;
+    refreshed_at: string | null;
+    refresh_failed_at?: string | null;
+    refresh_error?: string | null;
+  } | undefined;
 
   /* No secret in the vault. Not an error — it is a site without Instagram
      configured, and the app falls back to its local photographs. */
@@ -98,6 +103,7 @@ Deno.serve(async (request: Request): Promise<Response> => {
 
   let token = stored.token;
   let rotated = false;
+  let refreshError: string | null = null;
 
   /* A hand-pasted token has no date, so it is treated as due: better to spend
      one refresh than to discover in a month that it was already 50 days old. */
@@ -129,24 +135,96 @@ Deno.serve(async (request: Request): Promise<Response> => {
           }
         }
       } else {
-        /* Refused, but the stored token has not necessarily expired — Meta
-           also refuses for reasons we can retry past. Carry on with it. */
-        console.warn(`[instagram] refresh refused (${res.status}): ${await res.text()}`);
+        /* Refused. Carry on with the stored token — Meta also refuses for
+           reasons we can retry past — but WRITE IT DOWN. A console.warn is
+           what let the last token die: the refusal repeated for weeks while
+           the site answered 200 and looked healthy, and by the time anybody
+           looked, refresh could no longer recover it. The note does not touch
+           the token or its refreshed_at, so the next tick still retries. */
+        const detail = `${res.status}: ${(await res.text()).slice(0, 300)}`;
+        console.warn(`[instagram] refresh refused (${detail})`);
+        refreshError = detail;
+        await supabase.rpc('instagram_token_note_failure', { reason: detail });
       }
     } catch (cause) {
-      console.warn('[instagram] refresh could not be attempted', cause);
+      const detail = cause instanceof Error ? cause.message : String(cause);
+      console.warn('[instagram] refresh could not be attempted', detail);
+      refreshError = detail;
+      await supabase.rpc('instagram_token_note_failure', { reason: detail });
     }
   }
 
-  try {
-    const res = await fetch(
+  /* One place that asks for the media, so the retry below is the same request
+     rather than a second copy of it that can drift. */
+  const askForMedia = (accessToken: string) =>
+    fetch(
       `${GRAPH}/me/media?fields=${FIELDS}&limit=${limit}` +
-        `&access_token=${encodeURIComponent(token)}`,
+        `&access_token=${encodeURIComponent(accessToken)}`,
     );
 
+  try {
+    let res = await askForMedia(token);
+
+    /* An auth failure here is the one moment the system KNOWS the token is
+       wrong, and until now it was also the one moment it did nothing about it:
+       refresh ran on the age schedule and never in response to the evidence.
+       So try once, if a refresh has not already been attempted this call.
+       Meta will refuse for an expired token — that refusal is recorded, which
+       is how the vault comes to say why the site went quiet. */
+    if ((res.status === 400 || res.status === 401) && !rotated) {
+      const body = await res.clone().text();
+      console.warn(`[instagram] media refused (${res.status}), attempting a refresh: ${body.slice(0, 200)}`);
+
+      try {
+        const refresh = await fetch(
+          `${GRAPH}/refresh_access_token?grant_type=ig_refresh_token` +
+            `&access_token=${encodeURIComponent(token)}`,
+        );
+
+        if (refresh.ok) {
+          const refreshed = await refresh.json() as { access_token?: string };
+          if (refreshed.access_token) {
+            const { error: writeError } = await supabase.rpc('instagram_token_write', {
+              new_token: refreshed.access_token,
+            });
+            if (!writeError) {
+              token = refreshed.access_token;
+              rotated = true;
+              refreshError = null;
+              res = await askForMedia(token);
+            }
+          }
+        } else {
+          const detail = `${refresh.status}: ${(await refresh.text()).slice(0, 300)}`;
+          refreshError = detail;
+          await supabase.rpc('instagram_token_note_failure', { reason: `media auth: ${detail}` });
+        }
+      } catch (cause) {
+        const detail = cause instanceof Error ? cause.message : String(cause);
+        refreshError = detail;
+        await supabase.rpc('instagram_token_note_failure', { reason: `media auth: ${detail}` });
+      }
+    }
+
     if (!res.ok) {
-      console.error(`[instagram] media request failed (${res.status}): ${await res.text()}`);
-      return json({ error: 'media unavailable', rotated, posts: [] }, 502);
+      const body = await res.text();
+      console.error(`[instagram] media request failed (${res.status}): ${body}`);
+
+      /* Told apart on purpose. "Fix the token" and "Meta is having a moment"
+         need different reactions, and answering the same 502 to both is why
+         the last outage had to be diagnosed by reading source. */
+      const expired = res.status === 400 || res.status === 401;
+      return json(
+        {
+          error: expired ? 'token rejected' : 'media unavailable',
+          tokenRejected: expired,
+          rotated,
+          refreshError,
+          refreshFailedAt: stored.refresh_failed_at ?? null,
+          posts: [],
+        },
+        502,
+      );
     }
 
     const payload = await res.json() as { data?: GraphMedia[] };
@@ -162,7 +240,7 @@ Deno.serve(async (request: Request): Promise<Response> => {
       })
       .filter((post): post is InstagramPost => post !== null);
 
-    return json({ configured: true, rotated, posts });
+    return json({ configured: true, rotated, refreshError, posts });
   } catch (cause) {
     console.error('[instagram] media request errored', cause);
     return json({ error: 'media unavailable', rotated, posts: [] }, 502);
