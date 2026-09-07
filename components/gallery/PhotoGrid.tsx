@@ -79,7 +79,12 @@ export function PhotoGrid() {
                 type="button"
                 onClick={() => openLightbox(index)}
                 aria-haspopup="dialog"
-                aria-label={`Open photograph made in ${photo.location}`}
+                /* The accessible name has to start with the visible text, or
+                   a speech user saying "click <credit>" is not understood —
+                   that is label-content-name-mismatch. The credit is what is
+                   on screen, so the name leads with it and the location
+                   follows as context. */
+                aria-label={`${credit ?? 'Uncredited'} — open photograph made in ${photo.location}`}
                 className="group block w-full text-left"
               >
                 <span className={cn('block overflow-hidden bg-subtle', ASPECT[photo.aspect])}>

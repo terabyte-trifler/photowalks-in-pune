@@ -38,7 +38,12 @@ export async function InstagramSection() {
             >
               <Picture
                 src={post.image}
-                alt={post.caption}
+                /* Empty on purpose. The caption is rendered as visible text
+                   directly below (see the <p> further down), so putting it in
+                   alt as well makes a screen reader announce the same sentence
+                   twice — which is what image-redundant-alt flags. The link
+                   around it carries the accessible name. */
+                alt=""
                 width={900}
                 height={900}
                 loading="lazy"
