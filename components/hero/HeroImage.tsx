@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Picture } from '@/components/media/Picture';
-import { motion, useReducedMotion } from 'framer-motion';
+import { usePrefersReducedMotion } from '@/lib/use-reduced-motion';
 import { heroFrames } from '@/data/hero';
 
 /* ============================================================================
@@ -61,7 +61,7 @@ const HOLD_MS = 7000;
 const FADE_MS = 2400;
 
 export function HeroImage() {
-  const reduced = useReducedMotion();
+  const reduced = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -84,15 +84,22 @@ export function HeroImage() {
        and leaves this whole block underneath the type, where it belongs. */
     <div className="absolute inset-0 isolate">
       {heroFrames.map((frame, i) => (
-        <motion.div
+        <div
           key={frame.src}
-          className="absolute inset-0"
-          initial={false}
-          animate={{ opacity: i === index ? 1 : 0 }}
-          transition={{ duration: reduced ? 0 : FADE_MS / 1000, ease: 'linear' }}
-          /* The stack has a fixed order, so the frame coming in is told to sit
-             above the one going out rather than relying on source order. */
-          style={{ zIndex: i === index ? 1 : 0 }}
+          /* A crossfade is two opacities and a duration. This was
+             framer-motion; it is a compositor-driven CSS transition now, on
+             the page where this frame is the LCP element. Reduced motion is
+             handled by the utility rather than a hook — a media query needs no
+             re-render to be noticed. */
+          className="absolute inset-0 transition-opacity ease-linear motion-reduce:transition-none"
+          style={{
+            opacity: i === index ? 1 : 0,
+            transitionDuration: `${FADE_MS}ms`,
+            /* The stack has a fixed order, so the frame coming in is told to
+               sit above the one going out rather than relying on source
+               order. */
+            zIndex: i === index ? 1 : 0,
+          }}
         >
           <Picture
             src={frame.src}
@@ -104,7 +111,7 @@ export function HeroImage() {
             sizes="100vw"
             className="object-cover"
           />
-        </motion.div>
+        </div>
       ))}
 
       {/* The credit travels with the frame. aria-live is deliberately off: this
@@ -112,17 +119,15 @@ export function HeroImage() {
           would be hostile to anybody listening to the page. */}
       <div className="pointer-events-none absolute bottom-0 right-0 z-10 grid p-[clamp(1rem,3vw,2rem)]">
         {heroFrames.map((frame, i) => (
-          <motion.span
+          <span
             key={frame.src}
-            initial={false}
-            animate={{ opacity: i === index ? 1 : 0 }}
-            transition={{ duration: reduced ? 0 : FADE_MS / 2000 }}
+            style={{ opacity: i === index ? 1 : 0, transitionDuration: `${FADE_MS / 2}ms` }}
             /* Stacked in one grid cell so they occupy the same spot without
                absolute positioning, and the box is sized by the longest name. */
-            className="col-start-1 row-start-1 text-right font-mono text-micro uppercase tracking-[0.2em] text-[rgba(245,241,234,0.6)]"
+            className="col-start-1 row-start-1 text-right font-mono text-micro uppercase tracking-[0.2em] text-[rgba(245,241,234,0.6)] transition-opacity motion-reduce:transition-none"
           >
             {frame.credit}
-          </motion.span>
+          </span>
         ))}
       </div>
     </div>

@@ -1,6 +1,5 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
@@ -12,7 +11,6 @@ import { Avatar } from './Avatar';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const reduced = useReducedMotion();
   const { open: openRSVP } = useRSVP();
   /* Only ever rendered once somebody has opened the menu, so reading the
      clock here cannot disagree with a prerendered page. */
@@ -35,15 +33,11 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
   }, [open, onClose]);
 
   return (
-    <AnimatePresence>
+    <>
       {open && (
-        <motion.div
+        <div
           id="mobile-menu"
-          className="fixed inset-0 z-[70] flex flex-col bg-background p-gutter lg:hidden"
-          initial={reduced ? false : { y: '-100%' }}
-          animate={{ y: 0 }}
-          exit={reduced ? { opacity: 0 } : { y: '-100%' }}
-          transition={{ duration: reduced ? 0 : 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="overlay-drop fixed inset-0 z-[70] flex flex-col bg-background p-gutter lg:hidden"
         >
           <div className="mb-8 flex items-center justify-between">
             <span className="meta text-foreground">Menu</span>
@@ -154,8 +148,8 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
               </button>
             </div>
           )}
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

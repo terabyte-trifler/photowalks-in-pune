@@ -1,6 +1,5 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -29,7 +28,6 @@ export function Dialog({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
-  const reduced = useReducedMotion();
 
   const handleKey = useCallback(
     (event: KeyboardEvent) => {
@@ -75,52 +73,39 @@ export function Dialog({
     };
   }, [open, handleKey]);
 
-  const fade = reduced ? { duration: 0 } : { duration: 0.25 };
-  const rise = reduced
-    ? { initial: {}, animate: {}, exit: {}, transition: { duration: 0 } }
-    : {
-        initial: { opacity: 0, y: 16 },
-        animate: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: 8 },
-        transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as const },
-      };
 
   return (
-    <AnimatePresence>
+    <>
       {open && (
-        <motion.div
+        <div
           className={cn(
-            'fixed inset-0 z-[100]',
+            'fixed inset-0 z-[100] overlay-fade',
             variant === 'panel'
               ? 'grid place-items-center bg-[rgba(14,12,10,0.55)] p-gutter backdrop-blur-[6px]'
               : 'bg-[rgba(9,8,7,0.96)]',
           )}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={fade}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) onClose();
           }}
         >
-          <motion.div
+          <div
             ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label={label}
             className={cn(
+              'overlay-rise',
               variant === 'panel'
                 ? 'max-h-[88vh] w-full overflow-y-auto border border-border-strong bg-background p-[clamp(1.5rem,4vw,2.75rem)]'
                 : 'flex h-full w-full flex-col',
               className,
             )}
-            {...rise}
           >
             {children}
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
 

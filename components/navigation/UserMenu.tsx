@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Avatar } from './Avatar';
@@ -34,7 +33,6 @@ export function UserMenu() {
   const [signingOut, setSigningOut] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const reduced = useReducedMotion();
 
   useEffect(() => {
     if (!open) return;
@@ -113,17 +111,13 @@ export function UserMenu() {
 
       <span aria-hidden="true" className="hidden h-4 w-px bg-border lg:block" />
 
-      <AnimatePresence>
+      <>
         {open && (
-          <motion.div
+          <div
             id="user-menu"
             role="menu"
             aria-label="Your account"
-            className="absolute right-0 top-[calc(100%+0.75rem)] z-[80] w-[230px] border border-border-strong bg-background"
-            initial={reduced ? { opacity: 0 } : { opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
-            transition={{ duration: reduced ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="overlay-tip absolute right-0 top-[calc(100%+0.75rem)] z-[80] w-[230px] border border-border-strong bg-background"
           >
             <div className="border-b border-border px-4 py-3.5">
               <p className="truncate text-[0.875rem] font-medium tracking-normal">{name}</p>
@@ -162,9 +156,9 @@ export function UserMenu() {
             >
               {signingOut ? 'Logging out' : 'Log out'}
             </button>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </>
     </div>
   );
 }

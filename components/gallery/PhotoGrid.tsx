@@ -1,7 +1,6 @@
 'use client';
 
 import { Picture } from '@/components/media/Picture';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { type Photo } from '@/data/photos';
 import { cn } from '@/lib/utils';
 import { useGallery } from './GalleryProvider';
@@ -34,7 +33,6 @@ const DIMENSIONS: Record<Photo['aspect'], { width: number; height: number }> = {
 
 export function PhotoGrid() {
   const { visible, shown, showMore, openLightbox, creditFor } = useGallery();
-  const reduced = useReducedMotion();
 
   /* The lightbox still steps through the whole filtered set, not just what has
      been revealed — once a photograph is open, stopping the arrow keys at an
@@ -55,24 +53,18 @@ export function PhotoGrid() {
   return (
     <>
       <div className="grid grid-cols-2 gap-x-[clamp(0.75rem,2vw,2rem)] gap-y-[clamp(1rem,2.5vw,2.5rem)] md:grid-cols-6">
-      {/* `initial={false}` so the first paint is the photographs, not an empty
-          grid waiting for JavaScript to fade them in. Filtering still animates
-          — AnimatePresence suppresses only the mount — and the archive stays
-          readable if the script never runs, which is the property the CSS
-          Reveal was rewritten to guarantee. */}
-      <AnimatePresence mode="popLayout" initial={false}>
+            {/* The filter used to cross-dissolve through AnimatePresence and a
+                FLIP layout animation. Both are gone with the library: the grid
+                re-lays out at once when a category changes, which on a grid of
+                photographs reads as decisive rather than abrupt — and costs
+                none of the 54 kB that bought it. */}
         {drawn.map((photo, index) => {
           const credit = creditFor(photo.photographerId);
           const dims = DIMENSIONS[photo.aspect];
 
           return (
-            <motion.div
-              key={photo.id}
-              layout={!reduced}
-              initial={false}
-              animate={{ opacity: 1 }}
-              exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
-              transition={{ duration: reduced ? 0 : 0.4, ease: [0.16, 1, 0.3, 1] }}
+              <div
+                key={photo.id}
               className={cn('col-span-1', PLACEMENT[index % PLACEMENT.length])}
             >
               <button
@@ -105,10 +97,9 @@ export function PhotoGrid() {
                   <span>{photo.location}</span>
                 </span>
               </button>
-            </motion.div>
+            </div>
           );
         })}
-      </AnimatePresence>
       </div>
 
       {remaining > 0 && (

@@ -320,3 +320,55 @@
     }
   }
 }
+
+/* ----------------------------------------------------------------------------
+ * OVERLAYS
+ * ----------------------------------------------------------------------------
+ * The dialog, the mobile menu and the account dropdown all used framer-motion's
+ * AnimatePresence, which exists to animate a component on its way OUT — it has
+ * to keep the element mounted after React would have removed it.
+ *
+ * These animate in and leave immediately now. That is a deliberate trade: the
+ * alternative is keeping every overlay mounted for the life of the page so CSS
+ * has something to transition, and for the lightbox that would mean holding a
+ * full-screen photograph in the DOM behind every page. A modal that closes at
+ * once reads as responsive rather than abrupt; one that loads images nobody
+ * asked for does not.
+ *
+ * `both` so the first frame is the start of the animation and not a flash of
+ * the finished state.
+ * -------------------------------------------------------------------------- */
+
+@keyframes overlay-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes overlay-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes overlay-drop {
+  from { transform: translateY(-100%); }
+  to { transform: none; }
+}
+
+@keyframes overlay-tip {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.overlay-fade { animation: overlay-fade 250ms ease both; }
+.overlay-rise { animation: overlay-rise 350ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.overlay-drop { animation: overlay-drop 450ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.overlay-tip  { animation: overlay-tip 200ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay-fade,
+  .overlay-rise,
+  .overlay-drop,
+  .overlay-tip {
+    animation: none;
+  }
+}
