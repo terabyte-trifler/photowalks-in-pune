@@ -2,7 +2,7 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from './config';
+import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured, COOKIE_OPTIONS } from './config';
 import type { Database } from './types';
 
 export type TypedSupabaseClient = SupabaseClient<Database>;
@@ -20,7 +20,9 @@ let browserClient: TypedSupabaseClient | null = null;
 export function getSupabaseBrowserClient(): TypedSupabaseClient | null {
   if (!isSupabaseConfigured()) return null;
   if (!browserClient) {
-    browserClient = createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+    browserClient = createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      cookieOptions: COOKIE_OPTIONS,
+    });
   }
   return browserClient;
 }

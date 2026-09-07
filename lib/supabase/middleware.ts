@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from './config';
+import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured, COOKIE_OPTIONS } from './config';
 import { buildCsp, createNonce, isStaticPage } from '@/lib/security/csp';
 import type { Database } from './types';
 
@@ -59,6 +59,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   if (!isSupabaseConfigured()) return withCsp(response);
 
   const supabase = createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookieOptions: COOKIE_OPTIONS,
     cookies: {
       getAll() {
         return request.cookies.getAll();
