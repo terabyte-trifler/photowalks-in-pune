@@ -255,8 +255,13 @@ const nextConfig: NextConfig = {
  * ========================================================================== */
 export default withSentryConfig(nextConfig, {
   silent: true,
-  tunnelRoute: '/monitoring',
-  widenClientFileUpload: true,
+  /* No tunnelRoute, because nothing in the browser reports any more — see the
+     measurement at the top of instrumentation.ts. If a client SDK is ever added
+     back, add it again in the same commit: the CSP is
+     `connect-src 'self' https://*.supabase.co`, so a browser posting straight
+     to ingest.sentry.io is blocked by our own policy, silently, which is the
+     exact failure this was meant to end. */
+  widenClientFileUpload: false,
   sourcemaps: { deleteSourcemapsAfterUpload: true },
   disableLogger: true,
   /* Build-time exclusions. Setting tracesSampleRate to 0 stops events being

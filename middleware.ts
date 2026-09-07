@@ -11,10 +11,9 @@ export const config = {
        /public are the bulk of this site's requests and must not pay for a
        session refresh.
        
-       `monitoring` is the Sentry tunnel. Every error report would otherwise
-       arrive here and trigger a getUser() round trip to Supabase — a network
-       call, to refresh a session, on behalf of a POST that only wants to say
-       something broke. Reporting an error must not cost more than the error. */
+       `monitoring` was the Sentry browser tunnel and is kept excluded: it costs
+       nothing, and if a client SDK is added back this is one of the two things
+       that has to be true for it to work. See instrumentation.ts. */
     '/((?!_next/static|_next/image|monitoring|favicon.ico|icon.svg|images/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|woff2?)$).*)',
   ],
 };
