@@ -465,3 +465,37 @@ export async function listUntaggedPhotos(profileId: string): Promise<PhotoRecord
   if (error || !data) return [];
   return data as PhotoRecord[];
 }
+
+/**
+ * Who walked a given walk.
+ *
+ * The only genuinely unique thing a walk page can say that a place page
+ * cannot: these specific people were there, on this date. It reads through
+ * walk_attendance — the public projection of walk_rsvps that carries who and
+ * which walk and never a phone number — and then through photographer_cards
+ * for the names and faces.
+ *
+ * Two queries rather than one because walk_attendance holds no profile columns
+ * by design; joining them in the view would mean deciding, in SQL, which
+ * profile fields are public, and that decision already lives in
+ * photographer_cards where it can be read.
+ */
+export async function listWalkers(eventId: string, limit = 24): Promise<PhotographerCard[]> {
+  const supabase = getSupabasePublicClient();
+  if (!supabase) return [];
+
+  const { data: attendance } = await supabase
+    .from('walk_attendance')
+    .select('profile_id')
+    .eq('event_id', eventId);
+
+  const ids = [...new Set(((attendance ?? []) as { profile_id: string }[]).map((r) => r.profile_id))];
+  if (ids.length === 0) return [];
+
+  const { data } = await supabase
+    .from('photographer_cards')
+    .select(PHOTOGRAPHER_CARD_COLUMNS)
+    .in('id', ids.slice(0, limit));
+
+  return (data ?? []) as PhotographerCard[];
+}

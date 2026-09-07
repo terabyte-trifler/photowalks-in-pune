@@ -5,13 +5,15 @@ import { notFound } from 'next/navigation';
 
 import { WalkPhotos } from '@/components/events/WalkPhotos';
 import { RSVPButton } from '@/components/rsvp/RSVPButton';
+import { Avatar } from '@/components/navigation/Avatar';
 import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
 import { allWalksNewestFirst, walkBySlug } from '@/data/events';
 import { placeForWalk } from '@/data/places';
+import { notesForWalk } from '@/data/walk-notes';
 import { site } from '@/data/site';
 import { photoUrl } from '@/lib/directory';
-import { listPhotosForWalk } from '@/lib/photographers';
+import { listPhotosForWalk, listWalkers } from '@/lib/photographers';
 import { breadcrumbSchema, eventSchema, gallerySchema, jsonLd } from '@/lib/seo';
 import { longDate, priceLabel, registrationClosed } from '@/lib/utils';
 
@@ -71,7 +73,11 @@ export default async function WalkPage({
     { name: walk.title, path: `/walks/${walk.slug}` },
   ]);
 
-  const shot = await listPhotosForWalk(walk.id);
+  const [shot, walkers] = await Promise.all([
+    listPhotosForWalk(walk.id),
+    listWalkers(walk.id),
+  ]);
+  const notes = notesForWalk(walk.slug);
   const gallery =
     shot.length > 0
       ? gallerySchema(
@@ -131,6 +137,19 @@ export default async function WalkPage({
                   every walk held there and every frame made on them, and is
                   where somebody who arrived looking for the location rather
                   than the date actually wants to be. */}
+              {notes.length > 0 && (
+                <div className="mt-6 max-w-[46ch]">
+                  {notes.map((paragraph) => (
+                    <p
+                      key={paragraph.slice(0, 40)}
+                      className="mb-4 text-[0.9375rem] leading-[1.75] text-foreground-soft"
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              )}
+
               {place && (
                 <p className="mt-5 text-[0.9375rem]">
                   <Link
@@ -207,6 +226,38 @@ export default async function WalkPage({
         </div>
       </section>
     
+      {/* ---- who was there ------------------------------------------- */}
+      {walkers.length > 0 && (
+        <section className="border-t border-border py-section-sm" aria-labelledby="walkers-title">
+          <div className="shell">
+            <SectionHeader index="03" label="Who walked it" />
+            <Reveal>
+              <h2 id="walkers-title" className="display mb-[clamp(1.5rem,3vw,2.25rem)] text-display-lg">
+                {walkers.length} {walkers.length === 1 ? 'photographer' : 'photographers'} came
+              </h2>
+              <ul className="flex flex-wrap gap-x-8 gap-y-5">
+                {walkers.map((person) => (
+                  <li key={person.id}>
+                    <Link
+                      href={`/photographers/${person.username}`}
+                      className="group flex items-center gap-3"
+                    >
+                      <Avatar src={person.avatar_url} name={person.full_name} size={36} />
+                      <span className="min-w-0">
+                        <span className="block text-[0.9375rem] leading-tight transition-colors duration-300 group-hover:text-accent">
+                          {person.full_name}
+                        </span>
+                        <span className="meta normal-case tracking-[0.1em]">@{person.username}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          </div>
+        </section>
+      )}
+
       {event && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(event) }} />
       )}
