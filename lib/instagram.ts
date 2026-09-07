@@ -70,7 +70,16 @@ export const INSTAGRAM_REVALIDATE_SECONDS = 3600;
  * is not.
  *
  * The rate of that waste is set here, because the URLs only change when this
- * refetches. An hour is the right number.
+ * refetches. An hour WAS the number, and an hour was too long: the signature
+ * on a CDN URL expires on Meta's schedule, not ours, so a batch cached for an
+ * hour can rot inside the cache and be served as a set of links that answer
+ * 403. That is what the grid was doing — drawing alt text where photographs
+ * should be, because every URL in the cached batch had expired.
+ *
+ * Ten minutes instead. It costs six more function calls an hour, which is
+ * nothing, and it bounds how long a dead batch can be served to the same ten
+ * minutes. The real guard is the reachability check in requestPosts below;
+ * this only decides how quickly the grid heals once the source recovers.
  *
  * But a plain `next: { revalidate: 3600 }` caches a FAILED response for an
  * hour too, and that is not hypothetical — the first deploy went out before
@@ -80,7 +89,7 @@ export const INSTAGRAM_REVALIDATE_SECONDS = 3600;
  * is not a return, so failures are simply not cached and the next render tries
  * again.
  * -------------------------------------------------------------------------- */
-const FUNCTION_REVALIDATE_SECONDS = 3600;
+const FUNCTION_REVALIDATE_SECONDS = 600;
 
 const ENDPOINT = 'https://graph.instagram.com/me/media';
 const FIELDS = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
@@ -159,7 +168,45 @@ async function requestPosts(limit: number): Promise<InstagramPost[]> {
   const posts = payload.posts ?? [];
   if (posts.length === 0) throw new Error('the posts function returned nothing');
 
-  return posts.slice(0, limit);
+  const chosen = posts.slice(0, limit);
+
+  /* A batch of URLs is not the same as a batch of photographs.
+   *
+   * Instagram's CDN links are signed and expire, and an expired one answers
+   * 403 rather than disappearing — so a response can be perfectly well-formed
+   * and still be six dead links. Handed on as a success it becomes six broken
+   * frames on the homepage and, because the fallback only runs when this
+   * throws, the local photographs never get their turn.
+   *
+   * So one URL is actually asked. They are minted together and expire
+   * together, which is what makes a single check enough — six would be six
+   * times the latency for the same answer. HEAD, so nothing is downloaded, and
+   * a short timeout because this sits in the render path of the homepage.
+   *
+   * Only an outright refusal counts. A timeout or a network blip is not
+   * evidence that the media is gone, and treating it as such would replace a
+   * working grid with placeholders every time the CDN was slow. */
+  /* Only a remote URL is worth asking about — a local placeholder path is
+     served by this app and cannot be expired. */
+  const probe = chosen[0]?.image;
+  if (probe && /^https?:\/\//i.test(probe)) {
+    try {
+      const media = await fetch(probe, {
+        method: 'HEAD',
+        cache: 'no-store',
+        signal: AbortSignal.timeout(2500),
+      });
+      if (media.status === 403 || media.status === 404 || media.status === 410) {
+        throw new Error(`instagram media is unreachable (${media.status})`);
+      }
+    } catch (cause) {
+      /* Rethrow our own verdict; swallow anything else, which is the CDN being
+         slow rather than the media being gone. */
+      if (cause instanceof Error && cause.message.startsWith('instagram media')) throw cause;
+    }
+  }
+
+  return chosen;
 }
 
 const cachedPosts = unstable_cache(requestPosts, ['instagram-posts'], {
