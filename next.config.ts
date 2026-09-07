@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 /**
  * The storage host the image optimiser is allowed to fetch from. Derived from
@@ -229,4 +230,47 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/* ============================================================================
+ * ERROR REPORTING
+ * ----------------------------------------------------------------------------
+ * `tunnelRoute` is the setting that makes this work at all here, for two
+ * reasons that would each have made it silently useless:
+ *
+ *   The CSP is `connect-src 'self' https://*.supabase.co`. A browser posting an
+ *   error to ingest.sentry.io would be blocked by our own policy — and blocked
+ *   silently, which is precisely the failure this whole exercise exists to end.
+ *
+ *   Ad and tracker blockers block sentry.io by name. A meaningful share of
+ *   visitors would report nothing, and the errors that went missing would be
+ *   exactly the ones from the people running the strictest browsers.
+ *
+ * Tunnelling routes events through /monitoring on this origin, so `'self'`
+ * already covers it and no blocklist recognises it. The CSP does not need
+ * widening, which is the better outcome: a monitoring tool should not cost the
+ * site a hole in its own policy.
+ *
+ * Source maps are uploaded and then deleted from the bundle, so a stack trace
+ * is readable in Sentry and the client still ships nothing that maps minified
+ * code back to source.
+ * ========================================================================== */
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  tunnelRoute: '/monitoring',
+  widenClientFileUpload: true,
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+  disableLogger: true,
+  /* Build-time exclusions. Setting tracesSampleRate to 0 stops events being
+     sent but leaves the code in the bundle — only these flags actually remove
+     it, and on a site that just spent real effort deleting 37 kB of animation
+     library, shipping an unused tracer would be the same mistake wearing a
+     different hat. */
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+    excludeReplayShadowDom: true,
+    excludeReplayIframe: true,
+    excludeReplayWorker: true,
+  },
+  /* Only uploads when a token is present, so a local build or a fork does not
+     fail on a missing credential. */
+  telemetry: false,
+});
