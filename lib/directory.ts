@@ -53,9 +53,24 @@ export const SORT_OPTIONS: { id: DirectorySort; label: string }[] = [
 export const isDirectorySort = (value: string | undefined): value is DirectorySort =>
   SORT_OPTIONS.some((option) => option.id === value);
 
-/** The public URL of a stored image. Buckets are public; RLS guards writing. */
+/**
+ * The public URL of a stored image. Buckets are public; RLS guards writing.
+ *
+ * This used to return `storagePath` unchanged when it looked like a URL, as a
+ * convenience for a caller that never existed — every path in the database is
+ * written by uploadImage(), which always produces `<uid>/<file>`. What it
+ * actually did was turn a text column into an arbitrary <Image src>: a
+ * hostname outside next.config's remotePatterns makes next/image throw during
+ * render, which is HTTP 500 for the whole page, on the directory and on walk
+ * pages as much as on the owner's own profile.
+ *
+ * So a path is now always treated as a path. The database refuses to store
+ * anything else (migration 0016) and this is the second lock on the same door:
+ * if a URL ever reaches here it is appended to the bucket prefix, where it
+ * resolves to nothing and shows a broken image, rather than being fetched.
+ * Losing a thumbnail is the correct failure; losing the page is not.
+ */
 export function imageUrl(bucket: 'avatars' | 'photos', storagePath: string): string {
-  if (/^https?:\/\//i.test(storagePath)) return storagePath;
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${storagePath}`;
 }
 
