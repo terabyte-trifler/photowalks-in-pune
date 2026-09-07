@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif, Archivo, DM_Mono } from 'next/font/google';
 import { nextOpenWalk } from '@/data/events';
 import { site } from '@/data/site';
+import { jsonLd } from '@/lib/seo';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import './globals.css';
 import { THEME_SCRIPT } from '@/lib/security/theme-script';
@@ -176,7 +177,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData()) }}
+          dangerouslySetInnerHTML={{ __html: jsonLd(structuredData()) }}
         />
       </body>
     </html>

@@ -43,13 +43,12 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 const ALLOWED_ORIGINS = [
   'https://pwip.in',
   'https://www.pwip.in',
+  /* Still serving, and still canonicalising to pwip.in. Listed by its exact
+     hostname rather than matched by shape — see below. */
+  'https://photowalks-in-pune-gold.vercel.app',
   'http://localhost:3000',
   'http://localhost:3100',
 ];
-
-/* The production origin is pwip.in. The vercel.app hostname is not listed
-   separately because the preview pattern below already matches it — it is
-   `photowalks-in-pune-gold`, which is the same shape a preview takes. */
 
 function corsFor(request: Request): Record<string, string> {
   const origin = request.headers.get('Origin') ?? '';
@@ -58,11 +57,25 @@ function corsFor(request: Request): Record<string, string> {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     Vary: 'Origin',
   };
-  /* Preview deployments get their own hostname per build, so match the shape
-     rather than listing them. */
-  const allowed =
-    ALLOWED_ORIGINS.includes(origin) ||
-    /^https:\/\/photowalks-in-pune[a-z0-9-]*\.vercel\.app$/.test(origin);
+  /* An exact list, and no pattern.
+   *
+   * This used to also accept /^https:\/\/photowalks-in-pune[a-z0-9-]*\.vercel\.app$/
+   * so that preview deployments could call it. `vercel.app` is a shared,
+   * first-come namespace: anybody can create a project named
+   * `photowalks-in-pune-anything` and their origin satisfied that pattern.
+   *
+   * It granted an attacker nothing today — this endpoint authorises on a bearer
+   * token the caller has to put in a header, never on an ambient cookie, and it
+   * reads the user id from that token rather than the request body. A page on
+   * another origin cannot read this site's cookies, so it has no token to send,
+   * and there is no CSRF path because there is no ambient authority.
+   *
+   * It is gone anyway, because it stated a trust the app does not have, and
+   * because the day some future function accepts a cookie it would stop being
+   * theoretical. Losing preview support costs nothing worth having: deleting a
+   * real account from a throwaway build is not a thing anybody needs to do, and
+   * it is a good thing for it to be awkward. */
+  const allowed = ALLOWED_ORIGINS.includes(origin);
   if (allowed) headers['Access-Control-Allow-Origin'] = origin;
   return headers;
 }
