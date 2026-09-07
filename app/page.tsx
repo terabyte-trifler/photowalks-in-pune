@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+
 import { site } from '@/data/site';
 
 import { AnnouncementBar } from '@/components/navigation/AnnouncementBar';
@@ -27,6 +29,23 @@ import { getGalleryCredits } from '@/lib/credits';
  * between deploys.
  */
 export const revalidate = 300;
+
+/**
+ * The homepage was the only page emitting no canonical at all. Every other one
+ * states its own — /photographers, /privacy, /terms, /places and each walk —
+ * because the root layout deliberately sets none: metadata there is inherited
+ * rather than scoped, so a canonical in it made every page claim to be this
+ * one. See the note in app/layout.tsx.
+ *
+ * The gap matters because the site is still reachable at its old deployment
+ * hostname, which serves identical HTML. With no canonical, that copy is a
+ * separate indexable page competing with pwip.in for the same content; with
+ * one, both copies name pwip.in as the original. The title and description are
+ * inherited as before — only the canonical is added here.
+ */
+export const metadata: Metadata = {
+  alternates: { canonical: site.seo.url },
+};
 
 /**
  * The homepage. A server component: the two providers are client, but their
