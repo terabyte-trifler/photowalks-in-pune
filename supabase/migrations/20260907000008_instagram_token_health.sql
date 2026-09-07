@@ -37,7 +37,15 @@
 -- neither and reads back as "never failed", which is the right assumption for
 -- one that has not been through this version yet.
 
-create or replace function public.instagram_token_read()
+/* DROP first, and it has to be. Migration 0013 created this returning two
+   columns; adding refresh_failed_at and refresh_error changes the row type its
+   OUT parameters define, and CREATE OR REPLACE cannot do that — Postgres
+   answers 42P13, "cannot change return type of existing function". The whole
+   migration runs in one transaction, so there is no window where callers find
+   it missing. The grants go with it and are reissued below. */
+drop function if exists public.instagram_token_read();
+
+create function public.instagram_token_read()
 returns table (
   token             text,
   refreshed_at      timestamptz,
