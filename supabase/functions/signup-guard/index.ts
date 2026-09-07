@@ -56,8 +56,26 @@ const json = (body: unknown, status: number) =>
 
 const allow = () => json({}, 200);
 
+/* ----------------------------------------------------------------------------
+ * EVERY ANSWER IS HTTP 200. THE VERDICT IS IN THE BODY.
+ * ----------------------------------------------------------------------------
+ * This refused with HTTP 400 and a well-formed error body, which reads as the
+ * obvious thing to do and is not what the contract asks for. GoTrue treats the
+ * status code as "did the hook itself work", not "what did it decide" — so a
+ * 400 is a broken hook, and the signup fails with
+ *
+ *   500  unexpected_failure  "Invalid payload sent to hook"
+ *
+ * rather than the sentence written below. The guard was working the whole time;
+ * mailinator.com was being caught and the refusal was being thrown away.
+ *
+ * The decision goes in the body instead, and `http_code` there is what the
+ * caller receives. Same for the two failure paths: a 500 status would be
+ * discarded the same way, and the point of those is that somebody sees the
+ * reason.
+ * -------------------------------------------------------------------------- */
 const refuse = (message: string) =>
-  json({ error: { message, http_code: 400 } }, 400);
+  json({ error: { message, http_code: 400 } }, 200);
 
 /**
  * Does this domain have anywhere to deliver mail?
@@ -115,7 +133,7 @@ Deno.serve(async (request) => {
   const secret = Deno.env.get('BEFORE_USER_CREATED_HOOK_SECRET');
   if (!secret) {
     console.error('[signup-guard] BEFORE_USER_CREATED_HOOK_SECRET is not set');
-    return json({ error: { message: 'Signups are misconfigured.', http_code: 500 } }, 500);
+    return json({ error: { message: 'Signups are misconfigured.', http_code: 500 } }, 200);
   }
 
   let email = '';
@@ -127,7 +145,7 @@ Deno.serve(async (request) => {
     email = (event.user?.email ?? '').trim().toLowerCase();
   } catch (error) {
     console.error('[signup-guard] signature rejected:', error);
-    return json({ error: { message: 'Invalid request.', http_code: 401 } }, 401);
+    return json({ error: { message: 'Invalid request.', http_code: 401 } }, 200);
   }
 
   /* No email at all is not this hook's business — phone signups, and any
