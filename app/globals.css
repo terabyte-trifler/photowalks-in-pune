@@ -266,3 +266,57 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================================
+ * REVEAL
+ * ----------------------------------------------------------------------------
+ * Sections settle up by 18px as they come into view. This was framer-motion,
+ * on twenty-five wrappers across fourteen files, and it is now three rules and
+ * no JavaScript at all.
+ *
+ * THE DEFAULT IS VISIBLE, AND THAT IS THE POINT
+ * The motion version started every wrapper at `opacity: 0` and relied on
+ * JavaScript to raise it. When the homepage briefly served a Content Security
+ * Policy that blocked its own scripts, nothing raised it: the page rendered
+ * complete and entirely invisible, and the photographs were in the HTML the
+ * whole time. An animation is decoration and must never be the thing standing
+ * between a reader and the content.
+ *
+ * So `opacity: 1` is the base state. Everything below only ever adds movement
+ * on top of a page that already reads — no JS, blocked JS, an old browser or
+ * reduced motion all land on plain visible content rather than a blank screen.
+ *
+ * WHY A SCROLL TIMELINE RATHER THAN AN OBSERVER
+ * `animation-timeline: view()` ties progress to the element's position in the
+ * viewport, so the browser runs it on the compositor with no main-thread work
+ * and no observer per element. Where it is unsupported — Safari and Firefox at
+ * the time of writing — the @supports block simply does not apply and the
+ * content is visible, which is the same correct answer.
+ * ========================================================================== */
+
+.reveal {
+  opacity: 1;
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal-in linear both;
+      animation-timeline: view();
+      /* Finishes well before the element is centred, so nothing is still
+         fading while somebody is trying to read it. */
+      animation-range: entry 0% entry 45%;
+    }
+  }
+}

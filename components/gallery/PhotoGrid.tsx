@@ -55,7 +55,12 @@ export function PhotoGrid() {
   return (
     <>
       <div className="grid grid-cols-2 gap-x-[clamp(0.75rem,2vw,2rem)] gap-y-[clamp(1rem,2.5vw,2.5rem)] md:grid-cols-6">
-      <AnimatePresence mode="popLayout">
+      {/* `initial={false}` so the first paint is the photographs, not an empty
+          grid waiting for JavaScript to fade them in. Filtering still animates
+          — AnimatePresence suppresses only the mount — and the archive stays
+          readable if the script never runs, which is the property the CSS
+          Reveal was rewritten to guarantee. */}
+      <AnimatePresence mode="popLayout" initial={false}>
         {drawn.map((photo, index) => {
           const credit = creditFor(photo.photographerId);
           const dims = DIMENSIONS[photo.aspect];
@@ -64,7 +69,7 @@ export function PhotoGrid() {
             <motion.div
               key={photo.id}
               layout={!reduced}
-              initial={reduced ? false : { opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
               exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
               transition={{ duration: reduced ? 0 : 0.4, ease: [0.16, 1, 0.3, 1] }}

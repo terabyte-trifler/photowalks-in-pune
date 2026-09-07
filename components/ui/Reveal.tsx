@@ -1,35 +1,32 @@
-'use client';
-
-import { motion, useReducedMotion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 /**
  * The only scroll animation on the site: content settles up by 18px, once.
- * With prefers-reduced-motion the wrapper renders a plain div, so nothing
- * animates and nothing is ever left invisible.
+ *
+ * Deliberately not a client component and deliberately not framer-motion. The
+ * whole effect is three CSS rules (see `.reveal` in app/globals.css), which
+ * means this wrapper ships no JavaScript, adds no hydration boundary, and —
+ * the part that matters — cannot leave anything invisible. The motion version
+ * held every section at `opacity: 0` until JavaScript raised it, and when the
+ * homepage briefly served a CSP that blocked its own scripts, none of it ever
+ * came back.
+ *
+ * `prefers-reduced-motion` is handled in the stylesheet rather than here,
+ * because a media query does not need a component to re-render to notice.
  */
 export function Reveal({
   children,
   className,
-  delay = 0,
+  style,
 }: {
   children: ReactNode;
   className?: string;
-  delay?: number;
+  style?: CSSProperties;
 }) {
-  const reduced = useReducedMotion();
-
-  if (reduced) return <div className={className}>{children}</div>;
-
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '0px 0px -12% 0px' }}
-      transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay }}
-    >
+    <div className={cn('reveal', className)} style={style}>
       {children}
-    </motion.div>
+    </div>
   );
 }
