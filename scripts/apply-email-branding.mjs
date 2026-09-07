@@ -54,7 +54,31 @@ const TEMPLATES = [
   ['email_change', 'Confirm your new email · Photowalks in Pune'],
 ];
 
-const config = await fetch(api, { headers }).then((r) => r.json());
+/* Check the status before reading the body.
+ *
+ * This was `.then((r) => r.json())` with nothing between, so a 401 handed back
+ * an error object with no smtp_host on it — and the check below then announced
+ * "No custom SMTP is configured", which was a confident, wrong, and expensive
+ * thing to say. The SMTP was fine; the token was not. A script that reports the
+ * wrong cause is worse than one that fails. */
+const response = await fetch(api, { headers });
+if (!response.ok) {
+  const detail = await response.text();
+  console.error(
+    `\nCould not read the project's auth config (HTTP ${response.status}).\n` +
+      (response.status === 401
+        ? 'The access token is missing, expired, or not a real token — check that\n' +
+          'SUPABASE_ACCESS_TOKEN is the value from\n' +
+          'https://supabase.com/dashboard/account/tokens and not a placeholder.\n'
+        : response.status === 403
+          ? 'The token authenticated but is not allowed to read this project.\n' +
+            'It needs Application services -> Auth, on this project.\n'
+          : '') +
+      `\n${detail.slice(0, 300)}\n`,
+  );
+  process.exit(1);
+}
+const config = await response.json();
 
 // ---------------------------------------------------------------------------
 // 1 · Is there an SMTP provider yet?
