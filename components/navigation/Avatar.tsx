@@ -31,6 +31,12 @@ export function Avatar({
           src={src}
           alt=""
           fill
+          /* Passed even though `fill` positions it: a Google avatar is sized
+             from its own URL, and this is the number that tells Picture which
+             square to ask Google for. Without it every avatar would be
+             requested at the 96px default and scaled. */
+          width={size}
+          height={size}
           sizes={`${size}px`}
           className="object-cover"
           /* Picture decides how this is served, per src — see that file.

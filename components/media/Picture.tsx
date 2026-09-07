@@ -2,7 +2,13 @@ import NextImage from 'next/image';
 import type { CSSProperties } from 'react';
 
 import variants from '@/data/image-variants.json';
-import { IMAGE_QUALITY, uploadSrcSet } from '@/lib/images';
+import {
+  IMAGE_QUALITY,
+  googleAvatarAt,
+  googleAvatarSrcSet,
+  isGoogleAvatar,
+  uploadSrcSet,
+} from '@/lib/images';
 
 /* ============================================================================
  * PICTURE — one component, two very different ways of being served
@@ -121,6 +127,33 @@ export function Picture({
         decoding="async"
         loading={loading ?? (priority ? 'eager' : 'lazy')}
         fetchPriority={priority ? 'high' : undefined}
+        {...rest}
+      />
+    );
+  }
+
+  /* A Google avatar sizes itself from its own URL, so it needs neither the
+     optimiser nor a manifest. This is what stopped every face on the site from
+     loading when the optimisation quota ran out — see lib/images.ts. */
+  if (isGoogleAvatar(src)) {
+    const drawn = width ?? 96;
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={googleAvatarAt(src, drawn)}
+        srcSet={googleAvatarSrcSet(src, drawn)}
+        alt={alt}
+        className={className}
+        style={{
+          ...(fill ? { position: 'absolute' as const, inset: 0, width: '100%', height: '100%' } : {}),
+          ...style,
+        }}
+        width={fill ? undefined : drawn}
+        height={fill ? undefined : drawn}
+        decoding="async"
+        loading={loading ?? (priority ? 'eager' : 'lazy')}
+        fetchPriority={priority ? 'high' : undefined}
+        referrerPolicy="no-referrer"
         {...rest}
       />
     );

@@ -133,3 +133,43 @@ export function uploadSrcSet(url: string): string | null {
     .map((w) => `${variantPath(parsed.base, parsed.ladder, w, parsed.extension)} ${w}w`)
     .join(', ');
 }
+
+/* ============================================================================
+ * GOOGLE AVATARS
+ * ----------------------------------------------------------------------------
+ * The last images on this site still going through Vercel's optimiser, and the
+ * reason they stopped appearing at all: the optimisation quota ran out and
+ * every /_next/image request began answering
+ *
+ *   402  x-vercel-error: OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED
+ *
+ * — forty of them on /photographers alone, all of them somebody's face.
+ *
+ * The optimiser was never needed here. Google serves these itself and takes the
+ * size in the URL: the stored value ends `=s96-c`, and swapping that suffix
+ * asks for any other square. Verified against a real avatar — `=s64-c`,
+ * `=s96-c` and `=s144-c` all answer 200 — so the right file can be requested
+ * directly, at the size it is actually drawn, with no transformation billed and
+ * nothing between the reader and the image.
+ *
+ * The suffix is replaced rather than appended: appending a second `=s…` to a
+ * URL that already has one yields a 400 from Google.
+ * ========================================================================== */
+
+const GOOGLE_AVATAR = /^https:\/\/lh[0-9]+\.googleusercontent\.com\//i;
+
+export const isGoogleAvatar = (url: string): boolean => GOOGLE_AVATAR.test(url);
+
+/** The same avatar at a given square size, in CSS pixels. */
+export function googleAvatarAt(url: string, size: number): string {
+  const clamped = Math.max(16, Math.min(512, Math.round(size)));
+  return `${url.replace(/=s\d+(-c)?$/i, '')}=s${clamped}-c`;
+}
+
+/**
+ * 1x and 2x, because an avatar is small and a retina screen asking for a 30px
+ * circle wants 60 real pixels. Two entries is the whole ladder an avatar needs.
+ */
+export function googleAvatarSrcSet(url: string, size: number): string {
+  return `${googleAvatarAt(url, size)} 1x, ${googleAvatarAt(url, size * 2)} 2x`;
+}
