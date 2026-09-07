@@ -108,7 +108,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
   };
 
   return (
-    <main id="main">
+    <>
       <section className="border-b border-border py-section">
         <div className="shell">
           <SectionHeader index="01" label="A place we walk" />
@@ -280,6 +280,6 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(gallery) }} />
       )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqSchema) }} />
-    </main>
+    </>
   );
 }

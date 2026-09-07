@@ -72,7 +72,7 @@ export function PhotographerCard({
           <Avatar src={photographer.avatar_url} name={photographer.full_name} size={46} />
 
           <div className="min-w-0 flex-1">
-            <h3 className="display flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[clamp(1.1rem,2.2vw,1.45rem)] leading-tight transition-colors duration-300 group-hover:text-accent">
+            <h2 className="display flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[clamp(1.1rem,2.2vw,1.45rem)] leading-tight transition-colors duration-300 group-hover:text-accent">
               {photographer.full_name}
               {photographer.username === FOUNDER_USERNAME && (
                 /* Outlined in the accent rather than filled: this is a label,
@@ -82,7 +82,7 @@ export function PhotographerCard({
                   Founder
                 </span>
               )}
-            </h3>
+            </h2>
             <p className="meta mt-1 normal-case tracking-[0.1em]">
               @{photographer.username}
               {photographer.city ? ` · ${photographer.city}` : ''}

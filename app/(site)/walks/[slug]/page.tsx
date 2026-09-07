@@ -93,7 +93,7 @@ export default async function WalkPage({
       : null;
 
   return (
-    <main id="main">
+    <>
       <section className="border-b border-border py-section">
         <div className="shell">
           <SectionHeader index="01" label={closed ? 'A walk that has been' : 'An upcoming walk'} />
@@ -265,6 +265,6 @@ export default async function WalkPage({
       {gallery && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(gallery) }} />
       )}
-    </main>
+    </>
   );
 }

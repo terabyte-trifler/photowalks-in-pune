@@ -163,10 +163,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           it, and children are unaffected. */}
       <body suppressHydrationWarning>
         <a
-          href="#next-walk"
+          href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[200] focus:border focus:border-foreground focus:bg-background focus:px-4 focus:py-2 focus:font-mono focus:text-meta focus:uppercase"
         >
-          Skip to the next walk
+          Skip to content
         </a>
 
         {/* Auth state for the whole site. A client provider wrapping server

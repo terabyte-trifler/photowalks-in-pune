@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function PlacesPage() {
   return (
-    <main id="main">
+    <>
       <section className="border-b border-border py-section">
         <div className="shell">
           <SectionHeader index="01" label="Where we walk" />
@@ -77,6 +77,6 @@ export default function PlacesPage() {
           </Reveal>
         </div>
       </section>
-    </main>
+    </>
   );
 }

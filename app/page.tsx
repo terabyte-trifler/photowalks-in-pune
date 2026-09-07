@@ -50,7 +50,7 @@ export default async function HomePage() {
         <AnnouncementBar />
         <SiteHeader />
 
-        <main>
+        <main id="main">
           <Hero />
           <FeaturedWalk />
           <UpcomingWalks />

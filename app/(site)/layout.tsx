@@ -13,7 +13,7 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <RSVPProvider>
       <SiteHeader />
-      <main>{children}</main>
+      <main id="main">{children}</main>
       <SiteFooter />
     </RSVPProvider>
   );
