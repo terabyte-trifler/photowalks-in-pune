@@ -50,6 +50,17 @@ export interface PictureProps {
   height?: number;
   priority?: boolean;
   loading?: 'lazy' | 'eager';
+  /**
+   * Skip Vercel's image optimiser and use the URL as given.
+   *
+   * For a remote image already sized and served by somebody else's CDN, the
+   * optimiser buys almost nothing and costs a billed transformation per width
+   * per render. Instagram's media is the case this exists for: 54 optimiser
+   * requests on the homepage alone, which is what exhausted the quota and
+   * turned every one of them into a 402 — the browser then draws the alt text
+   * where the photograph should be.
+   */
+  unoptimized?: boolean;
   'aria-hidden'?: 'true' | 'false';
 }
 
@@ -84,6 +95,7 @@ export function Picture({
   height,
   priority = false,
   loading,
+  unoptimized = false,
   ...rest
 }: PictureProps) {
   const entry = MANIFEST[src];
@@ -126,6 +138,7 @@ export function Picture({
         quality={IMAGE_QUALITY}
         priority={priority}
         loading={loading}
+        unoptimized={unoptimized}
         {...(fill ? { fill: true } : { width: width ?? 1200, height: height ?? 800 })}
         {...rest}
       />

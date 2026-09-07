@@ -43,6 +43,11 @@ export async function InstagramSection() {
                 height={900}
                 loading="lazy"
                 sizes="(min-width: 768px) 17vw, 50vw"
+                /* Instagram serves these from its own CDN, already sized and
+                   cached. Putting them through the optimiser bought nothing
+                   and spent a transformation per width per render — 54 on this
+                   page — which is what ran the quota out. */
+                unoptimized
                 className="aspect-square w-full object-cover transition-[transform,opacity] duration-700 ease-editorial group-hover:scale-105 group-hover:opacity-75"
               />
               <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,rgba(10,9,8,0.75),transparent)] p-3 font-mono text-[0.5625rem] uppercase tracking-[0.16em] text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
