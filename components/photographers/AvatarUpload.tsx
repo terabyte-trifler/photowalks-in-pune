@@ -9,6 +9,7 @@ import {
   ACCEPT_ATTRIBUTE,
   checkFile,
   prepareChoice,
+  UploadRefusal,
   publicUrlFor,
   removeImageSurely,
   sweepAvatarFolder,
@@ -66,8 +67,12 @@ export function AvatarUpload({
     let chosen;
     try {
       chosen = await prepareChoice(file);
-    } catch {
-      setError('That photograph could not be read. Try exporting it as JPEG.');
+    } catch (cause) {
+      setError(
+        cause instanceof UploadRefusal
+          ? cause.message
+          : 'That photograph could not be opened. Try again, or choose a different one.',
+      );
       setState('idle');
       return;
     }

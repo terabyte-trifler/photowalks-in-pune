@@ -36,10 +36,35 @@ export const ACCEPTED_TYPES = [
  */
 export const STORABLE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 
-/* The extensions are named alongside the types because a file picker matches
-   on whichever it is given, and an iPhone export is routinely `.heic` with no
-   useful type attached. */
-export const ACCEPT_ATTRIBUTE = [...ACCEPTED_TYPES, '.heic', '.heif'].join(',');
+/**
+ * Deliberately the widest possible filter.
+ *
+ * A list of concrete types here is what stopped photographs being selectable on
+ * Android at all: the picker matches the attribute against whatever the gallery
+ * provider claims a file is, and Android's providers routinely claim nothing
+ * useful — so an explicit list greys out real photographs and the member cannot
+ * even choose one. `image/*` is the one value every picker on every platform
+ * understands.
+ *
+ * Widening it costs nothing, because this attribute was never the check. The
+ * decoder is: anything that cannot be drawn is refused in prepareChoice, with a
+ * message naming the reason. A file picker is a convenience, not a gate.
+ */
+export const ACCEPT_ATTRIBUTE = 'image/*';
+
+/**
+ * The largest file that may be chosen.
+ *
+ * Not a storage limit — nothing this large is ever uploaded, because everything
+ * is compressed to TARGET_BYTES first. It is a memory limit: decoding costs
+ * width x height x 4 bytes regardless of how well the file compressed, so a
+ * very large image can hang or crash the tab before any of this code runs.
+ *
+ * 100MB is far above any real camera JPEG, so nothing anybody actually
+ * photographed is turned away — it draws the line where files stop being
+ * photographs, and it costs one comparison rather than a failed decode.
+ */
+export const MAX_FILE_BYTES = 100 * 1024 * 1024;
 
 /**
  * Kept only so `UploadKind` has something to key off, and as the sizes quoted
@@ -119,10 +144,37 @@ const readableSize = (bytes: number): string =>
  * share one. The only refusal left is a file that is not an image at all,
  * which no amount of compression can fix.
  */
-export class UndecodableImageError extends Error {
+/**
+ * A refusal whose message is written to be shown to the member as-is.
+ *
+ * Every one of these is a dead end with a cause worth naming. "Could not be
+ * read" for all of them is what made the last round of reports impossible to
+ * act on — the same sentence covered a HEIC decoder that failed to load, a
+ * damaged file, and a format the device does not support, which want three
+ * different responses from the person holding the phone.
+ */
+export class UploadRefusal extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UploadRefusal';
+  }
+}
+
+export class UndecodableImageError extends UploadRefusal {
   constructor() {
-    super('undecodable_image');
+    super(
+      'This device could not read that photograph. It may be in a format this browser does not support, or the file may be incomplete.',
+    );
     this.name = 'UndecodableImageError';
+  }
+}
+
+export class HeicConversionError extends UploadRefusal {
+  constructor() {
+    super(
+      'That is a HEIC photograph and it could not be converted on this device. Sharing it from Photos, or saving it as JPEG, will work.',
+    );
+    this.name = 'HeicConversionError';
   }
 }
 
@@ -166,6 +218,9 @@ export async function sniffImageType(file: File): Promise<string | null> {
   if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return 'image/jpeg';
   if (ascii(0, 8) === '\x89PNG\r\n\x1a\n') return 'image/png';
   if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return 'image/webp';
+  if (ascii(0, 3) === 'GIF') return 'image/gif';
+  if (ascii(0, 2) === 'BM') return 'image/bmp';
+  if (ascii(0, 4) === 'II*\x00' || ascii(0, 4) === 'MM\x00*') return 'image/tiff';
 
   if (ascii(4, 8) === 'ftyp') {
     const brands = ascii(8, head.length);
@@ -173,18 +228,51 @@ export async function sniffImageType(file: File): Promise<string | null> {
     if (HEIC_BRANDS.test(brands)) return 'image/heic';
   }
 
+  /* Not images, and recognised only so the refusal can say what the file
+     actually is. Every one of these has turned up in a Downloads folder
+     wearing a .jpg or .png name. */
+  if (ascii(0, 4) === '%PDF') return 'application/pdf';
+  if (ascii(0, 2) === 'PK') return 'application/zip';
+  if (ascii(0, 4) === 'book') return 'application/x-apple-alias';
+  const start = ascii(0, 16).trim().toLowerCase();
+  if (start.startsWith('<!doctype') || start.startsWith('<html') || start.startsWith('<?xml')) {
+    return 'text/html';
+  }
+
   return null;
 }
+
+/** What to call a non-image in a refusal, so the message is about their file. */
+const NOT_AN_IMAGE: Record<string, string> = {
+  'application/pdf': 'a PDF',
+  'application/zip': 'a zip archive',
+  'application/x-apple-alias': 'a Finder alias — a pointer to a file, not the file',
+  'text/html': 'a web page',
+};
 
 export async function checkFile(file: File, _kind: UploadKind): Promise<string | undefined> {
   /* Before the slice, because slicing an empty file reads zero bytes and would
      be reported as an unrecognised format rather than as what it is. */
   if (file.size === 0) return 'That file is empty.';
 
+  if (file.size > MAX_FILE_BYTES) {
+    return `That file is ${readableSize(file.size)}. ${readableSize(MAX_FILE_BYTES)} is the most a photograph can be — anything larger is usually a video or a scan.`;
+  }
+
   const actual = await sniffImageType(file);
 
-  if (!actual || !ACCEPTED_TYPES.includes(actual)) {
-    return 'JPEG, PNG, WebP or AVIF, please — that looks like something else.';
+  /* An unrecognised signature is NOT refused here. This check is a courtesy —
+     it exists to give a fast, accurate message for the handful of things that
+     are obviously not photographs. Deciding what is a valid image is the
+     decoder's job, and it is better at it than any table: it knows what this
+     particular engine on this particular device can actually draw, which is
+     the only question that matters. Anything it cannot draw is refused in
+     prepareChoice with a reason.
+     
+     This is what lets every format through. A list here would have to be
+     updated for each new one, and would be wrong on some device either way. */
+  if (actual && NOT_AN_IMAGE[actual]) {
+    return `That is ${NOT_AN_IMAGE[actual]}, not a photograph.`;
   }
 
   return undefined;
@@ -213,16 +301,64 @@ export interface ChosenImage {
  * would show.
  */
 export async function prepareChoice(file: File): Promise<ChosenImage> {
+  /* ---------------------------------------------------------------------
+   * ASK THE ENGINE FIRST, ALWAYS.
+   *
+   * This used to convert on the strength of the signature alone, and that was
+   * wrong in the one place it mattered most. Safari on iOS and macOS decodes
+   * HEIC natively — it is Apple's own format — so an iPhone photograph needs
+   * no conversion at all. Routing it through WebAssembly anyway meant every
+   * iPhone upload depended on a 3MB module loading and running, and failed
+   * with "could not be read" whenever it did not.
+   *
+   * So the question asked is not "what format is this" but "can this browser
+   * draw it", which is the question that actually decides. Chrome on Android
+   * says no to HEIC and gets the decoder; Safari says yes and never loads it.
+   * ------------------------------------------------------------------- */
+  const native = await canRenderNatively(file);
+  if (native) return { file, url: URL.createObjectURL(file) };
+
+  /* The engine refused it. Only HEIC has a fallback worth having. */
   if ((await sniffImageType(file)) !== 'image/heic') {
-    return { file, url: URL.createObjectURL(file) };
+    throw new UndecodableImageError();
   }
 
-  const { heicTo } = await import('heic-to/csp');
-  const blob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.92 });
-  const converted = new File([blob], `${file.name.replace(/\.[^.]*$/, '')}.jpg`, {
-    type: 'image/jpeg',
+  try {
+    const { heicTo } = await import('heic-to/csp');
+    const blob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.92 });
+    const converted = new File([blob], `${file.name.replace(/\.[^.]*$/, '')}.jpg`, {
+      type: 'image/jpeg',
+    });
+    return { file: converted, url: URL.createObjectURL(converted) };
+  } catch (cause) {
+    /* The module is ~3MB and loads over the network, and it runs under this
+       site's script-src. Either can fail, and both look identical from here —
+       what matters is that the member is told it was the conversion, not their
+       photograph. */
+    console.error('[uploads] HEIC conversion failed', cause);
+    throw new HeicConversionError();
+  }
+}
+
+/**
+ * Whether this engine will draw this file, answered by trying.
+ *
+ * An <img> rather than createImageBitmap: it is what the preview uses, so a
+ * yes here is a promise the preview can keep. The object URL is revoked either
+ * way — this is a question, not a decode anybody keeps.
+ */
+function canRenderNatively(file: File): Promise<boolean> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const probe = new window.Image();
+    const done = (answer: boolean) => {
+      URL.revokeObjectURL(url);
+      resolve(answer);
+    };
+    probe.onload = () => done(probe.naturalWidth > 0 && probe.naturalHeight > 0);
+    probe.onerror = () => done(false);
+    probe.src = url;
   });
-  return { file: converted, url: URL.createObjectURL(converted) };
 }
 
 /** Natural dimensions, so the grid can reserve the right box before it loads. */
@@ -619,12 +755,7 @@ export async function uploadImage(
     /* checkFile already turned away everything whose signature is unreadable,
        so reaching here means the signature was fine and the decoder still
        refused — a truncated file, or a format this browser alone lacks. */
-    if (cause instanceof UndecodableImageError) {
-      return {
-        ok: false,
-        error: 'This browser could not read that image. If it came off a phone, export it as JPEG and try again.',
-      };
-    }
+    if (cause instanceof UploadRefusal) return { ok: false, error: cause.message };
     throw cause;
   }
   const { primary, smaller } = ladder;
@@ -686,7 +817,14 @@ export async function uploadImage(
   if (error) {
     const message = error.message.toLowerCase();
     if (message.includes('exceeded') || message.includes('too large')) {
-      return { ok: false, error: `That file is over the ${readableSize(LIMITS[kind])} limit.` };
+      /* Names the ceiling that actually rejected it. This used to quote
+         LIMITS — 10MB for a photograph — which is not enforced anywhere and is
+         fifty times the real bucket limit, so the one person who ever saw it
+         was sent to look at the wrong thing entirely. */
+      return {
+        ok: false,
+        error: `That photograph could not be compressed under ${readableSize(TARGET_BYTES[kind])}, which is the most one image may be. Very grainy or very detailed frames occasionally do this.`,
+      };
     }
     if (message.includes('mime') || message.includes('type')) {
       return { ok: false, error: 'That file type is not allowed.' };

@@ -9,6 +9,7 @@ import {
   ACCEPT_ATTRIBUTE,
   checkFile,
   prepareChoice,
+  UploadRefusal,
   type ChosenImage,
   photoInsertError,
   removeImageSurely,
@@ -126,9 +127,14 @@ export function PhotoManager({
     let chosen;
     try {
       chosen = await prepareChoice(file);
-    } catch {
+    } catch (cause) {
       setPreparing(false);
-      setError('That photograph could not be read. Try exporting it as JPEG.');
+      /* The refusal knows why; a generic sentence here would throw that away. */
+      setError(
+        cause instanceof UploadRefusal
+          ? cause.message
+          : 'That photograph could not be opened. Try again, or choose a different one.',
+      );
       return;
     }
     setPreparing(false);
