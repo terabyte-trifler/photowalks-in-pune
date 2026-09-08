@@ -1,5 +1,6 @@
 import convert from 'heic-convert';
 import { NextResponse } from 'next/server';
+import sharp from 'sharp';
 
 import { getCurrentUser } from '@/lib/auth/session';
 
@@ -81,27 +82,41 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const jpeg = await convert({
+    /* Two steps, because neither library does both. heic-convert reads HEIC
+       and cannot resize; sharp resizes anything and cannot read HEIC — its
+       libvips ships without HEIF, the format being patent-encumbered. So one
+       decodes and the other shrinks. */
+    const full = await convert({
       buffer: Buffer.from(input),
       format: 'JPEG',
-      /* ------------------------------------------------------------------
-       * 0.7, and the number is load-bearing: the ANSWER has a size limit too,
-       * not only the request. Measured on the largest real phone frame to hand
-       * (IMG_0906.HEIC, 3.68MB, 12MP):
-       *
-       *   q=0.92  ->  5.53MB   over the platform's response cap
-       *   q=0.80  ->  3.46MB   uncomfortably close to it
-       *   q=0.70  ->  2.76MB   room to spare
-       *   q=0.60  ->  2.34MB
-       *
-       * Quality costs almost nothing here, because this frame is an
-       * intermediate that never gets stored: compressToBudget re-encodes it to
-       * under 200KB in the browser within the second, and at that target the
-       * difference between starting from 0.92 and from 0.7 is not visible.
-       * What the higher number would buy is a response large enough to fail.
-       * ------------------------------------------------------------------ */
-      quality: 0.7,
+      /* Generous, because this buffer never leaves the function: it exists for
+         as long as it takes sharp to read it. Quality spent here is quality
+         available to the resize; quality saved here would be saved nowhere. */
+      quality: 0.92,
     });
+
+    const jpeg = await sharp(full)
+      /* Applies EXIF orientation and then drops it. Without this a portrait
+         frame can arrive sideways: the rotation lives in metadata, and a
+         canvas that reads the pixels alone never sees it. */
+      .rotate()
+      /* 2000 is EDGE_STEPS.photo[0] — the largest edge the browser is going to
+         keep. Sending more than that is sending pixels that get thrown away in
+         the next second, over the member's mobile data. */
+      .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+      /* 78, measured on the largest real phone frame to hand (IMG_0906.HEIC,
+         3.68MB, 12MP), after the resize to 1500x2000:
+        
+             q=82  798KB      q=78  712KB      q=75  658KB      q=70  592KB
+        
+         Past this the curve flattens and the quality is spent for very little.
+         It hardly matters to what gets stored either way — compressToBudget
+         squeezes this to under 200KB in the browser a second later, and two
+         starting points 86KB apart are indistinguishable after that. It
+         matters to the member's mobile data, which is the whole reason the
+         resize is here. */
+      .jpeg({ quality: 78, mozjpeg: true })
+      .toBuffer();
 
     return new NextResponse(new Uint8Array(jpeg), {
       status: 200,

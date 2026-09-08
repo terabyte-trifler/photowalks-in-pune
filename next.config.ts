@@ -65,6 +65,21 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   /**
+   * Left for Node to require at runtime instead of being bundled.
+   *
+   * libheif-js reaches its decoder through a dynamic require that webpack
+   * cannot follow — it says so at build time: "Critical dependency: require
+   * function is used in a way in which dependencies cannot be statically
+   * extracted". Bundling it anyway produces a function that builds cleanly and
+   * then cannot find its own decoder once deployed, which is the worst shape a
+   * failure can take: invisible here, certain there.
+   *
+   * These are server-only, reached from app/api/heic-convert. Nothing in this
+   * list is shipped to a browser.
+   */
+  serverExternalPackages: ['heic-convert', 'heic-decode', 'libheif-js'],
+
+  /**
    * There is a package-lock.json above this directory, so Next infers the
    * workspace root as the parent and warns on every build. Pinning it here
    * silences that and, more usefully, keeps deployment file-tracing scoped to
