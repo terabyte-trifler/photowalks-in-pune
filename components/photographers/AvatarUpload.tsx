@@ -8,6 +8,7 @@ import { updateAvatar } from '@/app/(site)/settings/actions';
 import {
   ACCEPT_ATTRIBUTE,
   checkFile,
+  prepareChoice,
   publicUrlFor,
   removeImageSurely,
   sweepAvatarFolder,
@@ -49,7 +50,7 @@ export function AvatarUpload({
   async function handleFile(file: File | undefined) {
     if (!file || !user) return;
 
-    const problem = checkFile(file, 'avatar');
+    const problem = await checkFile(file, 'avatar');
     if (problem) {
       setError(problem);
       return;
@@ -57,10 +58,22 @@ export function AvatarUpload({
 
     setError('');
     setNote('');
-    setPreview(URL.createObjectURL(file));
     setState('working');
 
-    const uploaded = await uploadImage(file, 'avatar', user.id);
+    /* HEIC is converted before anything else happens, so the preview shows the
+       same bytes that get uploaded rather than a frame this browser cannot
+       draw. Everything else passes through untouched. */
+    let chosen;
+    try {
+      chosen = await prepareChoice(file);
+    } catch {
+      setError('That photograph could not be read. Try exporting it as JPEG.');
+      setState('idle');
+      return;
+    }
+    setPreview(chosen.url);
+
+    const uploaded = await uploadImage(chosen.file, 'avatar', user.id);
     if (!uploaded.ok || !uploaded.path) {
       setError(uploaded.error ?? 'That did not upload.');
       setPreview(null);

@@ -8,6 +8,8 @@ import { MAX_PHOTOS_PER_MEMBER } from '@/lib/directory';
 import {
   ACCEPT_ATTRIBUTE,
   checkFile,
+  prepareChoice,
+  type ChosenImage,
   photoInsertError,
   removeImageSurely,
   uploadImage,
@@ -76,7 +78,9 @@ export function PhotoManager({
   const [eventId, setEventId] = useState('');
   const [caption, setCaption] = useState('');
   /* Chosen and being looked at, not yet uploaded. */
-  const [pending, setPending] = useState<{ file: File; url: string } | null>(null);
+  const [pending, setPending] = useState<ChosenImage | null>(null);
+  /* Converting a HEIC frame, before there is anything to show. */
+  const [preparing, setPreparing] = useState(false);
 
   /* Last resort: navigating away with a frame on screen should not leak its
      handle. Everywhere else revokes as it clears. */
@@ -93,11 +97,14 @@ export function PhotoManager({
   const full = remaining === 0;
 
   /** Picking a file only shows it. Nothing leaves the machine until Push. */
-  function chooseFile(files: FileList | null) {
+  /* Async only because the format check reads the file's first bytes. `file`
+     is taken from the list before any await, so clearing the input in the
+     change handler cannot pull it away mid-check. */
+  async function chooseFile(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
 
-    const rejected = checkFile(file, 'photo');
+    const rejected = await checkFile(file, 'photo');
     if (rejected) {
       setError(rejected);
       return;
@@ -111,10 +118,25 @@ export function PhotoManager({
     }
 
     setError('');
+
+    /* A HEIC frame is converted here, which is WebAssembly and a 12MP photo —
+       a second or two on a phone. Without a state to show for it the panel
+       just sits there after the picker closes, so it says what it is doing. */
+    setPreparing(true);
+    let chosen;
+    try {
+      chosen = await prepareChoice(file);
+    } catch {
+      setPreparing(false);
+      setError('That photograph could not be read. Try exporting it as JPEG.');
+      return;
+    }
+    setPreparing(false);
+
     setPending((current) => {
       /* One at a time: whatever was on screen is let go before the next. */
       if (current) URL.revokeObjectURL(current.url);
-      return { file, url: URL.createObjectURL(file) };
+      return chosen;
     });
   }
 
@@ -199,6 +221,12 @@ export function PhotoManager({
           {total} of {MAX_PHOTOS_PER_MEMBER} · compressed to under 200KB before upload
         </span>
       </div>
+
+      {preparing && (
+        <p className="meta mt-4 normal-case tracking-[0.08em]">
+          Converting that photograph so it can be shown and compressed…
+        </p>
+      )}
 
       {pending && (
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
@@ -325,7 +353,7 @@ export function PhotoManager({
         accept={ACCEPT_ATTRIBUTE}
         className="sr-only"
         onChange={(event) => {
-          chooseFile(event.target.files);
+          void chooseFile(event.target.files);
           event.target.value = '';
         }}
       />

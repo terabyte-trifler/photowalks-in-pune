@@ -18,8 +18,28 @@ import { MAX_PHOTOS_PER_MEMBER } from '@/lib/directory';
 import { CURRENT_LADDER, VARIANT_LADDERS, parseVariantPath, variantPath, variantWidths } from '@/lib/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
-export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
-export const ACCEPT_ATTRIBUTE = ACCEPTED_TYPES.join(',');
+/**
+ * What may be CHOSEN. HEIC is on the list because it is converted in the
+ * browser before anything leaves the machine — see prepareChoice.
+ */
+export const ACCEPTED_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+  'image/heic',
+];
+
+/**
+ * What may be STORED. The buckets refuse anything else (migration 0003), and
+ * HEIC is deliberately absent: it is converted on the way in, never kept.
+ */
+export const STORABLE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+
+/* The extensions are named alongside the types because a file picker matches
+   on whichever it is given, and an iPhone export is routinely `.heic` with no
+   useful type attached. */
+export const ACCEPT_ATTRIBUTE = [...ACCEPTED_TYPES, '.heic', '.heif'].join(',');
 
 /**
  * Kept only so `UploadKind` has something to key off, and as the sizes quoted
@@ -99,12 +119,110 @@ const readableSize = (bytes: number): string =>
  * share one. The only refusal left is a file that is not an image at all,
  * which no amount of compression can fix.
  */
-export function checkFile(file: File, _kind: UploadKind): string | undefined {
-  if (!ACCEPTED_TYPES.includes(file.type)) {
+export class UndecodableImageError extends Error {
+  constructor() {
+    super('undecodable_image');
+    this.name = 'UndecodableImageError';
+  }
+}
+
+/**
+ * ISO base-media brands, which is how AVIF and HEIC identify themselves. Both
+ * are `ftyp` boxes and differ only in the brand that follows, so the same four
+ * bytes decide between a format every browser reads and one Chrome cannot read
+ * at all.
+ *
+ * `mif1` and `msf1` are the generic HEIF brands. Some AVIF encoders write one
+ * of those as the MAJOR brand and name `avif` only in the compatible list —
+ * which is why the whole brand region is searched, and why avif is tested
+ * first. Testing heic first would misfile those as unreadable.
+ */
+const AVIF_BRANDS = /avif|avis/;
+const HEIC_BRANDS = /heic|heix|heim|heis|hevc|hevx|mif1|msf1/;
+
+/**
+ * What the first bytes say the file actually is, or null for anything not
+ * recognised.
+ *
+ * `file.type` is not evidence. The browser fills it from the operating system,
+ * which fills it from the extension — so a HEIC photograph renamed `.jpg`,
+ * which is what a routine phone-to-desktop transfer produces, arrives claiming
+ * `image/jpeg`. It then passes any check written against that claim and fails
+ * in the one place nobody is watching: the decoder. What the member sees is a
+ * broken preview with no explanation, because nothing in the app ever
+ * disagreed with the file.
+ *
+ * Thirty-two bytes covers every signature here: JPEG, PNG and WebP start with
+ * theirs, and the ISO base-media formats put `ftyp` at offset 4 with the brands
+ * immediately after.
+ */
+export async function sniffImageType(file: File): Promise<string | null> {
+  const head = new Uint8Array(await file.slice(0, 32).arrayBuffer());
+  if (head.length < 12) return null;
+
+  const ascii = (from: number, to: number) =>
+    String.fromCharCode(...head.subarray(from, Math.min(to, head.length)));
+
+  if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return 'image/jpeg';
+  if (ascii(0, 8) === '\x89PNG\r\n\x1a\n') return 'image/png';
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return 'image/webp';
+
+  if (ascii(4, 8) === 'ftyp') {
+    const brands = ascii(8, head.length);
+    if (AVIF_BRANDS.test(brands)) return 'image/avif';
+    if (HEIC_BRANDS.test(brands)) return 'image/heic';
+  }
+
+  return null;
+}
+
+export async function checkFile(file: File, _kind: UploadKind): Promise<string | undefined> {
+  /* Before the slice, because slicing an empty file reads zero bytes and would
+     be reported as an unrecognised format rather than as what it is. */
+  if (file.size === 0) return 'That file is empty.';
+
+  const actual = await sniffImageType(file);
+
+  if (!actual || !ACCEPTED_TYPES.includes(actual)) {
     return 'JPEG, PNG, WebP or AVIF, please — that looks like something else.';
   }
-  if (file.size === 0) return 'That file is empty.';
+
   return undefined;
+}
+
+export interface ChosenImage {
+  /** What to upload. A HEIC original is replaced by its JPEG conversion. */
+  file: File;
+  /** An object URL for showing it. The caller owns it and must revoke it. */
+  url: string;
+}
+
+/**
+ * Take what somebody picked and hand back something this browser can both draw
+ * and compress.
+ *
+ * For everything except HEIC that is the file itself and costs nothing. For
+ * HEIC it is a JPEG, converted here, once — which matters because the frame is
+ * needed twice: the preview draws it, and the compressor re-encodes it. Doing
+ * the conversion at the moment of choosing means the rest of the pipeline
+ * never learns that HEIC exists, and the preview is the same bytes that will
+ * be uploaded rather than a second decode of the same file.
+ *
+ * Quality is high because this is an intermediate: compressToBudget re-encodes
+ * it to under 200KB afterwards, and starting that from an already-lossy frame
+ * would show.
+ */
+export async function prepareChoice(file: File): Promise<ChosenImage> {
+  if ((await sniffImageType(file)) !== 'image/heic') {
+    return { file, url: URL.createObjectURL(file) };
+  }
+
+  const { heicTo } = await import('heic-to/csp');
+  const blob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.92 });
+  const converted = new File([blob], `${file.name.replace(/\.[^.]*$/, '')}.jpg`, {
+    type: 'image/jpeg',
+  });
+  return { file: converted, url: URL.createObjectURL(converted) };
 }
 
 /** Natural dimensions, so the grid can reserve the right box before it loads. */
@@ -159,21 +277,59 @@ type Decoded = { source: CanvasImageSource; width: number; height: number; relea
  * would otherwise discard. Where it is missing, an <img> still gets us a
  * source to compress, which matters more than the rotation.
  */
+function fromBitmap(bitmap: ImageBitmap): Decoded {
+  return {
+    source: bitmap,
+    width: bitmap.width,
+    height: bitmap.height,
+    release: () => bitmap.close(),
+  };
+}
+
+/**
+ * HEIC, through libheif compiled to WebAssembly.
+ *
+ * Chrome and Firefox have no HEIC decoder and are not getting one — the format
+ * is patent-encumbered — so this is the only way to accept a photograph
+ * straight off an iPhone without asking somebody to go and convert it first.
+ *
+ * Imported dynamically, and only from here: the decoder is around 3MB, which
+ * is far too much to put in the bundle for a format most uploads are not. This
+ * line is what keeps that cost on the uploads that actually need it.
+ *
+ * The `/csp` entry point is the build that does not need 'unsafe-eval' — the
+ * default one compiles its Emscripten glue with `new Function`, which this
+ * site's script-src refuses outright.
+ */
+async function decodeHeic(file: File): Promise<Decoded | null> {
+  try {
+    const { heicTo } = await import('heic-to/csp');
+    return fromBitmap(await heicTo({ blob: file, type: 'bitmap' }));
+  } catch {
+    return null;
+  }
+}
+
 async function decode(file: File): Promise<Decoded | null> {
   if (typeof createImageBitmap === 'function') {
     try {
-      const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
-      return {
-        source: bitmap,
-        width: bitmap.width,
-        height: bitmap.height,
-        release: () => bitmap.close(),
-      };
+      return fromBitmap(await createImageBitmap(file, { imageOrientation: 'from-image' }));
     } catch {
       /* Fall through to the <img> path. */
     }
   }
 
+  const drawable = await decodeViaImgElement(file);
+  if (drawable) return drawable;
+
+  /* Last, and only for the one format no browser engine here can read. Checked
+     by signature rather than by name, because the name is what lied. */
+  if ((await sniffImageType(file)) === 'image/heic') return decodeHeic(file);
+
+  return null;
+}
+
+function decodeViaImgElement(file: File): Promise<Decoded | null> {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
     const image = new window.Image();
@@ -284,15 +440,34 @@ async function compressToBudget(
   return smallest;
 }
 
-/** The original, untouched, when nothing better can be produced. */
+const EXTENSION_FOR: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/avif': 'avif',
+};
+
+/**
+ * The original, untouched, when nothing better can be produced.
+ *
+ * Reached only when the image decoded and no encoding of it came back, which
+ * is rare — but it is the one path that stores bytes nobody re-encoded, so it
+ * checks them rather than trusting them. Both the type and the extension come
+ * from the signature: `file.type` is the operating system's guess from the
+ * name, and storing a HEIC as `image/jpeg` because it was named `.jpg` is the
+ * exact failure this whole path exists to stop.
+ */
 async function passThrough(file: File): Promise<PreparedImage> {
+  const actual = await sniffImageType(file);
+  if (!actual || !STORABLE_TYPES.includes(actual)) throw new UndecodableImageError();
+
   const size = (await readDimensions(file)) ?? { width: 0, height: 0 };
   return {
     blob: file,
     width: size.width,
     height: size.height,
-    extension: (file.name.split('.').pop() ?? 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg',
-    contentType: file.type,
+    extension: EXTENSION_FOR[actual],
+    contentType: actual,
   };
 }
 
@@ -311,8 +486,13 @@ async function passThrough(file: File): Promise<PreparedImage> {
  */
 export async function prepareImage(file: File, kind: UploadKind): Promise<PreparedImage> {
   const decoded = await decode(file);
-  /* Undecodable — pass it through rather than lose it. */
-  if (!decoded) return passThrough(file);
+  /* Undecodable. Passing the original through used to happen here, and it was
+     the wrong instinct: bytes this browser cannot draw are bytes it cannot
+     shrink either, so what got stored was the full-size original under a name
+     promising a compressed one — rejected by the bucket ceiling if it was
+     large, and served as a permanently broken image to every visitor if it was
+     not. Refusing is the only outcome that tells anybody. */
+  if (!decoded) throw new UndecodableImageError();
   try {
     return (await compressToBudget(decoded, kind)) ?? (await passThrough(file));
   } finally {
@@ -342,7 +522,8 @@ export interface PreparedLadder {
  */
 export async function prepareLadder(file: File, kind: UploadKind): Promise<PreparedLadder> {
   const decoded = await decode(file);
-  if (!decoded) return { primary: await passThrough(file), smaller: [] };
+  /* See prepareImage: an undecodable file is refused, not passed through. */
+  if (!decoded) throw new UndecodableImageError();
 
   try {
     const primary = (await compressToBudget(decoded, kind)) ?? (await passThrough(file));
@@ -425,13 +606,28 @@ export async function uploadImage(
   kind: UploadKind,
   ownerId: string,
 ): Promise<UploadResult> {
-  const problem = checkFile(file, kind);
+  const problem = await checkFile(file, kind);
   if (problem) return { ok: false, error: problem };
 
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return { ok: false, error: 'Uploads are not connected on this build.' };
 
-  const { primary, smaller } = await prepareLadder(file, kind);
+  let ladder: PreparedLadder;
+  try {
+    ladder = await prepareLadder(file, kind);
+  } catch (cause) {
+    /* checkFile already turned away everything whose signature is unreadable,
+       so reaching here means the signature was fine and the decoder still
+       refused — a truncated file, or a format this browser alone lacks. */
+    if (cause instanceof UndecodableImageError) {
+      return {
+        ok: false,
+        error: 'This browser could not read that image. If it came off a phone, export it as JPEG and try again.',
+      };
+    }
+    throw cause;
+  }
+  const { primary, smaller } = ladder;
   const base = `${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   const put = (at: string, image: PreparedImage) =>
