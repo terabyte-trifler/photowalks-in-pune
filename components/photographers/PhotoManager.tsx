@@ -11,6 +11,9 @@ import {
   prepareChoice,
   reportUploadFailure,
   sniffImageType,
+  UNREADABLE,
+  UnreadableFileError,
+  canRenderNatively,
   UploadRefusal,
   type ChosenImage,
   photoInsertError,
@@ -110,19 +113,32 @@ export function PhotoManager({
     /* One read of the file's first bytes, shared by the format check and the
        conversion decision below. Reading twice was not just wasteful: each read
        is another chance for the handle to have gone away underneath us. */
-    let sniffed: string | null;
-    try {
-      sniffed = await sniffImageType(file);
-    } catch (cause) {
-      /* Was uncaught. checkFile could throw here and nothing was listening, so
-         the panel simply did nothing at all — no preview, no error, no clue. */
-      reportUploadFailure('choose', 'unreadable handle', file);
-      setError(
-        cause instanceof UploadRefusal
-          ? cause.message
-          : 'That photograph could not be opened. Try again, or choose a different one.',
-      );
-      return;
+    let sniffed = await sniffImageType(file);
+
+    /* ------------------------------------------------------------------
+     * The bytes would not read. Ask the renderer before giving up.
+     *
+     * This used to be the end of it — a failed 32-byte read refused the
+     * photograph outright, which is how an Android 10 phone got told its
+     * perfectly good frame could not be opened. arrayBuffer() and the image
+     * decoder do not share a path to the file, and on Android the decoder is
+     * the more forgiving of the two, so the only honest way to find out is to
+     * try it.
+     *
+     * If it draws, the upload proceeds and nothing was lost but a moment. If
+     * it does not, the file really is unreadable and the message can say the
+     * one useful thing about that: it is probably still in the cloud.
+     * ------------------------------------------------------------------ */
+    if (sniffed === UNREADABLE) {
+      reportUploadFailure('choose', 'signature unreadable, asking the renderer', file);
+      if (!(await canRenderNatively(file))) {
+        reportUploadFailure('choose', 'unreadable handle, renderer agreed', file);
+        setError(new UnreadableFileError().message);
+        return;
+      }
+      /* Readable after all. Unknown format, which is what null means, and the
+         decoder settles that later like it does for any unrecognised file. */
+      sniffed = null;
     }
 
     const rejected = await checkFile(file, 'photo', sniffed);

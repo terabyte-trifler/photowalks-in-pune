@@ -232,19 +232,36 @@ const HEIC_BRANDS = /heic|heix|heim|heis|hevc|hevx|mif1|msf1/;
  * theirs, and the ISO base-media formats put `ftyp` at offset 4 with the brands
  * immediately after.
  */
+/**
+ * Returned when the bytes could not be read at all. Deliberately not a MIME
+ * type: nothing downstream will mistake it for one, STORABLE_TYPES excludes it
+ * so it can never be uploaded as-is, and the caller can tell "unreadable" from
+ * "unrecognised" — which want different sentences.
+ */
+export const UNREADABLE = 'unreadable';
+
 export async function sniffImageType(file: File): Promise<string | null> {
-  let head: Uint8Array;
-  try {
-    head = new Uint8Array(await file.slice(0, 32).arrayBuffer());
-  } catch {
-    /* The handle went away between being chosen and being read. On Android a
-       picked file is backed by a content:// URI the <input> owns, so clearing
-       that input releases it — which is exactly what the change handler used
-       to do, one tick after this read started. Fixed there; named here,
-       because a revoked handle is also what a half-synced Google Photos or
-       iCloud item looks like, and that one is the member's to resolve. */
-    throw new UnreadableFileError();
+  /* ---------------------------------------------------------------------
+   * A failure here is REPORTED, not thrown.
+   *
+   * This read is wanted, not required: its only job is to spot HEIC. Making it
+   * fatal is what turned a maybe into a no — an Android 10 phone whose
+   * arrayBuffer() refused 32 bytes was told its photograph could not be
+   * opened, when the renderer and the decoder read files by a different
+   * internal path entirely and would very likely have managed it.
+   *
+   * Tried twice, because these refusals are frequently transient: a content://
+   * handle that a provider is still settling answers on the second ask.
+   * ------------------------------------------------------------------- */
+  let head: Uint8Array | null = null;
+  for (let attempt = 0; attempt < 2 && head === null; attempt += 1) {
+    try {
+      head = new Uint8Array(await file.slice(0, 32).arrayBuffer());
+    } catch {
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 120));
+    }
   }
+  if (head === null) return UNREADABLE;
   if (head.length < 12) return null;
 
   const ascii = (from: number, to: number) =>
@@ -465,7 +482,7 @@ async function convertHeicOnServer(file: File): Promise<File> {
  * yes here is a promise the preview can keep. The object URL is revoked either
  * way — this is a question, not a decode anybody keeps.
  */
-function canRenderNatively(file: File): Promise<boolean> {
+export function canRenderNatively(file: File): Promise<boolean> {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
     const probe = new window.Image();
