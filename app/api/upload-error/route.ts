@@ -45,6 +45,25 @@ export async function POST(request: Request): Promise<NextResponse> {
   const sniffed = typeof b.sniffed === 'string' ? b.sniffed.slice(0, 40) : 'unknown';
   const bytes = Number.isFinite(b.bytes) ? Number(b.bytes) : -1;
 
+  /* ------------------------------------------------------------------
+   * The platform log first, and Sentry second, because Sentry is allowed to
+   * be absent and this is not.
+   *
+   * NEXT_PUBLIC_SENTRY_DSN is unset in production, so sentryOptions resolves
+   * `enabled: false` and every capture below is a no-op. Two real upload
+   * failures were reported through this route and both were discarded — the
+   * route answered 204 and lost them, which is a worse failure than having no
+   * reporting at all, because it looks like reporting.
+   *
+   * console.error lands in the runtime log whatever else is configured. It
+   * costs nothing and it cannot be switched off by a missing variable.
+   * ------------------------------------------------------------------ */
+  console.error(
+    `[upload-error] stage=${stage} reason=${reason} sniffed=${sniffed} bytes=${bytes} ua=${
+      request.headers.get('user-agent')?.slice(0, 160) ?? 'absent'
+    }`,
+  );
+
   Sentry.captureMessage(`upload failed at ${stage}: ${reason}`, {
     level: 'warning',
     tags: { area: 'uploads', stage, sniffed },
