@@ -9,6 +9,7 @@ import {
   ACCEPT_ATTRIBUTE,
   checkFile,
   prepareChoice,
+  reportUploadFailure,
   UploadRefusal,
   type ChosenImage,
   photoInsertError,
@@ -205,6 +206,7 @@ export function PhotoManager({
       /* Do not leave an orphan file in the bucket. Awaited, so the rollback is
          as certain as the upload was. */
       await removeImageSurely('photo', uploaded.path);
+      reportUploadFailure('insert', insertError.message.slice(0, 120), pending.file);
       setError(photoInsertError(insertError.message));
       setBusy(false);
       return;

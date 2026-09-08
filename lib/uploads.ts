@@ -278,6 +278,38 @@ export async function checkFile(file: File, _kind: UploadKind): Promise<string |
   return undefined;
 }
 
+/**
+ * Tell the server an upload failed, so that it is reportable at all.
+ *
+ * Fire and forget, and deliberately unawaited: a report is never allowed to
+ * slow an upload down, and a report that fails must never become a second
+ * failure on top of the one it was describing. `keepalive` so it still leaves
+ * the machine when the member gives up and navigates away, which is exactly
+ * when the interesting failures happen.
+ */
+export function reportUploadFailure(
+  stage: 'choose' | 'decode' | 'compress' | 'put' | 'insert',
+  reason: string,
+  file?: File,
+  sniffed?: string | null,
+): void {
+  try {
+    void fetch('/api/upload-error', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({
+        stage,
+        reason,
+        sniffed: sniffed ?? 'unknown',
+        bytes: file?.size ?? -1,
+      }),
+    }).catch(() => {});
+  } catch {
+    /* Reporting is best effort by definition. */
+  }
+}
+
 export interface ChosenImage {
   /** What to upload. A HEIC original is replaced by its JPEG conversion. */
   file: File;
@@ -315,13 +347,20 @@ export async function prepareChoice(file: File): Promise<ChosenImage> {
    * draw it", which is the question that actually decides. Chrome on Android
    * says no to HEIC and gets the decoder; Safari says yes and never loads it.
    * ------------------------------------------------------------------- */
-  const native = await canRenderNatively(file);
-  if (native) return { file, url: URL.createObjectURL(file) };
-
-  /* The engine refused it. Only HEIC has a fallback worth having. */
-  if ((await sniffImageType(file)) !== 'image/heic') {
-    throw new UndecodableImageError();
+  /* Only HEIC is ever in question, so only HEIC pays for the answer.
+   *
+   * Probing every file cost a full extra decode of every photograph — three
+   * per upload (probe, preview, compress) where two had always been enough.
+   * On a phone holding a 12MP frame that is real memory and real seconds,
+   * spent on a question already answered for every format but one. */
+  const sniffed = await sniffImageType(file);
+  if (sniffed !== 'image/heic') {
+    return { file, url: URL.createObjectURL(file) };
   }
+
+  /* HEIC, and now it matters which engine this is. Safari decodes it natively
+   * and needs no conversion; Chrome cannot and needs the decoder. */
+  if (await canRenderNatively(file)) return { file, url: URL.createObjectURL(file) };
 
   try {
     const { heicTo } = await import('heic-to/csp');
@@ -336,6 +375,7 @@ export async function prepareChoice(file: File): Promise<ChosenImage> {
        what matters is that the member is told it was the conversion, not their
        photograph. */
     console.error('[uploads] HEIC conversion failed', cause);
+    reportUploadFailure('choose', `heic conversion: ${String(cause).slice(0, 120)}`, file, sniffed);
     throw new HeicConversionError();
   }
 }
@@ -755,7 +795,10 @@ export async function uploadImage(
     /* checkFile already turned away everything whose signature is unreadable,
        so reaching here means the signature was fine and the decoder still
        refused — a truncated file, or a format this browser alone lacks. */
-    if (cause instanceof UploadRefusal) return { ok: false, error: cause.message };
+    if (cause instanceof UploadRefusal) {
+      reportUploadFailure('decode', cause.name, file, await sniffImageType(file));
+      return { ok: false, error: cause.message };
+    }
     throw cause;
   }
   const { primary, smaller } = ladder;
@@ -815,6 +858,7 @@ export async function uploadImage(
   }
 
   if (error) {
+    reportUploadFailure('put', error.message.slice(0, 120), file, primary.contentType);
     const message = error.message.toLowerCase();
     if (message.includes('exceeded') || message.includes('too large')) {
       /* Names the ceiling that actually rejected it. This used to quote
