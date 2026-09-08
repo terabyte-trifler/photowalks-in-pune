@@ -388,7 +388,31 @@ export async function prepareChoice(file: File, known?: string | null): Promise<
 
   try {
     const { heicTo } = await import('heic-to/csp');
-    const blob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.92 });
+
+    /* ------------------------------------------------------------------
+     * Decode to a bitmap and downscale here, rather than asking for a JPEG.
+     *
+     * This decoder is not WebAssembly. libheif is built USE_WASM=0 — plain
+     * JavaScript, which is why it needs no CSP concession and also why it is
+     * slow and hungry. Asking it for `image/jpeg` made it encode a full 12MP
+     * frame that compressToBudget then immediately decoded again and threw
+     * away: two full-size images alive at once on a phone that has neither
+     * the memory nor the time to spare.
+     *
+     * A bitmap costs one decode, and drawAt puts it straight onto a bounded
+     * canvas — never larger than the pipeline was going to keep anyway.
+     * ------------------------------------------------------------------ */
+    const bitmap = await heicTo({ blob: file, type: 'bitmap' });
+    const decoded = fromBitmap(bitmap);
+    let blob: Blob | null = null;
+    try {
+      const drawn = drawAt(decoded, EDGE_STEPS.photo[0]);
+      if (drawn) blob = await toBlob(drawn.canvas, 'image/jpeg', 0.92);
+    } finally {
+      decoded.release();
+    }
+    if (!blob) throw new Error('heic bitmap could not be redrawn');
+
     const converted = new File([blob], `${file.name.replace(/\.[^.]*$/, '')}.jpg`, {
       type: 'image/jpeg',
     });
