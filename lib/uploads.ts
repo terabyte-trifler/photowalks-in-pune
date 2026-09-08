@@ -169,6 +169,15 @@ export class UndecodableImageError extends UploadRefusal {
   }
 }
 
+export class UnreadableFileError extends UploadRefusal {
+  constructor() {
+    super(
+      'That photograph could not be read from this device. If it is still syncing from Google Photos or iCloud, open it in the gallery first so it downloads, then try again.',
+    );
+    this.name = 'UnreadableFileError';
+  }
+}
+
 export class HeicConversionError extends UploadRefusal {
   constructor() {
     super(
@@ -209,7 +218,18 @@ const HEIC_BRANDS = /heic|heix|heim|heis|hevc|hevx|mif1|msf1/;
  * immediately after.
  */
 export async function sniffImageType(file: File): Promise<string | null> {
-  const head = new Uint8Array(await file.slice(0, 32).arrayBuffer());
+  let head: Uint8Array;
+  try {
+    head = new Uint8Array(await file.slice(0, 32).arrayBuffer());
+  } catch {
+    /* The handle went away between being chosen and being read. On Android a
+       picked file is backed by a content:// URI the <input> owns, so clearing
+       that input releases it — which is exactly what the change handler used
+       to do, one tick after this read started. Fixed there; named here,
+       because a revoked handle is also what a half-synced Google Photos or
+       iCloud item looks like, and that one is the member's to resolve. */
+    throw new UnreadableFileError();
+  }
   if (head.length < 12) return null;
 
   const ascii = (from: number, to: number) =>
@@ -250,7 +270,11 @@ const NOT_AN_IMAGE: Record<string, string> = {
   'text/html': 'a web page',
 };
 
-export async function checkFile(file: File, _kind: UploadKind): Promise<string | undefined> {
+export async function checkFile(
+  file: File,
+  _kind: UploadKind,
+  known?: string | null,
+): Promise<string | undefined> {
   /* Before the slice, because slicing an empty file reads zero bytes and would
      be reported as an unrecognised format rather than as what it is. */
   if (file.size === 0) return 'That file is empty.';
@@ -259,7 +283,7 @@ export async function checkFile(file: File, _kind: UploadKind): Promise<string |
     return `That file is ${readableSize(file.size)}. ${readableSize(MAX_FILE_BYTES)} is the most a photograph can be — anything larger is usually a video or a scan.`;
   }
 
-  const actual = await sniffImageType(file);
+  const actual = known !== undefined ? known : await sniffImageType(file);
 
   /* An unrecognised signature is NOT refused here. This check is a courtesy —
      it exists to give a fast, accurate message for the handful of things that
@@ -332,7 +356,7 @@ export interface ChosenImage {
  * it to under 200KB afterwards, and starting that from an already-lossy frame
  * would show.
  */
-export async function prepareChoice(file: File): Promise<ChosenImage> {
+export async function prepareChoice(file: File, known?: string | null): Promise<ChosenImage> {
   /* ---------------------------------------------------------------------
    * ASK THE ENGINE FIRST, ALWAYS.
    *
@@ -353,7 +377,7 @@ export async function prepareChoice(file: File): Promise<ChosenImage> {
    * per upload (probe, preview, compress) where two had always been enough.
    * On a phone holding a 12MP frame that is real memory and real seconds,
    * spent on a question already answered for every format but one. */
-  const sniffed = await sniffImageType(file);
+  const sniffed = known !== undefined ? known : await sniffImageType(file);
   if (sniffed !== 'image/heic') {
     return { file, url: URL.createObjectURL(file) };
   }

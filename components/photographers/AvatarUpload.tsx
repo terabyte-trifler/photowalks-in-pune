@@ -207,9 +207,16 @@ export function AvatarUpload({
         accept={ACCEPT_ATTRIBUTE}
         className="sr-only"
         onChange={(event) => {
-          void handleFile(event.target.files?.[0]);
-          /* Let the same file be chosen again after a failure. */
-          event.target.value = '';
+          /* Reset only once the file has been read. Clearing the input
+             releases its FileList, and on Android that invalidates the
+             content:// handle the File is built on — so a reset one tick into
+             an async read makes perfectly good bytes unreadable. The reset
+             still has to happen, or choosing the same file twice fires no
+             change event; it just happens after. */
+          const input = event.target;
+          void handleFile(input.files?.[0]).finally(() => {
+            input.value = '';
+          });
         }}
       />
     </div>

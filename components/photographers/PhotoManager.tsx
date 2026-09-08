@@ -10,6 +10,7 @@ import {
   checkFile,
   prepareChoice,
   reportUploadFailure,
+  sniffImageType,
   UploadRefusal,
   type ChosenImage,
   photoInsertError,
@@ -106,7 +107,25 @@ export function PhotoManager({
     const file = files?.[0];
     if (!file) return;
 
-    const rejected = await checkFile(file, 'photo');
+    /* One read of the file's first bytes, shared by the format check and the
+       conversion decision below. Reading twice was not just wasteful: each read
+       is another chance for the handle to have gone away underneath us. */
+    let sniffed: string | null;
+    try {
+      sniffed = await sniffImageType(file);
+    } catch (cause) {
+      /* Was uncaught. checkFile could throw here and nothing was listening, so
+         the panel simply did nothing at all — no preview, no error, no clue. */
+      reportUploadFailure('choose', 'unreadable handle', file);
+      setError(
+        cause instanceof UploadRefusal
+          ? cause.message
+          : 'That photograph could not be opened. Try again, or choose a different one.',
+      );
+      return;
+    }
+
+    const rejected = await checkFile(file, 'photo', sniffed);
     if (rejected) {
       setError(rejected);
       return;
@@ -127,7 +146,7 @@ export function PhotoManager({
     setPreparing(true);
     let chosen;
     try {
-      chosen = await prepareChoice(file);
+      chosen = await prepareChoice(file, sniffed);
     } catch (cause) {
       setPreparing(false);
       /* The refusal knows why; a generic sentence here would throw that away. */
@@ -361,8 +380,17 @@ export function PhotoManager({
         accept={ACCEPT_ATTRIBUTE}
         className="sr-only"
         onChange={(event) => {
-          void chooseFile(event.target.files);
-          event.target.value = '';
+          /* Cleared only AFTER the file has been read, not one tick into it.
+             Clearing the input releases its FileList, and on Android the File
+             is a handle on a content:// URI that the input owns — so resetting
+             it while chooseFile was still awaiting made the bytes unreadable
+             and produced "could not be opened" for a perfectly good
+             photograph. The reset itself has to stay: without it, choosing the
+             same file twice in a row fires no change event. */
+          const input = event.target;
+          void chooseFile(input.files).finally(() => {
+            input.value = '';
+          });
         }}
       />
     </div>
