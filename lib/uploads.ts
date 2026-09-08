@@ -178,12 +178,27 @@ export class UnreadableFileError extends UploadRefusal {
   }
 }
 
+/**
+ * Conversion failed, and which way it failed decides what the member should do
+ * about it — resize, sign in again, or simply try once more.
+ */
+const HEIC_MESSAGE: Record<string, string> = {
+  too_large:
+    'That HEIC photograph is over 4MB, which is too large to convert. Sharing it from Photos, or saving it as JPEG first, will work.',
+  unauthorised: 'Your session has expired. Log in again and try that photograph once more.',
+  offline:
+    'That photograph could not be converted — the connection dropped. Try again in a moment.',
+};
+
 export class HeicConversionError extends UploadRefusal {
-  constructor() {
+  readonly reason: string;
+  constructor(reason = 'unknown') {
     super(
-      'That is a HEIC photograph and it could not be converted on this device. Sharing it from Photos, or saving it as JPEG, will work.',
+      HEIC_MESSAGE[reason] ??
+        'That HEIC photograph could not be converted. Sharing it from Photos, or saving it as JPEG, will work.',
     );
     this.name = 'HeicConversionError';
+    this.reason = reason;
   }
 }
 
@@ -386,46 +401,61 @@ export async function prepareChoice(file: File, known?: string | null): Promise<
    * and needs no conversion; Chrome cannot and needs the decoder. */
   if (await canRenderNatively(file)) return { file, url: URL.createObjectURL(file) };
 
+  /* Chrome, on any platform, cannot read it. Off to the server. */
+  const converted = await convertHeicOnServer(file);
+  return { file: converted, url: URL.createObjectURL(converted) };
+}
+
+/**
+ * Hand a HEIC frame to the server and get a JPEG back.
+ *
+ * This used to happen in the browser, and the browser was the wrong place for
+ * it. libheif ships compiled USE_WASM=0 — plain JavaScript, 2.9MB of it — and a
+ * mid-range Android running an asm.js HEVC decoder over a 12MP photograph is
+ * not a tuning problem, it is a device that cannot do the work. The failures
+ * came from exactly those phones.
+ *
+ * The server has memory and CPU, runs the same code for everybody, and the
+ * bundle stops carrying a decoder for a format most uploads are not.
+ *
+ * Only the conversion moves. The downscale, the quality ladder and the 200KB
+ * budget all stay in the browser, because that is what keeps what gets uploaded
+ * small — this sends one HEIC and receives one JPEG, and the pipeline that
+ * always ran carries on from there.
+ */
+async function convertHeicOnServer(file: File): Promise<File> {
+  let response: Response;
   try {
-    const { heicTo } = await import('heic-to/csp');
-
-    /* ------------------------------------------------------------------
-     * Decode to a bitmap and downscale here, rather than asking for a JPEG.
-     *
-     * This decoder is not WebAssembly. libheif is built USE_WASM=0 — plain
-     * JavaScript, which is why it needs no CSP concession and also why it is
-     * slow and hungry. Asking it for `image/jpeg` made it encode a full 12MP
-     * frame that compressToBudget then immediately decoded again and threw
-     * away: two full-size images alive at once on a phone that has neither
-     * the memory nor the time to spare.
-     *
-     * A bitmap costs one decode, and drawAt puts it straight onto a bounded
-     * canvas — never larger than the pipeline was going to keep anyway.
-     * ------------------------------------------------------------------ */
-    const bitmap = await heicTo({ blob: file, type: 'bitmap' });
-    const decoded = fromBitmap(bitmap);
-    let blob: Blob | null = null;
-    try {
-      const drawn = drawAt(decoded, EDGE_STEPS.photo[0]);
-      if (drawn) blob = await toBlob(drawn.canvas, 'image/jpeg', 0.92);
-    } finally {
-      decoded.release();
-    }
-    if (!blob) throw new Error('heic bitmap could not be redrawn');
-
-    const converted = new File([blob], `${file.name.replace(/\.[^.]*$/, '')}.jpg`, {
-      type: 'image/jpeg',
+    response = await fetch('/api/heic-convert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: file,
     });
-    return { file: converted, url: URL.createObjectURL(converted) };
-  } catch (cause) {
-    /* The module is ~3MB and loads over the network, and it runs under this
-       site's script-src. Either can fail, and both look identical from here —
-       what matters is that the member is told it was the conversion, not their
-       photograph. */
-    console.error('[uploads] HEIC conversion failed', cause);
-    reportUploadFailure('choose', `heic conversion: ${String(cause).slice(0, 120)}`, file, sniffed);
-    throw new HeicConversionError();
+  } catch {
+    /* A dropped connection, not a bad photograph — worth saying differently,
+       because "try again" is useless advice for a file that will never work
+       and the only useful advice for one that would have. */
+    reportUploadFailure('choose', 'heic convert: network', file, 'image/heic');
+    throw new HeicConversionError('offline');
   }
+
+  if (!response.ok) {
+    let reason = String(response.status);
+    if (response.status === 401) reason = 'unauthorised';
+    else if (response.status === 413) reason = 'too_large';
+    else {
+      try {
+        reason = ((await response.json()) as { error?: string })?.error ?? reason;
+      } catch {
+        /* Keep the status code. */
+      }
+    }
+    reportUploadFailure('choose', `heic convert: ${reason}`, file, 'image/heic');
+    throw new HeicConversionError(reason);
+  }
+
+  const blob = await response.blob();
+  return new File([blob], `${file.name.replace(/\.[^.]*$/, '')}.jpg`, { type: 'image/jpeg' });
 }
 
 /**
@@ -511,24 +541,13 @@ function fromBitmap(bitmap: ImageBitmap): Decoded {
 }
 
 /**
- * HEIC, through libheif compiled to WebAssembly.
- *
- * Chrome and Firefox have no HEIC decoder and are not getting one — the format
- * is patent-encumbered — so this is the only way to accept a photograph
- * straight off an iPhone without asking somebody to go and convert it first.
- *
- * Imported dynamically, and only from here: the decoder is around 3MB, which
- * is far too much to put in the bundle for a format most uploads are not. This
- * line is what keeps that cost on the uploads that actually need it.
- *
- * The `/csp` entry point is the build that does not need 'unsafe-eval' — the
- * default one compiles its Emscripten glue with `new Function`, which this
- * site's script-src refuses outright.
+ * The safety net: a HEIC that reached uploadImage without going through
+ * prepareChoice. Converted server-side like any other, then decoded as the
+ * ordinary JPEG it now is.
  */
 async function decodeHeic(file: File): Promise<Decoded | null> {
   try {
-    const { heicTo } = await import('heic-to/csp');
-    return fromBitmap(await heicTo({ blob: file, type: 'bitmap' }));
+    return await decodeViaImgElement(await convertHeicOnServer(file));
   } catch {
     return null;
   }
