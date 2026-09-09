@@ -916,7 +916,13 @@ export async function uploadImage(
      which nothing in the app would surface. */
   const expected = VARIANT_LADDERS[CURRENT_LADDER][kind].filter((w) => w < primary.width);
   const uploaded: string[] = [];
-  let ladderIntact = smaller.length === expected.length && expected.length > 0;
+  /* An empty ladder is intact. A photograph narrower than the smallest rung
+     asks for no siblings, and naming it `-v1-<width>` is still true: every
+     consumer derives the widths from the stored width, so it resolves to
+     itself. Requiring a rung here is what left one 619px upload under a plain
+     name, and a plain name was the one path still going through the billed
+     optimiser — invisible until the quota ran out and it answered 402. */
+  let ladderIntact = smaller.length === expected.length;
 
   for (const rung of smaller) {
     const at = variantPath(base, CURRENT_LADDER, rung.width, rung.extension);

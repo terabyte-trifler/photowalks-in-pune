@@ -7,6 +7,7 @@ import {
   googleAvatarAt,
   googleAvatarSrcSet,
   isGoogleAvatar,
+  kindForUrl,
   uploadSrcSet,
 } from '@/lib/images';
 
@@ -23,14 +24,23 @@ import {
  *                         Plain static assets. The optimiser is never invoked,
  *                         so these cost no transformations at all, ever.
  *
- *   an upload with a   ->  <img srcset> over the rungs the browser produced
- *   variant marker         when it uploaded. Also no optimiser. One format,
- *                          because the uploader encodes one — whichever of
- *                          WebP or JPEG that browser could write.
+ *   an upload from     ->  <img>, served straight from Storage. With a
+ *   Storage                variant marker it gets a srcset over the rungs the
+ *                          browser produced when it uploaded; without one it
+ *                          is a single source. Either way no optimiser, and
+ *                          one format, because the uploader encodes one —
+ *                          whichever of WebP or JPEG that browser could write.
  *
- *   anything else     ->  next/image, exactly as before. Google avatars,
- *                         Instagram media, and uploads from before the ladder
- *                         existed all land here.
+ *                          A marker is not required, because an upload that
+ *                          has none is not a reason to route it through a
+ *                          billed optimiser: Storage already serves the file.
+ *                          One 619px photograph did route that way, and it was
+ *                          the only broken image on the site the day the
+ *                          optimisation quota ran out and /_next/image began
+ *                          answering 402.
+ *
+ *   anything else     ->  next/image, exactly as before. Google avatars and
+ *                         Instagram media land here.
  *
  * The <picture> path is not a downgrade. It emits a real srcset with the same
  * widths the optimiser would have produced, and it offers AVIF before WebP —
@@ -106,15 +116,17 @@ export function Picture({
 }: PictureProps) {
   const entry = MANIFEST[src];
 
-  /* An upload that carries its ladder in its name. Nothing to negotiate: the
-     widths are known from the name and the files are already there. */
+  /* An upload in Storage. Nothing to negotiate: the file is already there,
+     and where the name carries a ladder the widths are known from it too. */
   const uploaded = entry ? null : uploadSrcSet(src);
-  if (uploaded) {
+  if (uploaded || (!entry && kindForUrl(src))) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
-        srcSet={uploaded}
+        /* Absent for an upload with no ladder — a single source, which is the
+           whole truth about a file narrower than the smallest rung. */
+        srcSet={uploaded ?? undefined}
         alt={alt}
         sizes={sizes}
         className={className}
