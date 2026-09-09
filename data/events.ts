@@ -99,10 +99,39 @@ export const upcomingWalks: Event[] = [
     imageAlt: 'Two monkeys grooming each other in low light',
     price: 0,
     capacity: 25,
-    status: 'open',
+    status: 'past',
     /* Stays false until the time and the meeting point are confirmed — that
        is the switch that publishes this as a schema.org Event. */
     verified: true,
+  },
+
+  /*
+   * The next walk. Sunday 13 September 2026 — registrations close at six on
+   * the day, the same as every other walk (lib/utils.ts).
+   */
+  {
+    id: 'walk-2026-09-13',
+    slug: 'bhavani-peth-13-september',
+    title: 'Bhavani Peth / Sunday Morning',
+    date: '2026-09-13',
+    /* Morning, in keeping with every other walk through the peths — the light
+       is the reason to be there early. The exact hour goes out on WhatsApp. */
+    time: 'Morning',
+    location: 'Bhavani Peth',
+    area: 'Bhavani Peth',
+    description: 'Wada doorways, workshops and quiet lanes through one of the older peths, early on a Sunday.',
+    theme: 'Old city',
+    /* The Kasba Peth frame, standing in: it is the old quarters and reads as
+       this walk, but replace it with a photograph from Bhavani Peth itself. */
+    image: '/images/gallery/photo-10.jpg',
+    imageAlt:
+      'Old Pune buildings with green shutters, motorbikes parked below and a man riding past',
+    price: 0,
+    capacity: 25,
+    status: 'open',
+    /* False until the meeting point and the hour are confirmed — that is the
+       switch that publishes this as a schema.org Event. */
+    verified: false,
   },
 
 /* ----------------------------------------------------------------------------
