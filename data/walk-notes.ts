@@ -33,10 +33,6 @@ export const walkNotes: Record<string, string[]> = {
     'An afternoon brief rather than a morning one, which changes what Camp offers. The arcades along the Pul Gate end run deep, and late light reaches under them at an angle it never manages at midday — so the subject is the edge between the colonnade and the pavement, and the people crossing it.',
     'Heritage here means working buildings rather than monuments. Shopfronts, signage and the tailors and bakeries still trading behind them.',
   ],
-  'arai-30-august': [
-    'The only walk on the list that starts in the dark. Being on the ridge before first light is the whole brief: the twenty minutes before sunrise are the reason to climb, and arriving as the sun clears the horizon means missing them.',
-    'Late August is the end of the monsoon, when mist still collects below the ridge and burns off as the light arrives. Longer lenses earn their weight here in a way they never do in the peths.',
-  ],
   'mandai-20-june': [
     'A markets brief at the hour the market is actually working. Before eight the aisles are still passable, the produce is arriving rather than selling, and the light is coming through the ironwork roof at an angle that moves across the floor as the morning goes.',
     'Setting up is a more generous moment to photograph than the middle of a sale, and it is the one this walk was timed for.',
