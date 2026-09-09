@@ -226,7 +226,7 @@ export function PhotoManager({
     /* A walk carries the date and the area, so neither is asked for twice.
        Without one all three stay null — a date nobody supplied is not a date
        worth storing. */
-    const { error: insertError } = await supabase.from('photos').insert({
+    const row = {
       profile_id: user.id,
       storage_path: uploaded.path,
       width: uploaded.width ?? null,
@@ -235,7 +235,36 @@ export function PhotoManager({
       location: walk?.area ?? null,
       taken_at: walk?.date ?? null,
       event_id: walk?.id ?? null,
-    });
+    };
+
+    /* ------------------------------------------------------------------
+     * Retried on a dropped connection, like the PUT that got us here.
+     *
+     * By this line the bytes are already in the bucket. Losing the row to a
+     * blip deletes them again and asks for the whole photograph a second
+     * time — the most expensive moment in the flow to fail, and the one a
+     * phone on mobile data is most likely to reach.
+     *
+     * Safe to repeat: storage_path is unique (migration 0003), so an insert
+     * that actually landed and lost only its answer comes back as 23505 —
+     * a duplicate of this very row, which means it is saved.
+     *
+     * A Postgres error is an answer and is taken at its word; only a
+     * transport failure arrives without a code.
+     * ------------------------------------------------------------------ */
+    let insertError: { code: string; message: string } | null = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const { error } = await supabase.from('photos').insert(row);
+      insertError = error;
+      if (!error || error.code === '23505') {
+        insertError = null;
+        break;
+      }
+      if (error.code) break;
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+      }
+    }
 
     if (insertError) {
       /* Do not leave an orphan file in the bucket. Awaited, so the rollback is

@@ -119,6 +119,33 @@ export async function lastRsvpDetails(profileId: string): Promise<
 export const REGISTRATION_CLOSED_MESSAGE =
   'Registration for this walk closed at 6pm on the day of the walk.';
 
+/**
+ * Make a browser-side RSVP failure visible on the server.
+ *
+ * Posts to the same route the uploader uses. The name says "upload" because
+ * that is what it was built for, but what it does is the general thing: the
+ * browser states a fact, the server logs it where somebody will find it. The
+ * alternative here is a console.error in a member's phone, which is another
+ * way of spelling no reporting at all.
+ *
+ * Written out rather than imported from lib/uploads so that joining a walk
+ * does not pull the decoder, the ladder and the compressor into its bundle.
+ * Fire and forget, and keepalive, because the interesting failures are the
+ * ones where somebody gives up and closes the tab.
+ */
+function reportRsvpFailure(eventId: string, why: string): void {
+  try {
+    void fetch('/api/upload-error', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({ stage: 'insert', reason: `rsvp ${eventId}: ${why}`, bytes: -1 }),
+    }).catch(() => {});
+  } catch {
+    /* Reporting is best effort by definition. */
+  }
+}
+
 export async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
   /* Ahead of the branch below so it covers the no-backend path too: without a
      Supabase project the row only reaches localStorage, where no trigger can
@@ -145,6 +172,31 @@ export async function submitRsvp(input: RsvpInput): Promise<RsvpResult> {
       if (error) {
         /* The one-per-walk unique constraint. Not a failure — they are in. */
         if (error.code === '23505') return { ok: true, persisted: true, alreadyJoined: true };
+
+        /* ----------------------------------------------------------------
+         * The foreign key from migration 0024: this event_id has no row in
+         * public.walks.
+         *
+         * Which is a deployment fault, never the member's. Walks live in
+         * data/events.ts and their rows are copied across by
+         * scripts/sync-walk-capacity.mjs; ship a walk without running it and
+         * the site offers a walk the database has never heard of. That
+         * happened, and every attempt answered "That did not save. Try
+         * again" — advice that could not work, on a screen that looked like
+         * a flaky connection rather than a missing step.
+         *
+         * So say what is true: it is not us, it is not you, and trying again
+         * is not the fix. The report is what makes it findable next time.
+         * ---------------------------------------------------------------- */
+        if (error.code === '23503') {
+          reportRsvpFailure(input.eventId, 'walk missing from public.walks');
+          return {
+            ok: false,
+            persisted: false,
+            error:
+              'This walk is not open for sign-ups yet — that is on us, not you. Message us on WhatsApp and we will hold your spot.',
+          };
+        }
 
         if (error.code === '23514') {
           /* Shared code, two senders: the column constraints in migration 0002

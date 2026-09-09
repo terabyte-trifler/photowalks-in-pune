@@ -857,6 +857,22 @@ export interface UploadResult {
   error?: string;
 }
 
+type PutError = { message: string } | null;
+
+/** Three, matching removeImageSurely: enough for a blip, short of a hang. */
+const PUT_ATTEMPTS = 3;
+
+/**
+ * A refusal rather than a blip — the same answer however many times it is
+ * asked. Everything else is treated as transient, which is the safe way round:
+ * an unknown failure retried twice costs under a second, while a transient one
+ * treated as permanent costs somebody their photograph.
+ */
+const permanentPutFailure = (message: string): boolean =>
+  /exceeded|too large|payload|mime|content type|policy|unauthorized|not authorized|row-level|invalid/.test(
+    message,
+  );
+
 /**
  * Upload one file into the member's own folder. The uid prefix is what the
  * storage policy checks, so it is not optional and not decorative.
@@ -888,12 +904,52 @@ export async function uploadImage(
   const { primary, smaller } = ladder;
   const base = `${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-  const put = (at: string, image: PreparedImage) =>
-    supabase.storage.from(BUCKET[kind]).upload(at, image.blob, {
-      cacheControl: '31536000',
-      upsert: false,
-      contentType: image.contentType,
-    });
+  /* ---------------------------------------------------------------------
+   * One PUT, tried again while the failure still looks like the network.
+   *
+   * removeImageSurely has retried its deletes three times since it was
+   * written, on the reasoning that a blip must not leave bytes behind. The
+   * upload itself had no such thing: a single dropped request anywhere in a
+   * four-file ladder failed the whole photograph and asked the member to
+   * start again. That asymmetry is backwards — the rollback was more robust
+   * than the thing it was rolling back — and it is felt hardest on a phone,
+   * where the connection is the part most likely to flicker.
+   *
+   * Only transient failures are retried. A refusal — too large, wrong type,
+   * no policy for this folder — is the same refusal three times over, and
+   * repeating it would only make the message slower to arrive.
+   * ------------------------------------------------------------------- */
+  const put = async (at: string, image: PreparedImage): Promise<{ error: PutError }> => {
+    let last: { error: PutError } = { error: { message: 'upload did not run' } };
+
+    for (let attempt = 0; attempt < PUT_ATTEMPTS; attempt += 1) {
+      const result = await supabase.storage.from(BUCKET[kind]).upload(at, image.blob, {
+        cacheControl: '31536000',
+        upsert: false,
+        contentType: image.contentType,
+      });
+      if (!result.error) return { error: null };
+
+      const message = result.error.message.toLowerCase();
+
+      /* The object is already there. `upsert` is false, so this is what a
+         first attempt that actually landed looks like when only its answer
+         was lost — a success wearing an error, and retrying it forever would
+         turn a completed upload into a failed one. */
+      if (message.includes('already exists') || message.includes('duplicate')) {
+        return { error: null };
+      }
+
+      if (permanentPutFailure(message)) return { error: result.error };
+
+      last = { error: result.error };
+      if (attempt < PUT_ATTEMPTS - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+      }
+    }
+
+    return last;
+  };
 
   /* ---------------------------------------------------------------------
    * The narrow rungs go up first, and the primary last.
