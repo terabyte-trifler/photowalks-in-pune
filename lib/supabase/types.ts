@@ -148,7 +148,11 @@ export type Database = {
       walk_attendance: { Row: WalkAttendance; Relationships: [] };
       photographer_cards: { Row: PhotographerCard; Relationships: [] };
     };
-    Functions: { [_ in never]: never };
+    Functions: {
+      /* Migration 0026. No argument on purpose: it can only answer about the
+         caller, so it cannot be used to ask whether somebody else is one. */
+      is_walk_admin: { Args: Record<string, never>; Returns: boolean };
+    };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
   };

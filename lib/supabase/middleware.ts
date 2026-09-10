@@ -5,7 +5,7 @@ import { buildCsp, createNonce, isStaticPage } from '@/lib/security/csp';
 import type { Database } from './types';
 
 /** Signed-out visitors are sent to /login when they ask for one of these. */
-const PROTECTED_PREFIXES = ['/settings', '/profile', '/my-walks'];
+const PROTECTED_PREFIXES = ['/settings', '/profile', '/my-walks', '/admin'];
 
 /**
  * Signed-in visitors have no business on these. /forgot-password is
