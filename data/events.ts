@@ -83,21 +83,31 @@ export const upcomingWalks: Event[] = [
   featuredWalk,
 
   /*
-   * The next walk. Sunday 13 September 2026 — registrations close at six on
-   * the day, the same as every other walk (lib/utils.ts).
+   * The next walk. Sunday 13 September 2026 at three, and registrations still
+   * close at six on the day like every other walk (lib/utils.ts) — which for
+   * this one is three hours after it starts. Nobody can join it late, they
+   * just cannot join it after six.
    */
   {
     id: 'walk-2026-09-13',
     slug: 'bhavani-peth-13-september',
-    title: 'Bhavani Peth / Sunday Morning',
+    /* Was "Sunday Morning" while the hour was a guess. Three people joined
+       under that name and their walk_rsvps rows still carry the copy made at
+       signup, which /my-walks renders — so those three read "Sunday Morning"
+       while this page says three in the afternoon. There is no UPDATE policy
+       on walk_rsvps (migration 0002, deliberately), so correcting them takes
+       the service role. Until that is done the page and the sheet disagree,
+       and the people it disagrees about are the ones turning up. */
+    title: 'Bhavani Peth / Sunday Afternoon',
     date: '2026-09-13',
-    /* Morning, in keeping with every other walk through the peths — the light
-       is the reason to be there early. The exact hour goes out on WhatsApp. */
-    time: 'Morning',
+    /* An exact hour rather than a part of the day, because there is one to
+       give. `time` is free text everywhere it renders, so "3pm" sits beside
+       the weekday as readably as "Morning" did. */
+    time: '3pm',
     location: 'Bhavani Peth',
     area: 'Bhavani Peth',
-    description: 'Wada doorways, workshops and quiet lanes through one of the older peths, early on a Sunday.',
-    theme: 'Old city',
+    description: 'Wada doorways, workshops and quiet lanes through one of the older peths, in the long afternoon light.',
+    theme: 'Old city · afternoon light',
     /* The Kasba Peth frame, standing in: it is the old quarters and reads as
        this walk, but replace it with a photograph from Bhavani Peth itself. */
     image: '/images/gallery/photo-10.jpg',
@@ -106,9 +116,9 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'open',
-    /* False until the meeting point and the hour are confirmed — that is the
-       switch that publishes this as a schema.org Event. */
-    verified: false,
+    /* The date, the hour, the place and the cost are all real now, which is
+       the bar this flag names. Publishing as a schema.org Event. */
+    verified: true,
   },
 
 /* ----------------------------------------------------------------------------
