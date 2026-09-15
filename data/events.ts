@@ -145,11 +145,14 @@ export const upcomingWalks: Event[] = [
     area: 'Old city',
     description: 'The mandals through the old peths in festival week, photographed in the middle of the crowd.',
     theme: 'Festival · crowds',
-    /* A stand-in, and the closest frame in the archive: a street running at a
-       temple spire. Replace it with one from the festival itself. */
-    image: '/images/gallery/photo-47.jpg',
+    /* Ganeshotsav in the archive already, by Naman Gupta: somebody holding a
+       phone up to a decorated pandal, marigolds and bunting over it. The
+       festival and the act of photographing it in the same frame, which is
+       what this walk is. Not from this walk — it has not happened — so it
+       still gives way to a frame made on the day. */
+    image: '/images/gallery/photo-02.jpg',
     imageAlt:
-      'A busy street running towards a temple spire, traffic and overhead wires, in black and white',
+      'Someone in a white cap holding up a phone to photograph a decorated Ganpati pandal, autorickshaws waiting behind',
     price: 0,
     capacity: 25,
     status: 'open',
