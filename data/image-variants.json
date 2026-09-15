@@ -1,4 +1,13 @@
 {
+  "/images/email/frame.jpg": {
+    "w": 1200,
+    "h": 500,
+    "widths": [
+      640,
+      1024
+    ],
+    "v": "ef5a6eadfc39acae"
+  },
   "/images/gallery/photo-01.jpg": {
     "w": 2000,
     "h": 1333,
@@ -618,6 +627,15 @@
     ],
     "v": "62fb57c6ed65d9b6"
   },
+  "/images/og-cover.jpg": {
+    "w": 1200,
+    "h": 630,
+    "widths": [
+      640,
+      1024
+    ],
+    "v": "7bc99e6bb9aa68c0"
+  },
   "/images/stories/before-the-city-wakes.jpg": {
     "w": 1333,
     "h": 2000,
@@ -643,6 +661,15 @@
       640
     ],
     "v": "e33d8dbf52436804"
+  },
+  "/images/walks/ganpati.jpg": {
+    "w": 1333,
+    "h": 2000,
+    "widths": [
+      640,
+      1024
+    ],
+    "v": "78f14b9aec0a7abf"
   },
   "/images/walks/mandai.jpg": {
     "w": 1100,

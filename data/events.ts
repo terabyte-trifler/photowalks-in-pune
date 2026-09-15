@@ -145,14 +145,19 @@ export const upcomingWalks: Event[] = [
     area: 'Old city',
     description: 'The mandals through the old peths in festival week, photographed in the middle of the crowd.',
     theme: 'Festival · crowds',
-    /* Ganeshotsav in the archive already, by Naman Gupta: somebody holding a
-       phone up to a decorated pandal, marigolds and bunting over it. The
-       festival and the act of photographing it in the same frame, which is
-       what this walk is. Not from this walk — it has not happened — so it
-       still gives way to a frame made on the day. */
-    image: '/images/gallery/photo-02.jpg',
+    /* This year's festival, photographed on 15 September and uploaded to the
+       archive the same evening — the most recent Ganpati frame anybody has.
+       Copied into /public rather than pointed at in Storage: a banner that
+       reads from somebody's profile disappears the day they tidy it, and the
+       walk page would be left with a hole. The copy is the site's; the
+       photograph stays theirs on their profile.
+
+       Portrait, and the banner is a 3:2 crop — checked before choosing it.
+       The centre band holds the eye, the painted trunk and the crown, and
+       loses only blurred flowers at top and bottom. */
+    image: '/images/walks/ganpati.jpg',
     imageAlt:
-      'Someone in a white cap holding up a phone to photograph a decorated Ganpati pandal, autorickshaws waiting behind',
+      "A Ganpati idol's face seen through out-of-focus red flowers, silver crown above and a painted trunk",
     price: 0,
     capacity: 25,
     status: 'open',
