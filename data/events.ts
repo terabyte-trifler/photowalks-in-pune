@@ -79,6 +79,26 @@ export const featuredWalk: Event = {
   verified: true,
 };
 
+/* ----------------------------------------------------------------------------
+ * ADDING A WALK HERE IS TWO STEPS, NOT ONE
+ * ----------------------------------------------------------------------------
+ *     npm run walks:sync        (needs SUPABASE_SERVICE_ROLE_KEY)
+ *
+ * walk_rsvps.event_id is a foreign key into public.walks (migration 0024), and
+ * that table is filled only by scripts/sync-walk-capacity.mjs. A walk that is
+ * in this file and not in that table renders perfectly, takes no sign-ups, and
+ * answers 23503 to everybody who tries.
+ *
+ * This has now happened twice — Bhavani Peth on 9 September and Ganpati on the
+ * 16th — both times because the walk was added, reviewed, built, deployed and
+ * verified without anybody thinking about a table. The failure is invisible
+ * from this file, from the page, and from the build. It is visible only to the
+ * person trying to join, which is the worst place to keep it.
+ *
+ * lib/rsvp.ts now names the cause instead of saying "try again", so the third
+ * time is at least diagnosable from the screen. Better not to need that.
+ * -------------------------------------------------------------------------- */
+
 export const upcomingWalks: Event[] = [
   featuredWalk,
 
