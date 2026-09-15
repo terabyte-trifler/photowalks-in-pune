@@ -115,10 +115,49 @@ export const upcomingWalks: Event[] = [
       'Old Pune buildings with green shutters, motorbikes parked below and a man riding past',
     price: 0,
     capacity: 25,
-    status: 'open',
+    status: 'past',
     /* The date, the hour, the place and the cost are all real now, which is
        the bar this flag names. Publishing as a schema.org Event. */
     verified: true,
+  },
+
+  /*
+   * Ganeshotsav. Saturday 19 September 2026 — festival week, with visarjan on
+   * the 25th, so the mandals are still up and this is the crowd at its
+   * thickest rather than the aftermath.
+   */
+  {
+    id: 'walk-2026-09-19',
+    slug: 'ganpati-19-september',
+    title: 'Ganpati / Festival Saturday',
+    date: '2026-09-19',
+    /* Not decided yet, and said plainly rather than guessed. The last walk
+       carried "Morning" as a placeholder for three days, three people joined
+       it under that name, and the real hour turned out to be three in the
+       afternoon — a guess in this field is read as a fact by whoever signs
+       up. `time` is free text everywhere it renders, so this reads correctly
+       beside the weekday until there is an hour to put here. */
+    time: 'To be announced',
+    /* Both provisional: the mandal circuit runs through the old peths, but
+       which mandals, and where everybody meets, is the same decision as the
+       hour — and it has not been made either. */
+    location: 'Old city mandals',
+    area: 'Old city',
+    description: 'The mandals through the old peths in festival week, photographed in the middle of the crowd.',
+    theme: 'Festival · crowds',
+    /* A stand-in, and the closest frame in the archive: a street running at a
+       temple spire. Replace it with one from the festival itself. */
+    image: '/images/gallery/photo-47.jpg',
+    imageAlt:
+      'A busy street running towards a temple spire, traffic and overhead wires, in black and white',
+    price: 0,
+    capacity: 25,
+    status: 'open',
+    /* False, and this walk is why the flag exists. No hour and no meeting
+       point means no schema.org Event — publishing a time to search results
+       that nobody has agreed on is how people end up somewhere at the wrong
+       moment. Flip it when both are decided. */
+    verified: false,
   },
 
 /* ----------------------------------------------------------------------------
