@@ -55,11 +55,25 @@ export async function GET(request: NextRequest) {
   const fail = (reason: string) =>
     NextResponse.redirect(`${origin}${failurePath}?error=${reason}`);
 
-  /* Google's own refusals arrive as query parameters, not exceptions. */
+  /* Google's own refusals arrive as query parameters, not exceptions.
+   *
+   * This branch was as silent as the exchange one below, and it is the branch
+   * that actually fired: `unauthorized_client` — Google rejecting the OAuth
+   * client before any code exists to exchange. The provider's own words are
+   * the whole diagnosis, and they were being dropped on the floor. */
   if (oauthError) {
+    console.error(
+      `[auth-callback] provider refused: ${oauthError}${
+        errorCode ? ` (${errorCode})` : ''
+      } — ${searchParams.get('error_description')?.slice(0, 160) ?? 'no description'}`,
+    );
     if (oauthError === 'access_denied') return fail('denied');
     if (errorCode === 'otp_expired') return fail('expired');
-    return fail(isRecovery ? 'expired' : 'oauth');
+    return NextResponse.redirect(
+      `${origin}${failurePath}?error=${isRecovery ? 'expired' : 'oauth'}&d=${encodeURIComponent(
+        oauthError.slice(0, 48),
+      )}`,
+    );
   }
 
   const supabase = await getSupabaseServerClient();
