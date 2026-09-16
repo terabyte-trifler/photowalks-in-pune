@@ -141,11 +141,12 @@ function Roster({ roster }: { roster: WalkRoster }) {
       {/* Scrolls inside itself on a phone rather than widening the page — this
           is a page somebody reads standing at a meeting point. */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[36rem] border-collapse text-body">
+        <table className="w-full min-w-[48rem] border-collapse text-body">
           <thead>
             <tr className="border-b border-border">
               <th scope="col" className="meta py-2 pr-4 text-left font-normal">Name</th>
               <th scope="col" className="meta py-2 pr-4 text-left font-normal">WhatsApp</th>
+              <th scope="col" className="meta py-2 pr-4 text-left font-normal">Email</th>
               <th scope="col" className="meta py-2 pr-4 text-left font-normal">Experience</th>
               <th scope="col" className="meta py-2 text-left font-normal">Signed up</th>
             </tr>
@@ -173,6 +174,21 @@ function Roster({ roster }: { roster: WalkRoster }) {
                   >
                     {attendee.whatsapp}
                   </a>
+                </td>
+                {/* mailto, for the same reason the number is a tel: link — the
+                    address is here to be written to. A dash when it could not
+                    be read, rather than an empty cell that reads as a bug. */}
+                <td className="py-2.5 pr-4 font-mono text-[0.9rem]">
+                  {attendee.email ? (
+                    <a
+                      href={`mailto:${attendee.email}`}
+                      className="transition-colors hover:text-accent"
+                    >
+                      {attendee.email}
+                    </a>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
                 </td>
                 <td className="py-2.5 pr-4 text-foreground-soft">{attendee.experience}</td>
                 <td className="py-2.5 text-foreground-soft">{longDate(attendee.joinedAt.slice(0, 10))}</td>

@@ -152,6 +152,11 @@ export type Database = {
       /* Migration 0026. No argument on purpose: it can only answer about the
          caller, so it cannot be used to ask whether somebody else is one. */
       is_walk_admin: { Args: Record<string, never>; Returns: boolean };
+      /* Migration 0027. Empty for anybody who is not an admin. */
+      walk_rsvp_emails: {
+        Args: Record<string, never>;
+        Returns: { profile_id: string; email: string }[];
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

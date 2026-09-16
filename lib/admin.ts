@@ -35,6 +35,13 @@ export interface Attendee {
   fullName: string;
   username: string;
   whatsapp: string;
+  /**
+   * Empty when the address could not be read — the function answers only for
+   * admins, and only about members who have joined something. A blank cell is
+   * the honest rendering of that; inventing a placeholder would read as an
+   * address nobody has.
+   */
+  email: string;
   experience: string;
   /** When they signed up, not when the walk is. */
   joinedAt: string;
@@ -67,9 +74,19 @@ export async function walkRosters(): Promise<WalkRoster[]> {
   const supabase = await getSupabaseServerClient();
   if (!supabase) return [];
 
+  /* Two reads rather than one join: the address is not a column on any table
+     the query below can reach — it is in auth.users, behind the function added
+     in migration 0027. Asked for once for the whole page, not once per row. */
+  const { data: addresses } = await supabase.rpc('walk_rsvp_emails');
+  const emailFor = new Map<string, string>(
+    (addresses ?? []).map((row) => [row.profile_id, row.email]),
+  );
+
   const { data, error } = await supabase
     .from('walk_rsvps')
-    .select('id, event_id, event_title, event_date, whatsapp, experience, created_at, profiles(full_name, username)')
+    .select(
+      'id, profile_id, event_id, event_title, event_date, whatsapp, experience, created_at, profiles(full_name, username)',
+    )
     .order('event_date', { ascending: false })
     .order('created_at', { ascending: true });
 
@@ -104,6 +121,7 @@ export async function walkRosters(): Promise<WalkRoster[]> {
       fullName: profile?.full_name ?? 'Account removed',
       username: profile?.username ?? '',
       whatsapp: row.whatsapp,
+      email: emailFor.get(row.profile_id) ?? '',
       experience: row.experience,
       joinedAt: row.created_at,
     });
