@@ -67,7 +67,34 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) return fail(isRecovery ? 'expired' : 'oauth');
+    if (error) {
+      /* ------------------------------------------------------------------
+       * TEMPORARY, AND MEANT TO BE REMOVED.
+       *
+       * This branch has been throwing away the only fact worth having. A
+       * failed exchange is the single most reported auth problem and the
+       * screen it produces — "Google sign-in didn't complete" — is the same
+       * sentence whether the verifier cookie went missing, the code was
+       * already spent, or the provider rejected it. Three faults, three
+       * fixes, one message, no way to tell them apart.
+       *
+       * So: the reason goes to the platform log, where it is readable
+       * afterwards, and a short code rides along in the URL so somebody
+       * describing the failure over chat can say which one it was. The code
+       * is Supabase's own error name, not its prose, and no token or address
+       * is anywhere near it.
+       *
+       * Take the `d` parameter out once this is diagnosed. The console.error
+       * can stay — it costs nothing and it is the thing that was missing.
+       * ------------------------------------------------------------------ */
+      console.error(
+        `[auth-callback] exchange failed: ${error.code ?? error.name ?? 'unknown'} — ${error.message?.slice(0, 160)}`,
+      );
+      const detail = encodeURIComponent((error.code ?? error.name ?? 'unknown').slice(0, 48));
+      return NextResponse.redirect(
+        `${origin}${failurePath}?error=${isRecovery ? 'expired' : 'oauth'}&d=${detail}`,
+      );
+    }
     return NextResponse.redirect(`${origin}${next}`);
   }
 
