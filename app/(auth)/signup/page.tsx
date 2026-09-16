@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { site } from '@/data/site';
 import { getEnabledProviders } from '@/lib/auth/providers';
+import { isJoiningOpen } from '@/lib/auth/joining';
 import { SignupForm } from './SignupForm';
 
 export const metadata: Metadata = {
@@ -16,7 +17,11 @@ export default async function SignupPage({
 }: {
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const [params, providers] = await Promise.all([searchParams, getEnabledProviders()]);
+  const [params, providers, joiningOpen] = await Promise.all([
+    searchParams,
+    getEnabledProviders(),
+    isJoiningOpen(),
+  ]);
 
   return (
     <AuthShell
@@ -42,8 +47,26 @@ export default async function SignupPage({
         </p>
       }
     >
-      <SignupForm
-        googleEnabled={providers.google} next={params.next} callbackError={params.error} />
+      {joiningOpen ? (
+        <SignupForm
+          googleEnabled={providers.google} next={params.next} callbackError={params.error} />
+      ) : (
+        /* The cap in migration 0028 has been reached. Said here, in a
+           sentence, rather than left to the database to refuse at the end of
+           a filled-in form — the same division registrationClosed uses for a
+           walk that has been. */
+        <div className="border-l-2 border-border-strong bg-subtle py-6 pl-6 pr-5">
+          <p className="meta">Joining is closed</p>
+          <p className="mt-3 max-w-[48ch] text-body text-foreground-soft">
+            We have as many members as we can look after for now, so new
+            accounts are paused. The walks themselves are still open — come on
+            one, say hello, and we will let you know the moment this lifts.
+          </p>
+          <Link href="/#next-walk" className="cta mt-5">
+            See the next walk <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+      )}
     </AuthShell>
   );
 }
