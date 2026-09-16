@@ -151,20 +151,21 @@ export const upcomingWalks: Event[] = [
     slug: 'ganpati-19-september',
     title: 'Ganpati / Festival Saturday',
     date: '2026-09-19',
-    /* Not decided yet, and said plainly rather than guessed. The last walk
-       carried "Morning" as a placeholder for three days, three people joined
-       it under that name, and the real hour turned out to be three in the
-       afternoon — a guess in this field is read as a fact by whoever signs
-       up. `time` is free text everywhere it renders, so this reads correctly
-       beside the weekday until there is an hour to put here. */
-    time: 'To be announced',
-    /* Both provisional: the mandal circuit runs through the old peths, but
-       which mandals, and where everybody meets, is the same decision as the
-       hour — and it has not been made either. */
-    location: 'Old city mandals',
+    /* Decided: seven, from Shaniwar Wada. It held "To be announced" until
+       there was an answer rather than carrying a plausible guess, which is
+       what the last walk did — three people joined a "Morning" walk that
+       turned out to be at three in the afternoon. */
+    time: '7am',
+    location: 'Shaniwar Wada',
     area: 'Old city',
-    description: 'The mandals through the old peths in festival week, photographed in the middle of the crowd.',
-    theme: 'Festival · crowds',
+    /* Rewritten for the hour. This said "in the middle of the crowd", which
+       was true of the walk it described — a festival Saturday with no time on
+       it. At seven it is the opposite walk: the mandals are up, the queues
+       have not formed, and the light is coming down the peths sideways. The
+       file has been wrong this way before, when Camp promised afternoon light
+       for an evening walk. */
+    description: 'The mandals through the old peths at seven, before the queues build and while the light is still low.',
+    theme: 'Festival · morning light',
     /* This year's festival, photographed on 15 September and uploaded to the
        archive the same evening — the most recent Ganpati frame anybody has.
        Copied into /public rather than pointed at in Storage: a banner that
@@ -181,11 +182,15 @@ export const upcomingWalks: Event[] = [
     price: 0,
     capacity: 25,
     status: 'open',
-    /* False, and this walk is why the flag exists. No hour and no meeting
-       point means no schema.org Event — publishing a time to search results
-       that nobody has agreed on is how people end up somewhere at the wrong
-       moment. Flip it when both are decided. */
-    verified: false,
+    /* Both are decided now — seven, at Shaniwar Wada — so with the date and
+       the price that is the whole bar this flag names, and it publishes as a
+       schema.org Event.
+
+       One thing the Event does not carry: the hour. startDate in lib/seo.ts
+       is walk.date, and `time` is prose with no machine-readable twin, so
+       search results get the day and not the seven. Worth a field if these
+       walks keep having real hours. */
+    verified: true,
   },
 
 /* ----------------------------------------------------------------------------
