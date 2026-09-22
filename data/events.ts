@@ -181,7 +181,7 @@ export const upcomingWalks: Event[] = [
       "A Ganpati idol's face seen through out-of-focus red flowers, silver crown above and a painted trunk",
     price: 0,
     capacity: 25,
-    status: 'open',
+    status: 'past',
     /* Both are decided now — seven, at Shaniwar Wada — so with the date and
        the price that is the whole bar this flag names, and it publishes as a
        schema.org Event.
@@ -190,6 +190,34 @@ export const upcomingWalks: Event[] = [
        is walk.date, and `time` is prose with no machine-readable twin, so
        search results get the day and not the seven. Worth a field if these
        walks keep having real hours. */
+    verified: true,
+  },
+
+  /*
+   * Back to the market. Saturday 26 September 2026 at seven, meeting at the
+   * Digital Fantasy store — the day after visarjan, so Mandai is clearing up
+   * and restocking rather than mid-festival.
+   */
+  {
+    id: 'walk-2026-09-26',
+    slug: 'mandai-26-september',
+    title: 'Mandai / Saturday Morning',
+    date: '2026-09-26',
+    time: '7am',
+    location: 'Mandai · Digital Fantasy store',
+    area: 'Mandai',
+    description: 'Mandai at seven, as the stalls are laid out and the garlands go up, before the market fills.',
+    theme: 'Markets · morning light',
+    /* The strongest market frame in the archive and the sharpest file — the
+       only Mandai photograph at 2000px. It was the Flower Market Sunday
+       banner in August; shared here because the place is the same. */
+    image: '/images/gallery/photo-15.jpg',
+    imageAlt:
+      'Marigold garlands strung above a market stall with betel leaves below',
+    price: 0,
+    capacity: 25,
+    status: 'open',
+    /* Date, hour, meeting point and cost are all real. */
     verified: true,
   },
 
