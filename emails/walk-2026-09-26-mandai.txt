@@ -20,4 +20,5 @@ phone included. If you cannot make it, no reply is needed.
 —
 Photowalks in Pune · Walk. Photograph. Connect.
 You are receiving this because you have an account on pwip.in. Walk
-announcements are the only mail we send.
+announcements are the only mail we send — to stop them, and keep your
+account exactly as it is: {{{RESEND_UNSUBSCRIBE_URL}}}
