@@ -12,8 +12,7 @@ import { allWalksNewestFirst, walkBySlug } from '@/data/events';
 import { placeForWalk } from '@/data/places';
 import { notesForWalk } from '@/data/walk-notes';
 import { site } from '@/data/site';
-import { photoUrl } from '@/lib/directory';
-import { listPhotosForWalk, listWalkers } from '@/lib/photographers';
+import { listWalkGallery, listWalkers } from '@/lib/photographers';
 import { breadcrumbSchema, eventSchema, gallerySchema, jsonLd } from '@/lib/seo';
 import { longDate, priceLabel, registrationClosed } from '@/lib/utils';
 
@@ -74,7 +73,7 @@ export default async function WalkPage({
   ]);
 
   const [shot, walkers] = await Promise.all([
-    listPhotosForWalk(walk.id),
+    listWalkGallery([walk.id]),
     listWalkers(walk.id),
   ]);
   const notes = notesForWalk(walk.slug);
@@ -83,11 +82,11 @@ export default async function WalkPage({
       ? gallerySchema(
           `Photographs from ${walk.title}`,
           `Photographs made on ${walk.title} at ${walk.location}, Pune.`,
-          shot.map(({ photo, photographer }) => ({
-            url: photoUrl(photo),
+          shot.map((photo) => ({
+            url: photo.src,
             caption: photo.caption,
-            photographerName: photographer?.full_name ?? null,
-            photographerUsername: photographer?.username ?? null,
+            photographerName: photo.photographerName,
+            photographerUsername: photo.photographerUsername,
           })),
         )
       : null;
@@ -204,16 +203,7 @@ export default async function WalkPage({
 
               <WalkPhotos
                 walkTitle={walk.title}
-                photos={shot.map(({ photo, photographer }) => ({
-                  id: photo.id,
-                  src: photoUrl(photo),
-                  caption: photo.caption,
-                  width: photo.width,
-                  height: photo.height,
-                  photographerName: photographer?.full_name ?? null,
-                  photographerUsername: photographer?.username ?? null,
-                  photographerAvatar: photographer?.avatar_url ?? null,
-                }))}
+                photos={shot}
               />
             </>
           )}

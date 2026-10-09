@@ -91,7 +91,7 @@ export function gallerySchema(name: string, description: string, images: Gallery
     description,
     image: images.map((image) => ({
       '@type': 'ImageObject',
-      contentUrl: image.url,
+      contentUrl: absolute(image.url),
       ...(image.caption ? { caption: image.caption } : {}),
       ...(image.photographerName
         ? {

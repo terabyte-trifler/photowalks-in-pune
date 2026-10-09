@@ -18,8 +18,10 @@ import {
   FOUNDER_USERNAME,
   DIRECTORY_PAGE_SIZE,
   PHOTOS_PAGE_SIZE,
+  photoUrl,
   type DirectorySort,
 } from '@/lib/directory';
+import { archivedPhoto, archivedPhotosForWalks, isTakenDown } from '@/lib/walk-archive';
 import { getSupabasePublicClient } from '@/lib/supabase/public';
 import type { PhotoRecord, PhotographerCard, Profile, WalkAttendance } from '@/lib/supabase/types';
 import {
@@ -324,6 +326,87 @@ export async function listPhotosForWalks(
   return (data as unknown as (PhotoRecord & { profiles: Profile | null })[]).map(
     ({ profiles, ...photo }) => ({ photo, photographer: profiles ?? null }),
   );
+}
+
+/** One photograph on a walk or place page, live or kept from the archive. */
+export interface WalkGalleryPhoto {
+  id: string;
+  src: string;
+  caption: string | null;
+  width: number | null;
+  height: number | null;
+  photographerName: string | null;
+  photographerUsername: string | null;
+  photographerAvatar: string | null;
+  createdAt: string;
+}
+
+/**
+ * What a walk or place page shows: the live photographs filed under these
+ * walks, plus the archived copies of any that have since been deleted
+ * (lib/walk-archive.ts).
+ *
+ * A photograph that is archived is served from the copy in /public even while
+ * the upload still exists — same pixels, and it spends no Storage egress. If
+ * the database cannot be reached at all, the archive still renders on its own.
+ *
+ * A kept photograph whose photographer has since deleted their account keeps
+ * its name but loses the link, which would otherwise lead to a 404.
+ */
+export async function listWalkGallery(
+  eventIds: string[],
+  { limit = 60 }: { limit?: number } = {},
+): Promise<WalkGalleryPhoto[]> {
+  const live = await listPhotosForWalks(eventIds, { limit });
+  const liveIds = new Set(live.map(({ photo }) => photo.id));
+
+  const photos: WalkGalleryPhoto[] = live
+    .filter(({ photo }) => !isTakenDown(photo.id))
+    .map(({ photo, photographer }) => ({
+      id: photo.id,
+      src: archivedPhoto(photo.id)?.src ?? photoUrl(photo),
+      caption: photo.caption,
+      width: photo.width,
+      height: photo.height,
+      photographerName: photographer?.full_name ?? null,
+      photographerUsername: photographer?.username ?? null,
+      photographerAvatar: photographer?.avatar_url ?? null,
+      createdAt: photo.created_at,
+    }));
+
+  const kept = archivedPhotosForWalks(eventIds).filter((entry) => !liveIds.has(entry.id));
+
+  if (kept.length > 0) {
+    const names = [...new Set(kept.map((e) => e.photographerUsername).filter(Boolean))] as string[];
+    let stillHere: Set<string> | null = null;
+    const supabase = getSupabasePublicClient();
+    if (supabase && names.length > 0) {
+      const { data, error } = await supabase.from('profiles').select('username').in('username', names);
+      if (!error && data) stillHere = new Set((data as { username: string }[]).map((r) => r.username));
+    }
+
+    for (const entry of kept) {
+      const username =
+        entry.photographerUsername && (stillHere === null || stillHere.has(entry.photographerUsername))
+          ? entry.photographerUsername
+          : null;
+      photos.push({
+        id: entry.id,
+        src: entry.src,
+        caption: entry.caption,
+        width: entry.width,
+        height: entry.height,
+        photographerName: entry.photographerName,
+        photographerUsername: username,
+        photographerAvatar: null,
+        createdAt: entry.createdAt,
+      });
+    }
+  }
+
+  return photos
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0))
+    .slice(0, limit);
 }
 
 /** How many photographs each of these walks holds, for the index. */

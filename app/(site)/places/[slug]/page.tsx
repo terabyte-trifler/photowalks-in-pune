@@ -7,8 +7,7 @@ import { Reveal } from '@/components/ui/Reveal';
 import { SectionHeader } from '@/components/ui/Typography';
 import { places, placeBySlug, walksAtPlace } from '@/data/places';
 import { site } from '@/data/site';
-import { photoUrl } from '@/lib/directory';
-import { listPhotosForWalks } from '@/lib/photographers';
+import { listWalkGallery } from '@/lib/photographers';
 import { breadcrumbSchema, gallerySchema, jsonLd } from '@/lib/seo';
 import { dayNumber, longDate, monthShort, registrationClosed } from '@/lib/utils';
 
@@ -68,7 +67,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
   if (!place) notFound();
 
   const walks = walksAtPlace(place);
-  const shot = await listPhotosForWalks(walks.map((walk) => walk.id));
+  const shot = await listWalkGallery(walks.map((walk) => walk.id));
   const next = walks.find((walk) => !registrationClosed(walk.date));
 
   /* FAQPage, and only from the answers written in data/places.ts. Nothing here
@@ -88,11 +87,11 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
       ? gallerySchema(
           `Photographs from ${place.name}`,
           `Photographs made at ${place.name} in Pune on photowalks run by ${site.displayName}.`,
-          shot.map(({ photo, photographer }) => ({
-            url: photoUrl(photo),
+          shot.map((photo) => ({
+            url: photo.src,
             caption: photo.caption,
-            photographerName: photographer?.full_name ?? null,
-            photographerUsername: photographer?.username ?? null,
+            photographerName: photo.photographerName,
+            photographerUsername: photo.photographerUsername,
           })),
         )
       : null;
@@ -128,7 +127,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
                   [
                     'Walks here',
                     `${walks.length} ${walks.length === 1 ? 'walk' : 'walks'}${
-                      shot.length > 0 ? ` · ${shot.length} photographs` : ''
+                      shot.length > 0 ? ` · ${shot.length} ${shot.length === 1 ? 'photograph' : 'photographs'}` : ''
                     }`,
                   ],
                 ] as [string, string][]
@@ -195,16 +194,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
           ) : (
             <WalkPhotos
               walkTitle={place.name}
-              photos={shot.map(({ photo, photographer }) => ({
-                id: photo.id,
-                src: photoUrl(photo),
-                caption: photo.caption,
-                width: photo.width,
-                height: photo.height,
-                photographerName: photographer?.full_name ?? null,
-                photographerUsername: photographer?.username ?? null,
-                photographerAvatar: photographer?.avatar_url ?? null,
-              }))}
+              photos={shot}
             />
           )}
         </div>
