@@ -216,8 +216,35 @@ export const upcomingWalks: Event[] = [
       'Marigold garlands strung above a market stall with betel leaves below',
     price: 0,
     capacity: 25,
-    status: 'open',
+    status: 'past',
     /* Date, hour, meeting point and cost are all real. */
+    verified: true,
+  },
+
+  /*
+   * Back on FC Road, and the latest walk. Sunday 4 October 2026 from two,
+   * meeting at Kalakar Katta, Goodluck Chowk. The brief, from the poster:
+   * shapes, colours, patterns and themes, worked in teams.
+   */
+  {
+    id: 'walk-2026-10-04',
+    slug: 'fc-road-4-october',
+    title: 'FC Road / Sunday Afternoon',
+    date: '2026-10-04',
+    time: '2pm',
+    location: 'FC Road · Kalakar Katta, Goodluck Chowk',
+    area: 'FC Road',
+    description: 'Shapes, colours, patterns and themes along FC Road, hunted in teams through the afternoon.',
+    theme: 'Form · colour',
+    /* A stand-in, like the other FC Road banners: the shape-hunt frame,
+       because this walk had the same brief on the same street. Replace it with
+       a photograph from the 4th. */
+    image: '/images/gallery/photo-49.jpg',
+    imageAlt:
+      'An old scooter parked behind railings beside a weathered wall, in black and white',
+    price: 0,
+    capacity: 25,
+    status: 'past',
     verified: true,
   },
 

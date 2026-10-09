@@ -65,6 +65,10 @@ export const walkNotes: Record<string, string[]> = {
   'flower-market-9-august': [
     'The second consecutive morning in the flower section, with the geography already known. Coming back the next day is what turns a set of first impressions into a considered frame.',
   ],
+  'fc-road-4-october': [
+    'FC Road again, and the shape hunt brief from July made bigger: shapes, colours, patterns and themes. Two in the afternoon, from Kalakar Katta at Goodluck Chowk, so the sun is high and the shadows are hard, short and sharp at the edges.',
+    'Worked in teams, so that everybody gets involved, and rated medium for street photography. Any camera was fine. A phone was enough.',
+  ],
   'appa-balwant-chowk-15-august': [
     'A street brief that is mostly interiors. ABC is Pune’s book market, a few lanes of shops packed floor to ceiling, so the light is whatever reaches the doorway and the frames are about density.',
     'People shop for books slowly and read where they stand, which gives you longer than a street usually does.',
