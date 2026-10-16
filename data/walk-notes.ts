@@ -65,6 +65,10 @@ export const walkNotes: Record<string, string[]> = {
   'flower-market-9-august': [
     'The second consecutive morning in the flower section, with the geography already known. Coming back the next day is what turns a set of first impressions into a considered frame.',
   ],
+  'arai-vetal-tekdi-17-october': [
+    'A hill walk, not a street walk. Seven in the morning from the ARAI entry point, then along the ridge towards Vetal Tekdi, with Kothrud and the city underneath and the haze sitting in the valleys until the sun burns it off.',
+    'Landscape, trees and light, plus the walkers and runners who are already up there. Wear shoes you can climb in and bring water. Any camera is fine, and a phone is enough.',
+  ],
   'fc-road-4-october': [
     'FC Road again, and the shape hunt brief from July made bigger: shapes, colours, patterns and themes. Two in the afternoon, from Kalakar Katta at Goodluck Chowk, so the sun is high and the shadows are hard, short and sharp at the edges.',
     'Worked in teams, so that everybody gets involved, and rated medium for street photography. Any camera was fine. A phone was enough.',

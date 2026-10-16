@@ -248,6 +248,30 @@ export const upcomingWalks: Event[] = [
     verified: true,
   },
 
+  /*
+   * Up the hill. Saturday 17 October 2026 at seven, meeting at the ARAI entry
+   * point on the Kothrud side, and on along the ridge to Vetal Tekdi.
+   */
+  {
+    id: 'walk-2026-10-17',
+    slug: 'arai-vetal-tekdi-17-october',
+    title: 'ARAI Hills / Vetal Tekdi Morning',
+    date: '2026-10-17',
+    time: '7am',
+    location: 'ARAI Hills · ARAI entry point',
+    area: 'ARAI',
+    description: 'From the ARAI entry point along the ridge to Vetal Tekdi, with the city below and the morning haze still in the valleys.',
+    theme: 'Nature · morning light',
+    /* A stand-in from the archive: hills and trees going back into haze, which
+       is the view from this ridge. Replace it with a photograph from the 17th. */
+    image: '/images/gallery/photo-31.jpg',
+    imageAlt: 'Hills and trees receding into haze above a valley',
+    price: 0,
+    capacity: 25,
+    status: 'open',
+    verified: true,
+  },
+
 /* ----------------------------------------------------------------------------
  * WALKS THAT HAVE BEEN
  * ----------------------------------------------------------------------------
