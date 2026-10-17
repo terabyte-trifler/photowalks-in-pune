@@ -59,14 +59,15 @@ export function LightboxFrame({
             <DialogClose onClose={onClose} />
           </div>
 
-          <div className="grid min-h-0 flex-1 place-items-center p-[clamp(1rem,3vw,2.5rem)]">
-            <Picture
-              src={src}
-              alt={alt}
-              width={1600}
-              height={1600}
-              className="h-auto max-h-full w-auto max-w-full object-contain"
-            />
+          {/* The frame fills a box of definite size and is contained in it.
+              It used to be a grid item with max-h-full, but the grid's one row
+              was sized by its content, so the percentage had nothing to
+              resolve against and a portrait frame drew at its full height —
+              1812px tall in a 781px viewer, which read as zoomed in. */}
+          <div className="min-h-0 flex-1 p-[clamp(1rem,3vw,2.5rem)]">
+            <div className="relative h-full w-full">
+              <Picture src={src} alt={alt} fill sizes="100vw" className="object-contain" />
+            </div>
           </div>
 
           <div className="flex items-center justify-between gap-4 border-t border-white/10 px-gutter py-4 text-[rgba(245,241,234,0.75)]">
