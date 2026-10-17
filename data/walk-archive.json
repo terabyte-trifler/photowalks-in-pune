@@ -1,1 +1,122 @@
-[]
+[
+  {
+    "id": "67e17b2c-7da1-47c2-981a-0cb80cebf2ad",
+    "eventId": "walk-2026-10-17",
+    "src": "/images/walk-archive/walk-2026-10-17/67e17b2c-7da1-47c2-981a-0cb80cebf2ad.webp",
+    "caption": null,
+    "width": 1333,
+    "height": 2000,
+    "photographerName": "Nilesh Vyavhare",
+    "photographerUsername": "vyavhare_nil",
+    "createdAt": "2026-10-17T19:26:31.81005+00:00",
+    "archivedAt": "2026-10-17T19:54:17.422Z"
+  },
+  {
+    "id": "dfba3e00-a802-4dd5-b460-2dbcace56b16",
+    "eventId": "walk-2026-10-17",
+    "src": "/images/walk-archive/walk-2026-10-17/dfba3e00-a802-4dd5-b460-2dbcace56b16.webp",
+    "caption": null,
+    "width": 2000,
+    "height": 1333,
+    "photographerName": "Nilesh Vyavhare",
+    "photographerUsername": "vyavhare_nil",
+    "createdAt": "2026-10-17T19:26:10.031243+00:00",
+    "archivedAt": "2026-10-17T19:54:16.648Z"
+  },
+  {
+    "id": "c6389c6c-6adc-4214-a143-fdf3edc3c9d4",
+    "eventId": "walk-2026-10-17",
+    "src": "/images/walk-archive/walk-2026-10-17/c6389c6c-6adc-4214-a143-fdf3edc3c9d4.webp",
+    "caption": null,
+    "width": 1000,
+    "height": 1500,
+    "photographerName": "Nilesh Vyavhare",
+    "photographerUsername": "vyavhare_nil",
+    "createdAt": "2026-10-17T19:25:44.450635+00:00",
+    "archivedAt": "2026-10-17T19:54:16.243Z"
+  },
+  {
+    "id": "7a35fd04-5d41-4675-841a-22c872ec8e28",
+    "eventId": "walk-2026-10-17",
+    "src": "/images/walk-archive/walk-2026-10-17/7a35fd04-5d41-4675-841a-22c872ec8e28.webp",
+    "caption": "solitude",
+    "width": 1333,
+    "height": 2000,
+    "photographerName": "Nilesh Vyavhare",
+    "photographerUsername": "vyavhare_nil",
+    "createdAt": "2026-10-17T19:25:20.391564+00:00",
+    "archivedAt": "2026-10-17T19:54:15.906Z"
+  },
+  {
+    "id": "d20a08d7-1619-41b6-b774-6fe1fbf0030b",
+    "eventId": "walk-2026-10-17",
+    "src": "/images/walk-archive/walk-2026-10-17/d20a08d7-1619-41b6-b774-6fe1fbf0030b.webp",
+    "caption": null,
+    "width": 1500,
+    "height": 1000,
+    "photographerName": "Nilesh Vyavhare",
+    "photographerUsername": "vyavhare_nil",
+    "createdAt": "2026-10-17T19:24:39.90642+00:00",
+    "archivedAt": "2026-10-17T19:54:15.491Z"
+  },
+  {
+    "id": "43beef3d-7fc7-48a4-8c0d-c7f4f03b3ceb",
+    "eventId": "walk-2026-09-19",
+    "src": "/images/walk-archive/walk-2026-09-19/43beef3d-7fc7-48a4-8c0d-c7f4f03b3ceb.jpg",
+    "caption": null,
+    "width": 825,
+    "height": 1100,
+    "photographerName": "Dishan Sasdev",
+    "photographerUsername": "dishan",
+    "createdAt": "2026-09-20T17:01:51.679481+00:00",
+    "archivedAt": "2026-10-17T19:54:15.102Z"
+  },
+  {
+    "id": "d730f43a-b9d0-4a95-a9ae-16595fc88132",
+    "eventId": "walk-2026-09-19",
+    "src": "/images/walk-archive/walk-2026-09-19/d730f43a-b9d0-4a95-a9ae-16595fc88132.jpg",
+    "caption": null,
+    "width": 619,
+    "height": 825,
+    "photographerName": "Dishan Sasdev",
+    "photographerUsername": "dishan",
+    "createdAt": "2026-09-20T17:01:40.765468+00:00",
+    "archivedAt": "2026-10-17T19:54:14.771Z"
+  },
+  {
+    "id": "a6aa5ca6-c279-4e1f-a427-fcd3d2622f0c",
+    "eventId": "walk-2026-06-27",
+    "src": "/images/walk-archive/walk-2026-06-27/a6aa5ca6-c279-4e1f-a427-fcd3d2622f0c.webp",
+    "caption": "Just random",
+    "width": 1500,
+    "height": 844,
+    "photographerName": "Akib sayyed",
+    "photographerUsername": "ekchokra",
+    "createdAt": "2026-09-16T17:31:07.425543+00:00",
+    "archivedAt": "2026-10-17T19:54:14.452Z"
+  },
+  {
+    "id": "4082364b-1543-4f29-82e5-d810480defe0",
+    "eventId": "walk-2026-09-13",
+    "src": "/images/walk-archive/walk-2026-09-13/4082364b-1543-4f29-82e5-d810480defe0.webp",
+    "caption": null,
+    "width": 844,
+    "height": 1500,
+    "photographerName": "Animish Kulkarni",
+    "photographerUsername": "animish",
+    "createdAt": "2026-09-13T12:47:27.08631+00:00",
+    "archivedAt": "2026-10-17T19:54:14.043Z"
+  },
+  {
+    "id": "ee538a84-d2a7-482c-b0c6-376781223b68",
+    "eventId": "walk-next",
+    "src": "/images/walk-archive/walk-next/ee538a84-d2a7-482c-b0c6-376781223b68.webp",
+    "caption": "Street Side Ted Talk",
+    "width": 1333,
+    "height": 2000,
+    "photographerName": "Terabyte Trifler",
+    "photographerUsername": "gurnoorsingh",
+    "createdAt": "2026-08-25T21:36:02.947448+00:00",
+    "archivedAt": "2026-10-17T19:54:13.645Z"
+  }
+]
