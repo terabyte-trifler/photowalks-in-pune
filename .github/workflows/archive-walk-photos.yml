@@ -1,0 +1,54 @@
+# Copies walk-tagged photographs out of Supabase Storage into the site, so a
+# walk keeps them after the photographer deletes the upload. Commits only when
+# something new was archived; the push deploys through Vercel as usual.
+# See scripts/archive-walk-photos.mjs.
+name: Archive walk photographs
+
+on:
+  schedule:
+    - cron: '17 * * * *' # hourly
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: archive-walk-photos
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Archive
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://gcyweszlvjkguvbzfwlj.supabase.co
+          # The anon key, public by design — it ships in the site's JavaScript.
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: node scripts/archive-walk-photos.mjs
+
+      - name: Image variants
+        run: npm run images:variants
+
+      - name: Commit if anything changed
+        run: |
+          git add data/walk-archive.json data/image-variants.json data/image-variants.hashes.json public/images/walk-archive public/images/_v
+          if git diff --cached --quiet; then
+            echo "Nothing new."
+            exit 0
+          fi
+          git config user.name "pwip archive"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Archive walk photographs"
+          git pull --rebase origin main
+          git push origin HEAD:main
