@@ -1,5 +1,6 @@
 import { Picture } from '@/components/media/Picture';
 import { PhotoDeleteButton } from '@/components/photographers/PhotoDeleteButton';
+import { PhotoSelection, PhotoSelectToggle } from '@/components/photographers/PhotoSelection';
 import Link from 'next/link';
 
 import { photoAlt, photoUrl } from '@/lib/directory';
@@ -40,6 +41,8 @@ export function WorkGrid({
   priorityCount = 2,
   className,
   editable = false,
+  total,
+  allHref,
 }: {
   photos: PhotoRecord[];
   /** How many load eagerly. The rest wait until they are scrolled towards. */
@@ -47,8 +50,12 @@ export function WorkGrid({
   className?: string;
   /** Owner's own archive: each frame gets a ✕ on hover. Never for visitors. */
   editable?: boolean;
+  /** Everything the owner holds, when `photos` is only a slice of it. */
+  total?: number;
+  /** The page where every one of them can be selected. */
+  allHref?: string;
 }) {
-  return (
+  const grid = (
     <div
       className={cn(
         'grid grid-cols-2 gap-x-[clamp(0.75rem,2vw,2rem)] gap-y-[clamp(1rem,2.5vw,2.5rem)] md:grid-cols-6',
@@ -59,6 +66,7 @@ export function WorkGrid({
         <figure key={photo.id} className={cn('group/frame', PLACEMENT[index % PLACEMENT.length])}>
           <div className={cn('relative overflow-hidden bg-subtle', aspectFor(photo))}>
             {editable && <PhotoDeleteButton photo={photo} />}
+            {editable && <PhotoSelectToggle photoId={photo.id} />}
             <Picture
               src={photoUrl(photo)}
               alt={photoAlt(photo)}
@@ -107,6 +115,15 @@ export function WorkGrid({
         </figure>
       ))}
     </div>
+  );
+
+  /* Select-several only for the owner, and only when there is something to
+     select. Visitors get the bare grid, with no client state at all. */
+  if (!editable || photos.length === 0) return grid;
+  return (
+    <PhotoSelection photos={photos} total={total} allHref={allHref}>
+      {grid}
+    </PhotoSelection>
   );
 }
 

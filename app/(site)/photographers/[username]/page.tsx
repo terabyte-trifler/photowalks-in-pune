@@ -163,7 +163,12 @@ export default async function PhotographerPage({
             {work.rows.length > 0 ? (
               /* Your own frames carry a ✕ here too, so a photograph can be
                  pulled without first going to the archive page. */
-              <WorkGrid photos={work.rows} editable={isOwner} />
+              <WorkGrid
+                photos={work.rows}
+                editable={isOwner}
+                total={work.total}
+                allHref={`/photographers/${photographer.username}/photos`}
+              />
             ) : (
               /* Only for visitors now. The owner has the upload block directly
                  above, and stacking an empty-state box under it would be two

@@ -26,6 +26,31 @@ import type { PhotoRecord } from '@/lib/supabase/types';
  * rather than dropping the row and leaving an invisible copy behind that
  * nobody can see, nobody asked for, and everybody pays for.
  */
+/**
+ * Deletes one of your own photographs, file then row. True only when both are
+ * gone. Shared with the select-several bar in PhotoSelection, so removing
+ * eight at once is eight of exactly this and not a second, looser path.
+ */
+export async function deletePhoto(photo: Pick<PhotoRecord, 'id' | 'storage_path'>): Promise<boolean> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return false;
+
+  /* The bytes first. If this fails nothing else happens, so the photograph
+     is never half-deleted. */
+  const fileGone = await removeImageSurely('photo', photo.storage_path);
+  if (!fileGone) return false;
+
+  /* And now the row, with the same insistence. A row left pointing at a file
+     that is already gone renders as a broken frame on a public profile, so
+     "deleted" has to mean both halves — not one and a good intention. */
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { error } = await supabase.from('photos').delete().eq('id', photo.id);
+    if (!error) return true;
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+  }
+  return false;
+}
+
 export function PhotoDeleteButton({ photo }: { photo: PhotoRecord }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -33,35 +58,10 @@ export function PhotoDeleteButton({ photo }: { photo: PhotoRecord }) {
   const [error, setError] = useState('');
 
   async function handleDelete() {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-
     setBusy(true);
     setError('');
 
-    /* The bytes first. If this fails nothing else happens, so the photograph
-       is never half-deleted. */
-    const fileGone = await removeImageSurely('photo', photo.storage_path);
-    if (!fileGone) {
-      setError('Could not remove');
-      setBusy(false);
-      setConfirming(false);
-      return;
-    }
-
-    /* And now the row, with the same insistence. A row left pointing at a file
-       that is already gone renders as a broken frame on a public profile, so
-       "deleted" has to mean both halves — not one and a good intention. */
-    let rowGone = false;
-    for (let attempt = 0; attempt < 3 && !rowGone; attempt += 1) {
-      const { error: deleteError } = await supabase.from('photos').delete().eq('id', photo.id);
-      rowGone = !deleteError;
-      if (!rowGone && attempt < 2) {
-        await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
-      }
-    }
-
-    if (!rowGone) {
+    if (!(await deletePhoto(photo))) {
       setError('Could not remove');
       setBusy(false);
       setConfirming(false);
