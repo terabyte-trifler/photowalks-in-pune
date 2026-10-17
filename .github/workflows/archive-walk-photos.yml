@@ -52,5 +52,8 @@ jobs:
           git config user.name "pwip archive"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Archive walk photographs"
+          # npm install rewrites package-lock.json on the runner; drop it so
+          # the rebase has a clean tree.
+          git checkout -- .
           git pull --rebase origin main
           git push origin HEAD:main
