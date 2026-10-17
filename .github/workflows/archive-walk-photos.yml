@@ -28,7 +28,9 @@ jobs:
           node-version: 24
           cache: npm
 
-      - run: npm ci
+      # npm install, not npm ci: the lock file is written on macOS and is
+      # missing the Linux-only optional deps sharp needs (@emnapi/*).
+      - run: npm install --no-audit --no-fund
 
       - name: Archive
         env:
