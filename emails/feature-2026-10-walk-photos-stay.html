@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>The 20-photo limit no longer costs you your walk photos · Photowalks in Pune</title>
+<!--
+  ==========================================================================
+  FEATURE ANNOUNCEMENT (BETA) — WALK PHOTOGRAPHS OUTLIVE THE PROFILE, OCTOBER 2026
+  --------------------------------------------------------------------------
+  A broadcast, not an auth email: no GoTrue template variables, so it does not
+  belong in supabase/templates/ and must not be pasted into the Supabase
+  dashboard. Every link is absolute and every style is inline, on the same
+  contact-sheet frame as confirmation.html.
+
+  Not a walk: the walk sheet reused for a feature. The four rows are the four
+  things a member needs to know, and the button goes to /profile, which signs
+  them in and lands on their own page.
+  ========================================================================== -->
+<style>
+  /* Only progressive enhancement lives here. Everything structural is inline
+     so that a client which discards this block still renders correctly. */
+  @media (prefers-color-scheme: dark) {
+    .pw-body   { background: #14110e !important; }
+    .pw-sheet  { background: #1c1815 !important; border-color: #35302a !important; }
+    .pw-ink    { color: #f2efe9 !important; }
+    .pw-soft   { color: #c9c2b8 !important; }
+    .pw-mute   { color: #9a9186 !important; }
+    .pw-rule   { border-color: #35302a !important; }
+    .pw-strip  { background: #14110e !important; }
+    /* The button is ink-on-paper in light mode, which in dark mode would be a
+       near-black block on a near-black sheet — invisible, and it is the one
+       thing in here anybody has to find. It inverts instead. */
+    .pw-cta    { background: #f2efe9 !important; }
+    .pw-cta a  { color: #16130f !important; }
+  }
+  @media only screen and (max-width: 620px) {
+    .pw-pad    { padding-left: 24px !important; padding-right: 24px !important; }
+    .pw-h1     { font-size: 34px !important; line-height: 1.02 !important; }
+    .pw-btn    { display: block !important; text-align: center !important; }
+    .pw-key    { width: 34% !important; }
+  }
+  a { text-decoration: none; }
+</style>
+</head>
+
+<body class="pw-body" style="margin:0;padding:0;width:100%;background:#f2efe9;-webkit-font-smoothing:antialiased;">
+
+  <!-- Preheader: the line a client shows beside the subject. It carries the
+       three facts somebody decides on — place, day, hour — so the mail can be
+       answered from the inbox list without being opened. -->
+  <div style="display:none;font-size:1px;color:#f2efe9;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    Delete photos from your profile to make room — the ones tagged to a walk now stay on the walk.
+  </div>
+
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f2efe9;" class="pw-body">
+    <tr>
+      <td align="center" style="padding:32px 12px 48px 12px;">
+
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;max-width:600px;">
+
+          <!-- contact-sheet strip -->
+          <tr>
+            <td class="pw-strip" style="background:#f2efe9;padding:0 0 14px 0;font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;">
+              <span class="pw-mute">Pune · India</span>
+              <span class="pw-mute" style="float:right;">18&#176;31&#8242;N 73&#176;51&#8242;E</span>
+            </td>
+          </tr>
+
+          <!-- the sheet -->
+          <tr>
+            <td class="pw-sheet pw-rule" style="background:#ffffff;border:1px solid #d6cfc2;">
+
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+
+                <!-- masthead -->
+                <tr>
+                  <td class="pw-pad pw-rule" style="padding:26px 40px;border-bottom:1px solid #d6cfc2;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding-right:10px;">
+                          <!-- the lens mark, drawn in table cells so it needs no image -->
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="20" height="20" style="width:20px;height:20px;border:1px solid #16130f;border-radius:50%;">
+                            <tr><td align="center" valign="middle" style="line-height:0;">
+                              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="7" height="7" style="width:7px;height:7px;background:#c56a1b;border-radius:50%;"><tr><td style="line-height:0;font-size:0;">&nbsp;</td></tr></table>
+                            </td></tr>
+                          </table>
+                        </td>
+                        <td class="pw-ink" style="font-family:Archivo,Helvetica,Arial,sans-serif;font-size:15px;font-weight:500;letter-spacing:-0.01em;color:#16130f;">
+                          pwip.in
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- headline -->
+                <tr>
+                  <td class="pw-pad" style="padding:40px 40px 8px 40px;">
+                    <p class="pw-mute" style="margin:0 0 18px 0;font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;">
+                      New &middot; Beta
+                    </p>
+                    <h1 class="pw-h1 pw-ink" style="margin:0;font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-weight:400;font-size:44px;line-height:0.94;letter-spacing:-0.015em;text-transform:uppercase;color:#16130f;">
+                      Your walk photos<br>now stay.
+                    </h1>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="pw-pad" style="padding:22px 40px 0 40px;">
+                    <p class="pw-soft" style="margin:0 0 14px 0;font-family:Archivo,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:#45403a;">
+                      <!-- Resend fills the merge tag from the contact's first_name.
+                           The fallback after the pipe is what everybody whose name
+                           we do not hold sees, so the sentence reads either way —
+                           a greeting that says "Hello ," is worse than none. -->
+                      Hello {{{FIRST_NAME|there}}},
+                    </p>
+                    <p class="pw-soft" style="margin:0;font-family:Archivo,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:#45403a;">
+                      Your profile holds up to 20 photos. Until now, deleting old ones
+                      to make room also took them off the walk pages. Not any more:
+                      once a photo is tagged to a walk, it stays on that walk&rsquo;s
+                      page for good &mdash; even after you delete it from your profile.
+                      Make room freely; the walk keeps its album.
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- the four facts, as a contact sheet reads them -->
+                <tr>
+                  <td class="pw-pad" style="padding:30px 40px 0 40px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr><td class="pw-rule" style="border-top:1px solid #d6cfc2;font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
+
+                      <tr>
+                        <td style="padding:14px 0 0 0;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                            <tr>
+                              <td class="pw-mute pw-key" width="30%" style="font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;vertical-align:top;padding-bottom:12px;">Upload</td>
+                              <td class="pw-ink" style="font-family:Archivo,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#16130f;padding-bottom:12px;">Tag each photo to the walk you took it on</td>
+                            </tr>
+                            <tr>
+                              <td class="pw-mute pw-key" width="30%" style="font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;vertical-align:top;padding-bottom:12px;">Wait</td>
+                              <td class="pw-ink" style="font-family:Archivo,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#16130f;padding-bottom:12px;">About an hour, while it is saved to the walk</td>
+                            </tr>
+                            <tr>
+                              <td class="pw-mute pw-key" width="30%" style="font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;vertical-align:top;padding-bottom:12px;">Delete</td>
+                              <td class="pw-ink" style="font-family:Archivo,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#16130f;padding-bottom:12px;">Anytime after &mdash; it stays on the walk</td>
+                            </tr>
+                            <tr>
+                              <td class="pw-mute pw-key" width="30%" style="font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;vertical-align:top;">Clear out</td>
+                              <td class="pw-ink" style="font-family:Archivo,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#16130f;">&ldquo;Select photos to remove&rdquo; deletes several at once</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <tr><td class="pw-rule" style="border-top:1px solid #d6cfc2;font-size:0;line-height:0;height:1px;padding-top:16px;">&nbsp;</td></tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- the button -->
+                <tr>
+                  <td class="pw-pad" style="padding:28px 40px 0 40px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td class="pw-cta" style="background:#16130f;">
+                          <a class="pw-btn" href="https://pwip.in/profile"
+                             style="display:inline-block;padding:15px 30px;font-family:'DM Mono','Courier New',Courier,monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#f2efe9;">
+                            Go to my profile &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="pw-pad" style="padding:22px 40px 0 40px;">
+                    <p class="pw-mute" style="margin:0;font-family:Archivo,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#857c70;">
+                      Only photos tagged to a walk are kept &mdash; untagged ones are gone
+                      when you delete them. This is in beta, so if a photo does not
+                      show up on its walk, or you want one taken down, tell us in
+                      the WhatsApp group.
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- the link in full, because some clients do not make buttons clickable -->
+                <tr>
+                  <td class="pw-pad" style="padding:26px 40px 0 40px;">
+                    <p class="pw-mute" style="margin:0 0 6px 0;font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;">
+                      Or paste this into your browser
+                    </p>
+                    <p style="margin:0;font-family:'DM Mono','Courier New',Courier,monospace;font-size:12px;line-height:1.6;word-break:break-all;overflow-wrap:anywhere;">
+                      <a href="https://pwip.in/profile" style="color:#c56a1b;">https://pwip.in/profile</a>
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- footer -->
+                <tr>
+                  <td class="pw-pad pw-rule" style="padding:32px 40px 30px 40px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr><td class="pw-rule" style="border-top:1px solid #d6cfc2;font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
+                    </table>
+                    <p class="pw-mute" style="margin:20px 0 0 0;font-family:'DM Mono','Courier New',Courier,monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#857c70;">
+                      Photowalks in Pune &middot; Walk. Photograph. Connect.
+                    </p>
+                    <p class="pw-mute" style="margin:10px 0 0 0;font-family:Archivo,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#857c70;">
+                      You are receiving this because you have an account on
+                      <a href="https://pwip.in" style="color:#c56a1b;">pwip.in</a>.
+                      Walk and site announcements are the only mail we send &mdash; or
+                      <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#c56a1b;">stop them</a>
+                      and your account stays exactly as it is.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

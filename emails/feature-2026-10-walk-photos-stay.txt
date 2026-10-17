@@ -1,0 +1,27 @@
+PHOTOWALKS IN PUNE — NEW · BETA
+
+Your walk photos now stay.
+
+Hello {{{FIRST_NAME|there}}},
+
+Your profile holds up to 20 photos. Until now, deleting old ones to make
+room also took them off the walk pages. Not any more: once a photo is
+tagged to a walk, it stays on that walk's page for good — even after you
+delete it from your profile. Make room freely; the walk keeps its album.
+
+Upload     Tag each photo to the walk you took it on
+Wait       About an hour, while it is saved to the walk
+Delete     Anytime after — it stays on the walk
+Clear out  "Select photos to remove" deletes several at once
+
+Go to your profile: https://pwip.in/profile
+
+Only photos tagged to a walk are kept — untagged ones are gone when you
+delete them. This is in beta, so if a photo does not show up on its walk,
+or you want one taken down, tell us in the WhatsApp group.
+
+—
+Photowalks in Pune · Walk. Photograph. Connect.
+You are receiving this because you have an account on pwip.in. Walk and
+site announcements are the only mail we send — to stop them, and keep
+your account exactly as it is: {{{RESEND_UNSUBSCRIBE_URL}}}
